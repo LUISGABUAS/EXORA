@@ -1,4 +1,4 @@
-import { ParsedReceiptData } from '../types/expense';
+import { ParsedLineItem, ParsedReceiptData } from '../types/expense';
 import { classifyExpense } from './classifier';
 import { inferDeductibility, isValidMexicanRfc } from './tax';
 
@@ -52,14 +52,43 @@ function findUsoCfdi(rawText: string) {
   return match?.[1]?.toUpperCase();
 }
 
-function findConcepts(rawText: string) {
-  const lines = rawText.split('\n').map((l) => l.trim()).filter((l) => l.length > 3);
+const SKIP_PATTERNS = /^(sub\s*total|total|iva|i\.v\.a|impuesto|cambio|efectivo|tarjeta|visa|mastercard|pago|vuelto|propina|descuento|tc\b)/i;
+
+function findLineItems(rawText: string): ParsedLineItem[] {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+  const items: ParsedLineItem[] = [];
+
+  for (const line of lines) {
+    if (SKIP_PATTERNS.test(line)) {
+      continue;
+    }
+    // Match lines ending with a price: "Product Name  $12.50" or "Product Name 12.50"
+    const match = line.match(/^(.+?)\s+\$?\s*(\d+[.,]\d{2})\s*$/);
+    if (!match) {
+      continue;
+    }
+    const name = match[1].replace(/[\s.]+$/, '').trim();
+    const price = Number(match[2].replace(',', '.'));
+    if (name.length >= 2 && !Number.isNaN(price) && price > 0) {
+      items.push({ name, price });
+    }
+  }
+
+  return items;
+}
+
+function findConcepts(rawText: string, lineItems?: ParsedLineItem[]) {
+  if (lineItems?.length) {
+    return lineItems.map(i => `${i.name} $${i.price.toFixed(2)}`).join(', ');
+  }
+  const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 3);
   return lines.slice(1, 5).join(', ');
 }
 
 export function parseReceiptText(rawText: string): ParsedReceiptData {
   const merchantName = findMerchant(rawText);
-  const conceptsText = findConcepts(rawText);
+  const lineItems = findLineItems(rawText);
+  const conceptsText = findConcepts(rawText, lineItems);
   const rfc = findRfc(rawText) ?? '';
   const usoCFDI = findUsoCfdi(rawText) ?? '';
   const validRfc = isValidMexicanRfc(rfc) ? rfc : '';
@@ -71,6 +100,7 @@ export function parseReceiptText(rawText: string): ParsedReceiptData {
     date: findDate(rawText),
     merchantName,
     conceptsText,
+    lineItems: lineItems.length ? lineItems : undefined,
     rawText,
     suggestedCategory,
     deductible,

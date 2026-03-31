@@ -38,10 +38,10 @@ export async function getExpenseById(id: number): Promise<Expense | null> {
   return normalizeExpense(results.rows.item(0));
 }
 
-export async function createExpense(expense: ExpenseInput): Promise<void> {
+export async function createExpense(expense: ExpenseInput): Promise<number> {
   const db = await getDatabase();
   const createdAt = new Date().toISOString();
-  await db.executeSql(
+  const [result] = await db.executeSql(
     `INSERT INTO expenses
       (amount, date, category, description, merchantName, conceptsText, ocrRawText, deductible, rfc, usoCFDI, source, createdAt)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
@@ -60,6 +60,7 @@ export async function createExpense(expense: ExpenseInput): Promise<void> {
       createdAt,
     ],
   );
+  return result.insertId;
 }
 
 export async function updateExpense(id: number, expense: ExpenseInput): Promise<void> {

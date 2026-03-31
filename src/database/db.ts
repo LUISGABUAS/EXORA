@@ -1,4 +1,5 @@
 import SQLite, { SQLiteDatabase } from 'react-native-sqlite-storage';
+import { initSyncQueue } from './syncQueue';
 
 SQLite.enablePromise(true);
 
@@ -31,4 +32,5 @@ export async function initDatabase() {
       createdAt TEXT NOT NULL
     );
   `);
+  await initSyncQueue();
 }

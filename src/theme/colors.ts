@@ -1,4 +1,19 @@
-export const colors = {
+export type ColorPalette = {
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  text: string;
+  textMuted: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  danger: string;
+  success: string;
+  border: string;
+  white: string;
+};
+
+export const lightColors: ColorPalette = {
   background: '#f4efe6',
   surface: '#fffaf4',
   surfaceAlt: '#f0e6d6',
@@ -12,3 +27,5 @@ export const colors = {
   border: '#ddcfbd',
   white: '#ffffff',
 };
+
+export const colors = lightColors;

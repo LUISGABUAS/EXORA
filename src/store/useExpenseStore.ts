@@ -6,6 +6,7 @@ import {
   updateExpense,
   deleteExpense,
 } from '../database/expenseRepository';
+import { addToSyncQueue } from '../database/syncQueue';
 import { Expense, ExpenseInput } from '../types/expense';
 
 interface ExpenseState {
@@ -33,19 +34,22 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   },
 
   addExpense: async (expense) => {
-    await createExpense(expense);
+    const id = await createExpense(expense);
+    await addToSyncQueue('insert', id, expense as Record<string, any>);
     const expenses = await getAllExpenses();
     set({ expenses });
   },
 
   editExpense: async (id, expense) => {
     await updateExpense(id, expense);
+    await addToSyncQueue('update', id, expense as Record<string, any>);
     const expenses = await getAllExpenses();
     set({ expenses });
   },
 
   removeExpense: async (id) => {
     await deleteExpense(id);
+    await addToSyncQueue('delete', id);
     set((state) => ({ expenses: state.expenses.filter((e) => e.id !== id) }));
   },
 

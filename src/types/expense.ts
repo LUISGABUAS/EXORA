@@ -38,11 +38,17 @@ export interface ExpenseInput {
   source: ExpenseSource;
 }
 
+export interface ParsedLineItem {
+  name: string;
+  price: number;
+}
+
 export interface ParsedReceiptData {
   amount?: number;
   date?: string;
   merchantName?: string;
   conceptsText?: string;
+  lineItems?: ParsedLineItem[];
   rawText: string;
   suggestedCategory: ExpenseCategory;
   deductible: boolean;

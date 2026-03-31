@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>SmartExpenseMX2</string>
+	<string>Expensia</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,13 +34,28 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>SmartExpense MX necesita acceso a la camara para escanear tickets y facturas.</string>
+	<string>Expensia necesita acceso a la camara para escanear tickets y facturas.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>SmartExpense MX necesita acceso a tus fotos para seleccionar tickets.</string>
+	<string>Expensia necesita acceso a tus fotos para seleccionar tickets.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>MaterialCommunityIcons.ttf</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.477633387004-ko4n5u2uonbndkaetpp91geib16g38m2</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
