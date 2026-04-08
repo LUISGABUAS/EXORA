@@ -23,13 +23,19 @@ export function StatCard({ label, value, tone = 'primary', icon }: StatCardProps
     accent: colors.accent,
   };
 
+  const toneColor = toneColors[tone];
+
   return (
-    <View style={[s.card, { borderLeftColor: toneColors[tone] }]}>
+    <View style={s.card}>
       {icon ? (
-        <Icon name={icon} size={18} color={toneColors[tone]} />
+        <View style={[s.iconCircle, { backgroundColor: toneColor + '18' }]}>
+          <Icon name={icon} size={20} color={toneColor} />
+        </View>
       ) : null}
+      <Text style={[s.value, { color: toneColor }]} numberOfLines={1}>
+        {value}
+      </Text>
       <Text style={s.label}>{label}</Text>
-      <Text style={[s.value, { color: toneColors[tone] }]}>{value}</Text>
     </View>
   );
 }
@@ -42,17 +48,24 @@ const useStyles = (colors: ColorPalette) =>
       borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
-      borderLeftWidth: 4,
       padding: 14,
-      gap: 4,
+      alignItems: 'center',
+      gap: 6,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    value: {
+      fontSize: 16,
+      fontWeight: '800',
     },
     label: {
       color: colors.textMuted,
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: '600',
-    },
-    value: {
-      fontSize: 18,
-      fontWeight: '800',
     },
   });

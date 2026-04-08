@@ -1,45 +1,64 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ExpenseForm } from '../components/ExpenseForm';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
+import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
-import { shadows } from '../theme/spacing';
-import { ExpenseInput } from '../types/expense';
+import { ExpenseCategory, ExpenseInput } from '../types/expense';
 import { formatCurrency, formatDate } from '../utils/format';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ExpenseDetail'>;
 
 function InfoRow({ label, value, icon, colors }: { label: string; value: string; icon?: string; colors: ColorPalette }) {
   return (
-    <View style={infoStyles.infoRow}>
-      <View style={infoStyles.infoLabelRow}>
-        {icon ? <Icon name={icon} size={14} color={colors.textMuted} /> : null}
-        <Text style={[infoStyles.infoLabel, { color: colors.textMuted }]}>{label}</Text>
+    <View style={infoStyles.row}>
+      <View style={infoStyles.labelRow}>
+        {icon ? (
+          <View style={[infoStyles.iconDot, { backgroundColor: colors.primary + '15' }]}>
+            <Icon name={icon} size={14} color={colors.primary} />
+          </View>
+        ) : null}
+        <Text style={[infoStyles.label, { color: colors.textMuted }]}>{label}</Text>
       </View>
-      <Text style={[infoStyles.infoValue, { color: colors.text }]}>{value || '-'}</Text>
+      <Text style={[infoStyles.value, { color: colors.text }]} numberOfLines={2}>
+        {value || '-'}
+      </Text>
     </View>
   );
 }
 
 const infoStyles = StyleSheet.create({
-  infoRow: { gap: 4 },
-  infoLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  infoLabel: { fontSize: 12 },
-  infoValue: { fontSize: 15, lineHeight: 22 },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: { fontSize: 13, fontWeight: '600' },
+  value: { fontSize: 14, fontWeight: '600', textAlign: 'right', maxWidth: '50%' },
 });
 
 export function ExpenseDetailScreen({ route, navigation }: Props) {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
   const { expenseId } = route.params;
-  const getExpense = useExpenseStore((state) => state.getExpense);
-  const editExpense = useExpenseStore((state) => state.editExpense);
-  const removeExpense = useExpenseStore((state) => state.removeExpense);
+  const getExpense = useExpenseStore(state => state.getExpense);
+  const editExpense = useExpenseStore(state => state.editExpense);
+  const removeExpense = useExpenseStore(state => state.removeExpense);
   const expense = getExpense(expenseId);
   const [editing, setEditing] = useState(false);
 
@@ -54,11 +73,11 @@ export function ExpenseDetailScreen({ route, navigation }: Props) {
   const handleEdit = async (payload: ExpenseInput) => {
     await editExpense(expenseId, payload);
     setEditing(false);
-    Alert.alert('Actualizado', 'El gasto fue modificado correctamente.');
+    Alert.alert('Actualizado', 'El gasto se actualizó correctamente.');
   };
 
   const handleDelete = () => {
-    Alert.alert('Eliminar gasto', '¿Estas seguro de que quieres eliminar este gasto?', [
+    Alert.alert('Eliminar gasto', '¿Estás seguro de que quieres eliminar este gasto?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
@@ -80,82 +99,200 @@ export function ExpenseDetailScreen({ route, navigation }: Props) {
           onSubmit={handleEdit}
         />
         <Pressable style={s.cancelButton} onPress={() => setEditing(false)}>
-          <Text style={s.cancelText}>Cancelar edicion</Text>
+          <Text style={s.cancelText}>Cancelar edición</Text>
         </Pressable>
       </ScreenContainer>
     );
   }
 
+  const catIcon = categoryIcons[expense.category as ExpenseCategory] || 'dots-horizontal-circle-outline';
+
   return (
     <ScreenContainer>
-      <View style={s.hero}>
-        <Text style={s.heroLabel}>Monto</Text>
-        <Text style={s.heroValue}>{formatCurrency(expense.amount)}</Text>
-        <Text style={s.heroMeta}>{expense.merchantName || expense.description}</Text>
-      </View>
+      {/* Hero — amount + category */}
+      <Animated.View entering={FadeInDown.duration(350)} style={s.hero}>
+        <View style={s.heroIconCircle}>
+          <Icon name={catIcon} size={28} color={colors.primary} />
+        </View>
+        <Text style={s.heroAmount}>{formatCurrency(expense.amount)}</Text>
+        <Text style={s.heroMeta}>
+          {expense.merchantName || expense.description || expense.category}
+        </Text>
+        <View style={s.heroBadge}>
+          <Text style={s.heroBadgeText}>{expense.category}</Text>
+        </View>
+      </Animated.View>
 
-      <View style={s.section}>
+      {/* General info */}
+      <Animated.View entering={FadeInDown.delay(100).duration(350)} style={s.section}>
         <View style={s.sectionHeader}>
-          <Icon name="information-outline" size={20} color={colors.text} />
+          <Icon name="information-outline" size={18} color={colors.text} />
           <Text style={s.sectionTitle}>Datos generales</Text>
         </View>
+        <View style={s.divider} />
         <InfoRow label="Fecha" value={formatDate(expense.date)} icon="calendar" colors={colors} />
-        <InfoRow label="Categoria" value={expense.category} icon="tag" colors={colors} />
-        <InfoRow label="Descripcion" value={expense.description} icon="text" colors={colors} />
-        <InfoRow label="Conceptos" value={expense.conceptsText} icon="format-list-bulleted" colors={colors} />
-        <InfoRow label="Origen" value={expense.source === 'ocr' ? 'Escaneo OCR' : 'Manual'} icon="source-branch" colors={colors} />
-      </View>
+        <InfoRow label="Categoría" value={expense.category} icon="tag" colors={colors} />
+        <InfoRow label="Descripción" value={expense.description} icon="text" colors={colors} />
+        {expense.conceptsText ? (
+          <InfoRow label="Conceptos" value={expense.conceptsText} icon="format-list-bulleted" colors={colors} />
+        ) : null}
+        <InfoRow
+          label="Origen"
+          value={expense.source === 'ocr' ? 'Escaneo OCR' : 'Manual'}
+          icon="source-branch"
+          colors={colors}
+        />
+      </Animated.View>
 
-      <View style={s.section}>
+      {/* Fiscal info */}
+      <Animated.View entering={FadeInDown.delay(200).duration(350)} style={s.section}>
         <View style={s.sectionHeader}>
-          <Icon name="shield-check-outline" size={20} color={colors.text} />
+          <Icon name="shield-check-outline" size={18} color={colors.text} />
           <Text style={s.sectionTitle}>Datos fiscales</Text>
         </View>
-        <InfoRow label="Deducible" value={expense.deductible ? 'Si' : 'No'} icon="check-circle-outline" colors={colors} />
-        <InfoRow label="RFC" value={expense.rfc} icon="card-account-details-outline" colors={colors} />
-        <InfoRow label="Uso CFDI" value={expense.usoCFDI} icon="file-document-outline" colors={colors} />
-      </View>
+        <View style={s.divider} />
+        <InfoRow
+          label="Deducible"
+          value={expense.deductible ? 'Sí' : 'No'}
+          icon="check-circle-outline"
+          colors={colors}
+        />
+        {expense.rfc ? (
+          <InfoRow label="RFC" value={expense.rfc} icon="card-account-details-outline" colors={colors} />
+        ) : null}
+        {expense.usoCFDI ? (
+          <InfoRow label="Uso CFDI" value={expense.usoCFDI} icon="file-document-outline" colors={colors} />
+        ) : null}
+      </Animated.View>
 
+      {/* OCR text */}
       {expense.ocrRawText ? (
-        <View style={s.section}>
+        <Animated.View entering={FadeInDown.delay(300).duration(350)} style={s.section}>
           <View style={s.sectionHeader}>
-            <Icon name="text-recognition" size={20} color={colors.text} />
+            <Icon name="text-recognition" size={18} color={colors.text} />
             <Text style={s.sectionTitle}>Texto OCR</Text>
           </View>
+          <View style={s.divider} />
           <Text style={s.ocrText}>{expense.ocrRawText}</Text>
-        </View>
+        </Animated.View>
       ) : null}
 
-      <View style={s.actions}>
+      {/* Actions */}
+      <Animated.View entering={FadeInDown.delay(350).duration(300)} style={s.actions}>
         <Pressable style={s.editButton} onPress={() => setEditing(true)}>
           <Icon name="pencil-outline" size={18} color={colors.white} />
-          <Text style={s.editButtonText}>Editar</Text>
+          <Text style={s.actionText}>Editar</Text>
         </Pressable>
         <Pressable style={s.deleteButton} onPress={handleDelete}>
-          <Icon name="trash-can-outline" size={18} color={colors.white} />
-          <Text style={s.deleteButtonText}>Eliminar</Text>
+          <Icon name="trash-can-outline" size={18} color={colors.danger} />
+          <Text style={[s.actionText, { color: colors.danger }]}>Eliminar</Text>
         </Pressable>
-      </View>
+      </Animated.View>
     </ScreenContainer>
   );
 }
 
-const useStyles = (colors: ColorPalette, isDark: boolean) =>
+const useStyles = (colors: ColorPalette, _isDark: boolean) =>
   StyleSheet.create({
     loading: { color: colors.textMuted },
-    hero: { borderRadius: 26, padding: 22, backgroundColor: colors.accent, gap: 6, ...shadows.cardLg },
-    heroLabel: { color: isDark ? '#aac5dc' : '#d7e5f0', fontSize: 13 },
-    heroValue: { color: colors.white, fontSize: 34, fontWeight: '800' },
-    heroMeta: { color: colors.white, fontSize: 15 },
-    section: { borderRadius: 22, padding: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 10, ...shadows.card },
-    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    sectionTitle: { color: colors.text, fontWeight: '800', fontSize: 18 },
-    ocrText: { color: colors.text, lineHeight: 22 },
-    actions: { flexDirection: 'row', gap: 12 },
-    editButton: { flex: 1, flexDirection: 'row', gap: 6, backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    editButtonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
-    deleteButton: { flex: 1, flexDirection: 'row', gap: 6, backgroundColor: colors.danger, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    deleteButtonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
-    cancelButton: { paddingVertical: 14, alignItems: 'center' },
-    cancelText: { color: colors.textMuted, fontWeight: '600' },
+    hero: {
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 24,
+    },
+    heroIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary + '15',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    heroAmount: {
+      color: colors.text,
+      fontSize: 36,
+      fontWeight: '800',
+    },
+    heroMeta: {
+      color: colors.textMuted,
+      fontSize: 15,
+    },
+    heroBadge: {
+      backgroundColor: colors.primary + '15',
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      marginTop: 4,
+    },
+    heroBadgeText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '700',
+    },
+    section: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontWeight: '700',
+      fontSize: 16,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginTop: 12,
+    },
+    ocrText: {
+      color: colors.text,
+      lineHeight: 22,
+      fontSize: 13,
+      marginTop: 8,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    editButton: {
+      flex: 1,
+      flexDirection: 'row',
+      gap: 8,
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteButton: {
+      flex: 1,
+      flexDirection: 'row',
+      gap: 8,
+      backgroundColor: colors.danger + '12',
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    actionText: {
+      color: colors.white,
+      fontWeight: '700',
+      fontSize: 15,
+    },
+    cancelButton: {
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    cancelText: {
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
   });

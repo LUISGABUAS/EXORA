@@ -10,8 +10,7 @@ export const categoryIcons: Record<ExpenseCategory, string> = {
 };
 
 export const tabIcons: Record<string, string> = {
-  Dashboard: 'view-dashboard-outline',
-  Escaneo: 'camera-outline',
-  Historial: 'history',
-  Configuracion: 'cog-outline',
+  Inicio: 'home',
+  Movimientos: 'swap-horizontal',
+  Perfil: 'account-circle-outline',
 };

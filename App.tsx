@@ -8,26 +8,48 @@ import { configureNotifications } from './src/services/notificationService';
 import { startSyncService } from './src/services/syncService';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useExpenseStore } from './src/store/useExpenseStore';
+import { usePremiumStore } from './src/store/usePremiumStore';
+import { useTemplateStore } from './src/store/useTemplateStore';
+import { initRevenueCat } from './src/services/revenuecatService';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
   const loadExpenses = useExpenseStore(state => state.loadExpenses);
   const initializeAuth = useAuthStore(state => state.initialize);
   const authLoading = useAuthStore(state => state.loading);
+  const hydratePremium = usePremiumStore(state => state.hydrate);
+  const updateStreak = usePremiumStore(state => state.updateStreak);
+  const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
+  const premiumLoaded = usePremiumStore(state => state.loaded);
+  const hydrateTemplates = useTemplateStore(state => state.hydrate);
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
     const bootstrap = async () => {
-      await initializeAuth();
-      await initDatabase();
-      configureNotifications();
-      await loadExpenses();
-      startSyncService();
+      try {
+        // Auth (network) and DB (local) are independent — run in parallel
+        await Promise.all([
+          initializeAuth(),
+          initDatabase().then(() => loadExpenses()),
+          hydratePremium(),
+          hydrateTemplates(),
+        ]);
+        await updateStreak();
+        configureNotifications();
+        startSyncService();
+
+        // Init RevenueCat + sync premium status
+        const currentSession = useAuthStore.getState().session;
+        await initRevenueCat(currentSession?.user?.id);
+        await syncWithRevenueCat();
+      } catch (error) {
+        console.error('Bootstrap error:', error);
+      }
     };
     void bootstrap();
-  }, [loadExpenses, initializeAuth]);
+  }, [loadExpenses, initializeAuth, hydratePremium, updateStreak, hydrateTemplates, syncWithRevenueCat]);
 
-  if (authLoading) {
+  if (authLoading || !premiumLoaded) {
     return (
       <View style={[styles.splash, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />

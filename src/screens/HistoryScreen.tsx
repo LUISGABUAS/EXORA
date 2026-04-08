@@ -1,33 +1,55 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, LayoutAnimation, Platform, Pressable, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
+import { FlatList, LayoutAnimation, Platform, Pressable, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AmountRangeFilter } from '../components/AmountRangeFilter';
 import { DateRangePicker } from '../components/DateRangePicker';
+import { DeductibleSummary } from '../components/DeductibleSummary';
 import { EmptyState } from '../components/EmptyState';
 import { ExpenseCard } from '../components/ExpenseCard';
 import { ExpenseForm } from '../components/ExpenseForm';
+import { LineChart } from '../components/LineChart';
+import { PaywallModal } from '../components/PaywallModal';
+import { PieChart } from '../components/PieChart';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { SimpleBarChart } from '../components/SimpleBarChart';
+import { UndoToast } from '../components/UndoToast';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useExpenseStore } from '../store/useExpenseStore';
+import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { categoryIcons } from '../theme/icons';
 import { ExpenseCategory, ExpenseInput } from '../types/expense';
+import { formatCurrency, localDateString } from '../utils/format';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
+  Comida: '#22C55E',
+  Transporte: '#3B82F6',
+  Entretenimiento: '#F59E0B',
+  Salud: '#EF4444',
+  Educacion: '#8B5CF6',
+  Otros: '#8E8E93',
+};
+
 const categories: Array<ExpenseCategory | 'Todas'> = ['Todas', 'Comida', 'Transporte', 'Entretenimiento', 'Salud', 'Educacion', 'Otros'];
 
 type SortMode = 'recent' | 'amount_desc' | 'amount_asc';
 const sortOptions: Array<{ value: SortMode; label: string }> = [
-  { value: 'recent', label: 'Mas reciente' },
+  { value: 'recent', label: 'Más reciente' },
   { value: 'amount_desc', label: 'Mayor monto' },
   { value: 'amount_asc', label: 'Menor monto' },
 ];
+
+const separatorStyle = { height: 12 };
+function SeparatorComponent() {
+  return <View style={separatorStyle} />;
+}
 
 export function HistoryScreen() {
   const { colors, isDark } = useTheme();
@@ -35,10 +57,17 @@ export function HistoryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const expenses = useExpenseStore((state) => state.expenses);
   const addExpense = useExpenseStore((state) => state.addExpense);
+  const removeExpense = useExpenseStore((state) => state.removeExpense);
+  const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
+  const [paywallVisible, setPaywallVisible] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [lastSavedId, setLastSavedId] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'Todas'>('Todas');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [minAmount, setMinAmount] = useState('');
@@ -65,7 +94,13 @@ export function HistoryScreen() {
   };
 
   const filteredExpenses = useMemo(() => {
-    let result = expenses.filter(e => {
+    let source = expenses;
+    if (!hasFullAccess()) {
+      const n = new Date();
+      const cutoff = localDateString(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 30));
+      source = source.filter(e => e.date >= cutoff);
+    }
+    let result = source.filter(e => {
       const matchesQuery =
         !query ||
         `${e.merchantName} ${e.description} ${e.conceptsText}`.toLowerCase().includes(query.toLowerCase());
@@ -96,32 +131,122 @@ export function HistoryScreen() {
     }
 
     return result;
-  }, [expenses, query, selectedCategory, startDate, endDate, minAmount, maxAmount, sortMode]);
+  }, [expenses, query, selectedCategory, startDate, endDate, minAmount, maxAmount, sortMode, hasFullAccess]);
+
+  // Chart data computed from all expenses (not filtered)
+  const now = new Date();
+  const todayStr = localDateString(now);
+  const monthPrefix = todayStr.slice(0, 7);
+
+  const weekDates = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
+      return localDateString(d);
+    });
+  }, []);
+
+  const chartData = useMemo(() =>
+    weekDates.map(dateStr => ({
+      label: String(Number(dateStr.slice(8, 10))),
+      value: expenses.filter(e => e.date.startsWith(dateStr)).reduce((sum, e) => sum + e.amount, 0),
+    })),
+  [expenses, weekDates]);
+
+  const categoryBreakdown = useMemo(() => {
+    const monthExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
+    const groups: Record<string, number> = {};
+    for (const e of monthExpenses) {
+      groups[e.category] = (groups[e.category] || 0) + e.amount;
+    }
+    return Object.entries(groups)
+      .map(([category, amount]) => ({
+        category,
+        amount,
+        color: CATEGORY_COLORS[category as ExpenseCategory] || '#999',
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [expenses, monthPrefix]);
+
+  const weeklyTrend = useMemo(() => {
+    const today = new Date();
+    const weeks: Array<{ label: string; value: number }> = [];
+    for (let w = 3; w >= 0; w--) {
+      const wEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() - w * 7);
+      const wStart = new Date(wEnd.getFullYear(), wEnd.getMonth(), wEnd.getDate() - 6);
+      const wStartStr = localDateString(wStart);
+      const wEndStr = localDateString(wEnd);
+      const total = expenses
+        .filter(e => e.date >= wStartStr && e.date <= wEndStr)
+        .reduce((sum, e) => sum + e.amount, 0);
+      weeks.push({ label: `S${4 - w}`, value: total });
+    }
+    return weeks;
+  }, [expenses]);
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [filteredExpenses.length, showForm, showAdvanced]);
+  }, [filteredExpenses.length, showForm, showAdvanced, showStats]);
 
   const saveManualExpense = async (payload: ExpenseInput) => {
     await addExpense({ ...payload, source: 'manual' });
+    const allExpenses = useExpenseStore.getState().expenses;
+    const newId = Math.max(...allExpenses.map(e => e.id));
+    setLastSavedId(newId);
     setShowForm(false);
-    Alert.alert('Guardado', 'El gasto manual fue registrado.');
+    setToastMessage(`${formatCurrency(payload.amount)} ${payload.category} registrado`);
+    setToastVisible(true);
+  };
+
+  const handleUndo = async () => {
+    if (lastSavedId !== null) {
+      await removeExpense(lastSavedId);
+      setLastSavedId(null);
+    }
   };
 
   return (
+    <View style={s.flex}>
     <ScreenContainer>
       <View style={s.header}>
-        <Text style={s.title}>Historial de gastos</Text>
+        <Text style={s.title}>Movimientos</Text>
         <Pressable style={s.addButton} onPress={() => setShowForm(v => !v)}>
           <Icon name={showForm ? 'close' : 'plus'} size={16} color={colors.white} />
           <Text style={s.addButtonText}>{showForm ? 'Cerrar' : 'Nuevo gasto'}</Text>
         </Pressable>
       </View>
 
+      {/* Stats toggle */}
+      {expenses.length > 0 ? (
+        <Pressable
+          style={s.statsToggle}
+          onPress={() => setShowStats(v => !v)}
+        >
+          <Icon name="chart-arc" size={18} color={colors.primary} />
+          <Text style={s.statsToggleText}>Estadísticas</Text>
+          <Icon
+            name={showStats ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={colors.textMuted}
+          />
+        </Pressable>
+      ) : null}
+
+      {showStats && expenses.length > 0 ? (
+        <View style={s.statsSection}>
+          <DeductibleSummary expenses={expenses} />
+          {categoryBreakdown.length > 0 ? (
+            <PieChart data={categoryBreakdown} />
+          ) : null}
+          <SimpleBarChart data={chartData} highlightLast />
+          <LineChart data={weeklyTrend} title="Tendencia últimas 4 semanas" />
+        </View>
+      ) : null}
+
       <View style={s.searchRow}>
         <Icon name="magnify" size={20} color={colors.textMuted} style={s.searchIcon} />
         <TextInput
-          placeholder="Buscar por comercio o descripcion"
+          placeholder="Buscar por comercio o descripción"
           placeholderTextColor={colors.textMuted}
           style={s.search}
           value={query}
@@ -215,32 +340,70 @@ export function HistoryScreen() {
             onPress={() => navigation.navigate('ExpenseDetail', { expenseId: item.id })}
           />
         )}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        ItemSeparatorComponent={SeparatorComponent}
         ListEmptyComponent={
           <EmptyState
             icon="receipt"
             title="Sin resultados"
-            message="Aun no hay gastos para este filtro. Agrega uno nuevo o cambia el filtro."
+            message="Aún no hay gastos para este filtro. Agrega uno nuevo o cambia el filtro."
           />
         }
         scrollEnabled={false}
       />
+      {/* Upgrade banner for free users */}
+      {!hasFullAccess() ? (
+        <Pressable style={s.upgradeBanner} onPress={() => setPaywallVisible(true)}>
+          <Icon name="lock-outline" size={18} color={colors.warning} />
+          <Text style={s.upgradeBannerText}>Historial limitado a 30 días</Text>
+          <Icon name="chevron-right" size={18} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
+
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        trigger="history"
+      />
     </ScreenContainer>
+    <UndoToast
+      visible={toastVisible}
+      message={toastMessage}
+      onUndo={handleUndo}
+      onDismiss={() => setToastVisible(false)}
+    />
+    </View>
   );
 }
 
-const useStyles = (colors: ColorPalette, isDark: boolean) =>
+const useStyles = (colors: ColorPalette, _isDark: boolean) =>
   StyleSheet.create({
+    flex: { flex: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
     title: { flex: 1, color: colors.text, fontSize: 28, fontWeight: '800' },
-    addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.secondary, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },
+    addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },
     addButtonText: { color: colors.white, fontWeight: '700' },
-    searchRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 16, backgroundColor: colors.surface, paddingHorizontal: 14 },
+    statsToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.primaryGlow,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    statsToggleText: {
+      flex: 1,
+      color: colors.primary,
+      fontWeight: '700',
+      fontSize: 14,
+    },
+    statsSection: { gap: 12 },
+    searchRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, backgroundColor: colors.surfaceAlt, paddingHorizontal: 14 },
     searchIcon: { marginRight: 8 },
     search: { flex: 1, paddingVertical: 12, color: colors.text },
     filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.surfaceAlt },
-    chipActive: { backgroundColor: colors.accent },
+    chipActive: { backgroundColor: colors.primary },
     chipText: { color: colors.text, fontSize: 12, fontWeight: '600' },
     chipTextActive: { color: colors.white },
     advancedToggle: {
@@ -280,4 +443,19 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     sortChipTextActive: { color: colors.white },
     clearButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8 },
     clearText: { color: colors.danger, fontWeight: '600', fontSize: 13 },
+    upgradeBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.warning + '12',
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    upgradeBannerText: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
+    },
   });

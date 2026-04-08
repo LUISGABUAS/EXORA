@@ -43,11 +43,11 @@ export function SimpleBarChart({ data, highlightLast }: SimpleBarChartProps) {
                   style={[
                     s.bar,
                     { height: `${(item.value / max) * 100}%` },
-                    isHighlighted && { backgroundColor: colors.secondary, opacity: 1 },
+                    isHighlighted && s.barHighlighted,
                   ]}
                 />
               </View>
-              <Text style={[s.barLabel, isHighlighted && { color: colors.text, fontWeight: '800' }]}>
+              <Text style={[s.barLabel, isHighlighted && s.barLabelHighlighted]}>
                 {item.label}
               </Text>
             </View>
@@ -103,9 +103,17 @@ const useStyles = (colors: ColorPalette) =>
       width: '100%',
       opacity: 0.85,
     },
+    barHighlighted: {
+      backgroundColor: colors.secondary,
+      opacity: 1,
+    },
     barLabel: {
       color: colors.textMuted,
       fontSize: 10,
       fontWeight: '600',
+    },
+    barLabelHighlighted: {
+      color: colors.text,
+      fontWeight: '800',
     },
   });

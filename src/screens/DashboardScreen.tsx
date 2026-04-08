@@ -1,151 +1,486 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { DeductibleSummary } from '../components/DeductibleSummary';
+import { Avatar } from '../components/Avatar';
 import { EmptyState } from '../components/EmptyState';
+import { InsightCard } from '../components/InsightCard';
 import { LineChart } from '../components/LineChart';
-import { PieChart } from '../components/PieChart';
+import { NewExpenseModal } from '../components/NewExpenseModal';
+import { PaywallModal } from '../components/PaywallModal';
+import { SmartInputBar } from '../components/SmartInputBar';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { SimpleBarChart } from '../components/SimpleBarChart';
-import { StatCard } from '../components/StatCard';
+import { StreakBadge } from '../components/StreakBadge';
+import { TaxSavingsCard } from '../components/TaxSavingsCard';
+import { UndoToast } from '../components/UndoToast';
+import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
+import { useAuthStore } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
+import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
-import { shadows } from '../theme/spacing';
+import { generateLocalInsights, Insight } from '../services/insightService';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
-import { monthlyDeductibleTotal } from '../utils/tax';
+
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+const DAY_LABELS = ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'];
 
 const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  Comida: '#0f766e',
-  Transporte: '#355c7d',
-  Entretenimiento: '#c96f3b',
-  Salud: '#b42318',
-  Educacion: '#7c3aed',
-  Otros: '#74685f',
+  Comida: '#22C55E',
+  Transporte: '#3B82F6',
+  Entretenimiento: '#F59E0B',
+  Salud: '#EF4444',
+  Educacion: '#8B5CF6',
+  Otros: '#8E8E93',
 };
+
+function getFirstName(session: any): string {
+  if (!session?.user) return '';
+  const meta = session.user.user_metadata;
+  if (meta?.full_name) return meta.full_name.split(' ')[0];
+  if (session.user.email) return session.user.email.split('@')[0];
+  return '';
+}
+
+function formatTime(createdAt: string): string {
+  const now = new Date();
+  const todayStr = localDateString(now);
+  const yesterdayStr = localDateString(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
+  );
+
+  const dateStr = createdAt.slice(0, 10);
+  const timePart = createdAt.slice(11, 16);
+  const [hStr, mStr] = timePart.split(':');
+  const h = parseInt(hStr || '0', 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+
+  if (dateStr === todayStr) return `Hoy, ${h12}:${m} ${ampm}`;
+  if (dateStr === yesterdayStr) return `Ayer, ${h12}:${m} ${ampm}`;
+  return `${dateStr.slice(5)}`;
+}
 
 export function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
-  const expenses = useExpenseStore((state) => state.expenses);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const expenses = useExpenseStore(state => state.expenses);
+  const session = useAuthStore(state => state.session);
+
+  const streak = usePremiumStore(state => state.streak);
+  const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
+  const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [lastSavedId, setLastSavedId] = useState<number | null>(null);
 
   const now = new Date();
   const todayStr = localDateString(now);
   const monthPrefix = todayStr.slice(0, 7);
+  const currentMonth = MONTHS[now.getMonth()];
+  const currentYear = now.getFullYear();
 
-  const weekDates = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - i));
-    return localDateString(d);
-  });
-  const weekStart = weekDates[0];
+  const weekStart = localDateString(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6),
+  );
+  const prevWeekStart = localDateString(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13),
+  );
+  const prevWeekEnd = localDateString(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
+  );
 
-  const daily = expenses.filter(e => e.date.startsWith(todayStr)).reduce((sum, e) => sum + e.amount, 0);
-  const weekly = expenses.filter(e => e.date >= weekStart && e.date <= todayStr).reduce((sum, e) => sum + e.amount, 0);
-  const monthly = expenses.filter(e => e.date.startsWith(monthPrefix)).reduce((sum, e) => sum + e.amount, 0);
-  const deductibleMonth = monthlyDeductibleTotal(expenses);
+  const monthly = expenses
+    .filter(e => e.date.startsWith(monthPrefix))
+    .reduce((sum, e) => sum + e.amount, 0);
 
-  const chartData = weekDates.map(dateStr => ({
-    label: String(Number(dateStr.slice(8, 10))),
-    value: expenses.filter(e => e.date.startsWith(dateStr)).reduce((sum, e) => sum + e.amount, 0),
-  }));
+  const thisWeek = expenses
+    .filter(e => e.date >= weekStart && e.date <= todayStr)
+    .reduce((sum, e) => sum + e.amount, 0);
 
-  const categoryBreakdown = useMemo(() => {
-    const monthExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
-    const groups: Record<string, number> = {};
-    for (const e of monthExpenses) {
-      groups[e.category] = (groups[e.category] || 0) + e.amount;
+  const prevWeek = expenses
+    .filter(e => e.date >= prevWeekStart && e.date <= prevWeekEnd)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const weekDiff = thisWeek - prevWeek;
+  const weekPct = prevWeek > 0 ? Math.abs(weekDiff / prevWeek) * 100 : 0;
+  const weekUp = weekDiff >= 0;
+
+  const recentExpenses = useMemo(
+    () => expenses.slice(0, 4),
+    [expenses],
+  );
+
+  // Insights: local pattern analysis
+  const insights: Insight[] = useMemo(() => {
+    if (expenses.length === 0) return [];
+    return generateLocalInsights(expenses, fiscalRegime, hasFullAccess());
+  }, [expenses, fiscalRegime, hasFullAccess]);
+
+  // Weekly chart data (last 7 days)
+  const chartData = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
+      const dateStr = localDateString(d);
+      const dayIdx = (d.getDay() + 6) % 7; // Mon=0
+      return {
+        label: DAY_LABELS[dayIdx],
+        value: expenses.filter(e => e.date.startsWith(dateStr)).reduce((sum, e) => sum + e.amount, 0),
+      };
+    });
+  }, [expenses]);
+
+  const firstName = getFirstName(session);
+
+  const handleSaved = (message: string, expenseId: number) => {
+    setLastSavedId(expenseId);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
+
+  const handleInlineSave = (expenseId: number, message: string) => {
+    setLastSavedId(expenseId);
+    setToastMessage(message);
+    setToastVisible(true);
+  };
+
+  const handleUndo = async () => {
+    if (lastSavedId !== null) {
+      await useExpenseStore.getState().removeExpense(lastSavedId);
+      setLastSavedId(null);
     }
-    return Object.entries(groups)
-      .map(([category, amount]) => ({
-        category,
-        amount,
-        color: CATEGORY_COLORS[category as ExpenseCategory] || '#999',
-      }))
-      .sort((a, b) => b.amount - a.amount);
-  }, [expenses, monthPrefix]);
+  };
 
-  const weeklyTrend = useMemo(() => {
-    const weeks: Array<{ label: string; value: number }> = [];
-    for (let w = 3; w >= 0; w--) {
-      const wEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - w * 7);
-      const wStart = new Date(wEnd.getFullYear(), wEnd.getMonth(), wEnd.getDate() - 6);
-      const startStr = localDateString(wStart);
-      const endStr = localDateString(wEnd);
-      const total = expenses
-        .filter(e => e.date >= startStr && e.date <= endStr)
-        .reduce((sum, e) => sum + e.amount, 0);
-      weeks.push({
-        label: `S${4 - w}`,
-        value: total,
-      });
-    }
-    return weeks;
-  }, [expenses, now]);
+  const navigateToScan = () => navigation.navigate('Scan');
 
   return (
-    <ScreenContainer>
-      <Animated.View entering={FadeInDown.duration(400).springify()} style={s.hero}>
-        <Text style={s.title}>Expensia</Text>
-        <Text style={s.subtitle}>Controla gastos, tickets y deducciones en un solo lugar.</Text>
-      </Animated.View>
-
-      {expenses.length === 0 ? (
-        <EmptyState
-          icon="wallet-outline"
-          title="Sin gastos registrados"
-          message="Escanea un ticket o agrega un gasto manual para comenzar."
-        />
-      ) : (
-        <>
-          <DeductibleSummary expenses={expenses} />
-
-          <View style={s.statsGrid}>
-            <StatCard label="Hoy" value={formatCurrency(daily)} tone="primary" icon="calendar-today" />
-            <StatCard label="Semana" value={formatCurrency(weekly)} tone="secondary" icon="calendar-week" />
-            <StatCard label="Mes" value={formatCurrency(monthly)} tone="accent" icon="calendar-month" />
+    <View style={s.flex}>
+      <ScreenContainer>
+        {/* Header — Avatar + Greeting + Bell */}
+        <Animated.View entering={FadeInDown.duration(300)}>
+          <View style={s.headerRow}>
+            <Pressable onPress={() => navigation.navigate('ProfileEdit')} style={s.headerTap}>
+              <Avatar size={44} name={firstName} />
+              <View style={s.greetingBlock}>
+                <Text style={s.greeting}>
+                  {firstName ? `Hola, ${firstName}` : 'Hola'}
+                </Text>
+                <Text style={s.monthLabel}>{currentMonth} {currentYear}</Text>
+              </View>
+            </Pressable>
+            <StreakBadge streak={streak} />
+            <Pressable hitSlop={8}>
+              <Icon name="bell-outline" size={22} color={colors.textMuted} />
+            </Pressable>
           </View>
+        </Animated.View>
 
-          {categoryBreakdown.length > 0 ? (
-            <PieChart data={categoryBreakdown} />
-          ) : null}
+        {/* Smart Input Bar — always visible */}
+        <Animated.View entering={FadeInDown.delay(50).duration(350)}>
+          <SmartInputBar
+            onSave={handleInlineSave}
+            onScanPress={navigateToScan}
+            onExpandPress={() => setModalVisible(true)}
+          />
+        </Animated.View>
 
-          <SimpleBarChart data={chartData} highlightLast />
+        {/* Tax Savings Card */}
+        <Animated.View entering={FadeInDown.delay(75).duration(350)}>
+          <TaxSavingsCard
+            expenses={expenses}
+            regime={fiscalRegime}
+            isPremium={hasFullAccess()}
+            onUpgradePress={() => setPaywallVisible(true)}
+          />
+        </Animated.View>
 
-          <LineChart data={weeklyTrend} title="Tendencia ultimas 4 semanas" />
+        {expenses.length === 0 ? (
+          <Animated.View entering={FadeInDown.delay(100).duration(350)}>
+            <EmptyState
+              icon="wallet-outline"
+              title="Sin gastos registrados"
+              message="Escribe tu primer gasto arriba para comenzar."
+            />
+          </Animated.View>
+        ) : (
+          <>
+            {/* Monthly Summary Card */}
+            <Animated.View entering={FadeInDown.delay(100).duration(350)}>
+              <View style={s.summaryCard}>
+                <Text style={s.summaryLabel}>Gastos este mes</Text>
+                <View style={s.summaryRow}>
+                  <Text style={s.summaryAmount}>{formatCurrency(monthly)}</Text>
+                  {weekPct > 0 ? (
+                    <View style={[s.pctBadge, weekUp ? s.pctBadgeUp : s.pctBadgeDown]}>
+                      <Icon
+                        name={weekUp ? 'arrow-up' : 'arrow-down'}
+                        size={12}
+                        color={weekUp ? colors.danger : colors.success}
+                      />
+                      <Text style={[s.pctText, { color: weekUp ? colors.danger : colors.success }]}>
+                        {weekPct.toFixed(1)}%
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={s.progressTrack}>
+                  <View style={[s.progressFill, { width: `${Math.min((thisWeek / (prevWeek || thisWeek || 1)) * 100, 100)}%` }]} />
+                </View>
+                <Text style={s.compareText}>
+                  vs semana pasada: {formatCurrency(Math.abs(weekDiff))} {weekUp ? 'más' : 'menos'}
+                </Text>
+              </View>
+            </Animated.View>
 
-          <View style={s.summaryCard}>
-            <View style={s.summaryHeader}>
-              <Icon name="shield-check-outline" size={22} color={colors.success} />
-              <Text style={s.summaryTitle}>Resumen fiscal del mes</Text>
-            </View>
-            <Text style={s.summaryValue}>{formatCurrency(deductibleMonth)}</Text>
-            <Text style={s.summaryCaption}>Gastos marcados como deducibles con RFC y/o CFDI.</Text>
-          </View>
-        </>
-      )}
-    </ScreenContainer>
+            {/* Recent Transactions */}
+            <Animated.View entering={FadeInDown.delay(150).duration(350)}>
+              <View style={s.sectionHeader}>
+                <Text style={s.sectionTitle}>Últimos movimientos</Text>
+                <Pressable onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })} hitSlop={6}>
+                  <Text style={s.sectionLink}>Ver todos</Text>
+                </Pressable>
+              </View>
+              <View style={s.recentList}>
+                {recentExpenses.map((exp, idx) => {
+                  const catColor = CATEGORY_COLORS[exp.category as ExpenseCategory] || colors.textMuted;
+                  return (
+                    <Pressable
+                      key={exp.id}
+                      style={[s.recentItem, idx === recentExpenses.length - 1 && s.recentItemLast]}
+                      onPress={() => navigation.navigate('ExpenseDetail', { expenseId: exp.id })}
+                    >
+                      <View style={[s.recentIcon, { backgroundColor: catColor + '18' }]}>
+                        <Icon
+                          name={categoryIcons[exp.category as ExpenseCategory] || 'dots-horizontal-circle-outline'}
+                          size={20}
+                          color={catColor}
+                        />
+                      </View>
+                      <View style={s.recentInfo}>
+                        <Text style={s.recentName} numberOfLines={1}>
+                          {exp.merchantName || exp.description || exp.category}
+                        </Text>
+                        <Text style={s.recentCategory}>
+                          {exp.category} · {formatTime(exp.createdAt)}
+                        </Text>
+                      </View>
+                      <Text style={s.recentAmount}>
+                        -{formatCurrency(exp.amount)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Animated.View>
+
+            {/* Insight Cards */}
+            {insights.length > 0 ? (
+              <View style={s.insightsContainer}>
+                {insights.slice(0, 3).map((ins, idx) => (
+                  <InsightCard
+                    key={ins.id}
+                    insight={ins}
+                    index={idx}
+                    onPremiumPress={ins.isPremium && !hasFullAccess() ? () => setPaywallVisible(true) : undefined}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            {/* Weekly Chart */}
+            <Animated.View entering={FadeInDown.delay(250).duration(350)}>
+              <LineChart data={chartData} title="Últimos 7 días" />
+            </Animated.View>
+          </>
+        )}
+
+        <View style={s.spacer} />
+      </ScreenContainer>
+
+      {/* Modal */}
+      <NewExpenseModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSaved={handleSaved}
+        onScanPress={navigateToScan}
+      />
+
+      {/* Paywall */}
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        trigger="tax_detail"
+      />
+
+      {/* Toast */}
+      <UndoToast
+        visible={toastVisible}
+        message={toastMessage}
+        onUndo={handleUndo}
+        onDismiss={() => setToastVisible(false)}
+      />
+    </View>
   );
 }
 
-const useStyles = (colors: ColorPalette, isDark: boolean) =>
+const useStyles = (colors: ColorPalette, _isDark: boolean) =>
   StyleSheet.create({
-    hero: { backgroundColor: isDark ? colors.surface : colors.text, borderRadius: 28, padding: 22, gap: 8 },
-    title: { color: colors.white, fontSize: 30, fontWeight: '800' },
-    subtitle: { color: isDark ? colors.textMuted : '#e7dcca', fontSize: 15, lineHeight: 22 },
-    statsGrid: { flexDirection: 'row', gap: 10 },
+    flex: { flex: 1 },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    headerTap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      flex: 1,
+    },
+    greetingBlock: {
+      flex: 1,
+      gap: 2,
+    },
+    greeting: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '800',
+    },
+    monthLabel: {
+      color: colors.textMuted,
+      fontSize: 13,
+    },
     summaryCard: {
-      borderRadius: 24,
-      padding: 20,
       backgroundColor: colors.surface,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: colors.border,
-      gap: 6,
-      ...shadows.card,
+      padding: 18,
+      gap: 8,
     },
-    summaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    summaryTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-    summaryValue: { color: colors.success, fontSize: 28, fontWeight: '800' },
-    summaryCaption: { color: colors.textMuted, lineHeight: 20 },
+    summaryLabel: {
+      color: colors.textMuted,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    summaryAmount: {
+      color: colors.text,
+      fontSize: 32,
+      fontWeight: '800',
+    },
+    pctBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    pctBadgeUp: {
+      backgroundColor: '#EF444418',
+    },
+    pctBadgeDown: {
+      backgroundColor: '#22C55E18',
+    },
+    pctText: {
+      fontSize: 12,
+      fontWeight: '700',
+    },
+    progressTrack: {
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+    },
+    progressFill: {
+      height: 4,
+      backgroundColor: colors.primary,
+      borderRadius: 2,
+    },
+    compareText: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    sectionLink: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    recentList: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    recentItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    recentIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    recentInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    recentName: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    recentCategory: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    recentAmount: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    recentItemLast: {
+      borderBottomWidth: 0,
+    },
+    insightsContainer: {
+      gap: 10,
+    },
+    spacer: { height: 24 },
   });

@@ -1,7 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx jest:*)",
+      "Bash(python3:*)",
+      "Bash(node -e:*)",
+      "Bash(wc:*)",
+      "Bash(npm test:*)",
+      "Bash(grep:*)",
+      "Bash(sips:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(npx react-native config:*)",
+      "Bash(pod install)",
+      "Bash(pod install:*)",
+      "Bash(pod update:*)"
     ]
   }
 }

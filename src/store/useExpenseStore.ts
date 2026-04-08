@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   getAllExpenses,
-  getExpenseById,
   createExpense,
   updateExpense,
   deleteExpense,

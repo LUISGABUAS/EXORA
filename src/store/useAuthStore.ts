@@ -23,8 +23,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     GoogleSignin.configure({
       webClientId: '477633387004-3ggdouudj4r8dmucrub5amltdvbbg28b.apps.googleusercontent.com',
       iosClientId: '477633387004-ko4n5u2uonbndkaetpp91geib16g38m2.apps.googleusercontent.com',
-      offlineAccess: true, // importante para que se genere el refresh token
-  forceCodeForRefreshToken: true, // importante para iOS
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
     });
 
     const {
@@ -38,10 +38,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signInWithEmail: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     return error ? error.message : null;
   },
 
@@ -50,35 +47,37 @@ export const useAuthStore = create<AuthState>((set) => ({
     return error ? error.message : null;
   },
 
-  signInWithPhone: async phone => {
+  signInWithPhone: async (phone) => {
     const { error } = await supabase.auth.signInWithOtp({ phone });
     return error ? error.message : null;
   },
 
   verifyOtp: async (phone, code) => {
-    const { error } = await supabase.auth.verifyOtp({
-      phone,
-      token: code,
-      type: 'sms',
-    });
+    const { error } = await supabase.auth.verifyOtp({ phone, token: code, type: 'sms' });
     return error ? error.message : null;
   },
 
   signInWithGoogle: async () => {
     try {
       await GoogleSignin.hasPlayServices();
-      const response = await GoogleSignin.signIn();
-      const idToken = response.data?.idToken;
-      if (!idToken) {
-        return 'No se obtuvo el token de Google.';
-      }
+
+      // Inicia sesión con Google
+      await GoogleSignin.signIn();
+
+      // Obtiene idToken
+      const { idToken } = await GoogleSignin.getTokens();
+
+      if (!idToken) return 'No se obtuvo el token de Google.';
+
+      // Envía token a Supabase
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: idToken,
       });
+
       return error ? error.message : null;
     } catch (err: any) {
-      return err?.message ?? 'Error al iniciar sesion con Google.';
+      return err?.message ?? 'Error al iniciar sesión con Google.';
     }
   },
 

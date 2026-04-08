@@ -35,9 +35,9 @@ export function LineChart({ data, title }: LineChartProps) {
         {/* Plot area */}
         <View style={s.plotArea}>
           {/* Grid lines */}
-          <View style={[s.gridLine, { top: 0 }]} />
-          <View style={[s.gridLine, { top: '50%' }]} />
-          <View style={[s.gridLine, { bottom: 0 }]} />
+          <View style={[s.gridLine, s.gridTop]} />
+          <View style={[s.gridLine, s.gridMid]} />
+          <View style={[s.gridLine, s.gridBot]} />
 
           {/* Dots and connecting lines */}
           {data.map((point, idx) => {
@@ -141,6 +141,9 @@ const useStyles = (colors: ColorPalette) =>
       height: 1,
       backgroundColor: colors.border,
     },
+    gridTop: { top: 0 },
+    gridMid: { top: '50%' },
+    gridBot: { bottom: 0 },
     dot: {
       position: 'absolute',
       width: 8,

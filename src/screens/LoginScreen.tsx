@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +20,8 @@ import { useAuthStore } from '../store/useAuthStore';
 import { ColorPalette } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { isValidMexicanRfc } from '../utils/tax';
+
+const logo = require('../assets/logo.png');
 
 type Tab = 'login' | 'signup';
 type PhoneStep = 'idle' | 'input' | 'otp';
@@ -43,13 +46,13 @@ export function LoginScreen() {
   const validate = () => {
     const next: typeof errors = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      next.email = 'Ingresa un correo valido.';
+      next.email = 'Ingresa un correo válido.';
     }
     if (password.length < 6) {
-      next.password = 'Minimo 6 caracteres.';
+      next.password = 'Mínimo 6 caracteres.';
     }
     if (tab === 'signup' && isAdult && rfc.trim() && !isValidMexicanRfc(rfc)) {
-      next.rfc = 'RFC invalido. Formato: XXXX000000XXX';
+      next.rfc = 'RFC inválido. Formato: XXXX000000XXX';
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -91,7 +94,7 @@ export function LoginScreen() {
 
   const handleSendOtp = async () => {
     if (!phone.trim()) {
-      Alert.alert('Error', 'Ingresa tu numero de telefono.');
+      Alert.alert('Error', 'Ingresa tu número de teléfono.');
       return;
     }
     setLoading(true);
@@ -106,7 +109,7 @@ export function LoginScreen() {
 
   const handleVerifyOtp = async () => {
     if (otpCode.length < 6) {
-      Alert.alert('Error', 'Ingresa el codigo de 6 digitos.');
+      Alert.alert('Error', 'Ingresa el código de 6 dígitos.');
       return;
     }
     setLoading(true);
@@ -126,22 +129,25 @@ export function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeInDown.duration(500).springify()} style={s.hero}>
-            <Icon name="wallet-outline" size={48} color={colors.primary} />
-            <Text style={s.title}>Expensia</Text>
+          {/* Hero */}
+          <Animated.View entering={FadeInDown.duration(400)} style={s.hero}>
+            <View style={s.heroIcon}>
+              <Image source={logo} style={s.heroLogo} />
+            </View>
+            <Text style={s.title}>EXPENSIA</Text>
             <Text style={s.subtitle}>
-              Controla tus gastos, tickets y deducciones fiscales.
+              Controla tus gastos, tickets y deducciones fiscales
             </Text>
           </Animated.View>
 
           {/* Tabs */}
-          <View style={s.tabs}>
+          <Animated.View entering={FadeInDown.delay(100).duration(350)} style={s.tabs}>
             <Pressable
               style={[s.tab, tab === 'login' && s.tabActive]}
               onPress={() => setTab('login')}
             >
               <Text style={[s.tabText, tab === 'login' && s.tabTextActive]}>
-                Iniciar sesion
+                Iniciar sesión
               </Text>
             </Pressable>
             <Pressable
@@ -152,13 +158,13 @@ export function LoginScreen() {
                 Crear cuenta
               </Text>
             </Pressable>
-          </View>
+          </Animated.View>
 
           {/* Email form */}
-          <View style={s.card}>
+          <Animated.View entering={FadeInDown.delay(200).duration(350)} style={s.card}>
             <View style={s.inputGroup}>
               <TextInput
-                placeholder="Correo electronico"
+                placeholder="Correo electrónico"
                 placeholderTextColor={colors.textMuted}
                 style={[s.input, errors.email && s.inputError]}
                 value={email}
@@ -177,7 +183,7 @@ export function LoginScreen() {
 
             <View style={s.inputGroup}>
               <TextInput
-                placeholder="Contrasena"
+                placeholder="Contraseña"
                 placeholderTextColor={colors.textMuted}
                 style={[s.input, errors.password && s.inputError]}
                 value={password}
@@ -203,7 +209,7 @@ export function LoginScreen() {
                     size={22}
                     color={isAdult ? colors.primary : colors.textMuted}
                   />
-                  <Text style={s.checkboxLabel}>Soy mayor de 18 anos</Text>
+                  <Text style={s.checkboxLabel}>Soy mayor de 18 años</Text>
                 </Pressable>
 
                 {isAdult ? (
@@ -237,45 +243,45 @@ export function LoginScreen() {
                 <ActivityIndicator color={colors.white} />
               ) : (
                 <Text style={s.primaryButtonText}>
-                  {tab === 'login' ? 'Iniciar sesion' : 'Crear cuenta'}
+                  {tab === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
                 </Text>
               )}
             </Pressable>
-          </View>
+          </Animated.View>
 
           {/* Separator */}
-          <View style={s.separator}>
+          <Animated.View entering={FadeInDown.delay(300).duration(300)} style={s.separator}>
             <View style={s.separatorLine} />
-            <Text style={s.separatorText}>o continua con</Text>
+            <Text style={s.separatorText}>o continúa con</Text>
             <View style={s.separatorLine} />
-          </View>
+          </Animated.View>
 
-          {/* Google button */}
-          <Pressable
-            style={s.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Icon name="google" size={20} color={colors.white} />
-            <Text style={s.googleButtonText}>Continuar con Google</Text>
-          </Pressable>
-
-          {/* Phone button */}
-          <Pressable
-            style={s.phoneButton}
-            onPress={() => setPhoneStep('input')}
-            disabled={loading}
-          >
-            <Icon name="phone" size={20} color={colors.white} />
-            <Text style={s.phoneButtonText}>Telefono (SMS)</Text>
-          </Pressable>
+          {/* Social buttons */}
+          <Animated.View entering={FadeInDown.delay(350).duration(300)} style={s.socialRow}>
+            <Pressable
+              style={s.socialButton}
+              onPress={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <Icon name="google" size={20} color={colors.white} />
+              <Text style={s.socialButtonText}>Google</Text>
+            </Pressable>
+            <Pressable
+              style={[s.socialButton, s.phoneButton]}
+              onPress={() => setPhoneStep('input')}
+              disabled={loading}
+            >
+              <Icon name="phone" size={20} color={colors.white} />
+              <Text style={s.socialButtonText}>SMS</Text>
+            </Pressable>
+          </Animated.View>
 
           {/* Phone OTP flow */}
           {phoneStep !== 'idle' ? (
-            <View style={s.card}>
+            <Animated.View entering={FadeInDown.duration(300)} style={s.card}>
               {phoneStep === 'input' ? (
                 <>
-                  <Text style={s.cardTitle}>Ingresa tu numero</Text>
+                  <Text style={s.cardTitle}>Ingresa tu número</Text>
                   <TextInput
                     placeholder="+52 1234567890"
                     placeholderTextColor={colors.textMuted}
@@ -292,19 +298,17 @@ export function LoginScreen() {
                     {loading ? (
                       <ActivityIndicator color={colors.white} />
                     ) : (
-                      <Text style={s.primaryButtonText}>
-                        Enviar codigo
-                      </Text>
+                      <Text style={s.primaryButtonText}>Enviar código</Text>
                     )}
                   </Pressable>
                 </>
               ) : (
                 <>
                   <Text style={s.cardTitle}>
-                    Codigo enviado a {phone}
+                    Código enviado a {phone}
                   </Text>
                   <TextInput
-                    placeholder="Codigo de 6 digitos"
+                    placeholder="Código de 6 dígitos"
                     placeholderTextColor={colors.textMuted}
                     style={s.input}
                     value={otpCode}
@@ -333,7 +337,7 @@ export function LoginScreen() {
               >
                 <Text style={s.cancelLink}>Cancelar</Text>
               </Pressable>
-            </View>
+            </Animated.View>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -341,18 +345,33 @@ export function LoginScreen() {
   );
 }
 
-const useStyles = (colors: ColorPalette, isDark: boolean) =>
+const useStyles = (colors: ColorPalette, _isDark: boolean) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
     flex: { flex: 1 },
     scroll: { padding: 24, gap: 20 },
-    hero: { alignItems: 'center', gap: 8, paddingVertical: 24 },
-    title: { fontSize: 30, fontWeight: '800', color: colors.text },
+    hero: { alignItems: 'center', gap: 10, paddingVertical: 32 },
+    heroIcon: {
+      width: 88,
+      height: 88,
+      borderRadius: 20,
+      overflow: 'hidden' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    heroLogo: {
+      width: 88,
+      height: 88,
+      borderRadius: 20,
+    },
+    title: { fontSize: 28, fontWeight: '800', color: colors.text },
     subtitle: {
       color: colors.textMuted,
       textAlign: 'center',
       lineHeight: 22,
       paddingHorizontal: 16,
+      fontSize: 14,
     },
     tabs: {
       flexDirection: 'row',
@@ -361,12 +380,12 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       padding: 4,
     },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 14 },
-    tabActive: { backgroundColor: isDark ? colors.surface : colors.white },
+    tabActive: { backgroundColor: colors.surface },
     tabText: { color: colors.textMuted, fontWeight: '600' },
     tabTextActive: { color: colors.text, fontWeight: '700' },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 24,
+      borderRadius: 20,
       padding: 18,
       borderWidth: 1,
       borderColor: colors.border,
@@ -377,10 +396,10 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 14,
+      borderRadius: 16,
       paddingHorizontal: 14,
       paddingVertical: 12,
-      backgroundColor: isDark ? colors.surfaceAlt : colors.white,
+      backgroundColor: colors.surfaceAlt,
       color: colors.text,
       fontSize: 15,
     },
@@ -406,26 +425,24 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     separatorLine: { flex: 1, height: 1, backgroundColor: colors.border },
     separatorText: { color: colors.textMuted, fontSize: 13 },
-    googleButton: {
+    socialRow: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      paddingVertical: 14,
-      borderRadius: 16,
-      backgroundColor: '#4285F4',
+      gap: 12,
     },
-    googleButtonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
-    phoneButton: {
+    socialButton: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
       paddingVertical: 14,
       borderRadius: 16,
+      backgroundColor: colors.accent,
+    },
+    phoneButton: {
       backgroundColor: colors.success,
     },
-    phoneButtonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
+    socialButtonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
     cancelLink: {
       color: colors.textMuted,
       fontWeight: '600',
