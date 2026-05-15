@@ -10,6 +10,12 @@ export interface TaxSavingsResult {
 const TAX_RATES: Record<FiscalRegime, number> = {
   resico: 0.025,
   actividad_empresarial: 0.30,
+  sueldos_salarios: 0.20,
+  arrendamiento: 0.35,
+  plataformas_digitales: 0.04,
+  honorarios: 0.30,
+  regimen_general: 0.30,
+  incorporacion_fiscal: 0.10,
   no_facturo: 0,
 };
 

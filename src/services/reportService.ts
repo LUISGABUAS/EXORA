@@ -7,6 +7,12 @@ import { calculateTaxSavings } from '../utils/taxSavings';
 const REGIME_LABELS: Record<FiscalRegime, string> = {
   resico: 'RESICO',
   actividad_empresarial: 'Actividad Empresarial',
+  sueldos_salarios: 'Sueldos y Salarios',
+  arrendamiento: 'Arrendamiento',
+  plataformas_digitales: 'Plataformas Digitales',
+  honorarios: 'Honorarios',
+  regimen_general: 'Régimen General',
+  incorporacion_fiscal: 'Incorporación Fiscal',
   no_facturo: 'Sin regimen',
 };
 

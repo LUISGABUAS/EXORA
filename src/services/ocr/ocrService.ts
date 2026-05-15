@@ -66,7 +66,7 @@ async function recognizeWithRetry(imageUri: string): Promise<OcrResult> {
     return bestResult;
   }
 
-  throw lastError ?? new Error('No se pudo extraer texto de la imagen. Intenta con mejor iluminacion o mas cerca del ticket.');
+  throw lastError ?? new Error('No se pudo extraer texto de la imagen. Intenta con mejor iluminación o más cerca del ticket.');
 }
 
 /**

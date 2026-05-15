@@ -7,17 +7,16 @@ import { Avatar } from '../components/Avatar';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { supabase } from '../lib/supabase';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { pickProfilePhoto, takeProfilePhoto } from '../services/fileService';
+import { parseConstanciaText, readPdfText, validateIsConstancia } from '../services/constanciaService';
+import { pickPdfFile, pickProfilePhoto, takeProfilePhoto } from '../services/fileService';
 import { useAuthStore } from '../store/useAuthStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
+import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
 
-const REGIMES: Array<{ value: FiscalRegime; icon: string; title: string; desc: string }> = [
-  { value: 'resico', icon: 'account-check', title: 'RESICO', desc: 'Régimen Simplificado de Confianza' },
-  { value: 'actividad_empresarial', icon: 'briefcase-outline', title: 'Actividad Empresarial', desc: 'Freelancers y profesionistas independientes' },
-  { value: 'no_facturo', icon: 'wallet-outline', title: 'No facturo', desc: 'Solo quiero controlar mis gastos' },
-];
+const PRIMARY_REGIMES = FISCAL_REGIME_DISPLAY.filter(r => r.isPrimary);
+const SECONDARY_REGIMES = FISCAL_REGIME_DISPLAY.filter(r => !r.isPrimary);
 
 export function ProfileEditScreen() {
   const { colors, isDark } = useTheme();
@@ -26,6 +25,11 @@ export function ProfileEditScreen() {
   const session = useAuthStore(state => state.session);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
+  const setFiscalProfile = usePremiumStore(state => state.setFiscalProfile);
+  const clearConstancia = usePremiumStore(state => state.clearConstancia);
+  const storeRazonSocial = usePremiumStore(state => state.razonSocial);
+  const storeConstanciaUri = usePremiumStore(state => state.constanciaUri);
+  const storeConstanciaDate = usePremiumStore(state => state.constanciaUploadDate);
 
   const currentName = session?.user?.user_metadata?.full_name || '';
   const userEmail = session?.user?.email || '';
@@ -33,7 +37,12 @@ export function ProfileEditScreen() {
   const [name, setName] = useState(currentName);
   const [selectedRegime, setSelectedRegime] = useState<FiscalRegime>(fiscalRegime);
   const [rfc, setRfc] = useState(session?.user?.user_metadata?.rfc || '');
+  const [razonSocial, setRazonSocial] = useState(storeRazonSocial || '');
   const [saving, setSaving] = useState(false);
+  const [showMoreRegimes, setShowMoreRegimes] = useState(
+    () => !PRIMARY_REGIMES.some(r => r.value === fiscalRegime),
+  );
+  const [uploading, setUploading] = useState(false);
   const setAvatarUri = usePremiumStore(state => state.setAvatarUri);
 
   const handleAvatarPress = () => {
@@ -73,6 +82,90 @@ export function ProfileEditScreen() {
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'No se pudo seleccionar la foto.');
     }
+  };
+
+  const handleUploadConstancia = async () => {
+    setUploading(true);
+    try {
+      const file = await pickPdfFile();
+      if (!file) {
+        setUploading(false);
+        return;
+      }
+
+      const text = await readPdfText(file.uri);
+      if (!text) {
+        Alert.alert(
+          'No se pudo leer',
+          'No se pudo extraer texto del PDF. Ingresa los datos manualmente.',
+        );
+        setUploading(false);
+        return;
+      }
+
+      if (!validateIsConstancia(text)) {
+        Alert.alert(
+          'Documento no válido',
+          'El archivo no parece ser una Constancia de Situación Fiscal del SAT.',
+        );
+        setUploading(false);
+        return;
+      }
+
+      const parsed = parseConstanciaText(text);
+      if (!parsed.success) {
+        Alert.alert(
+          'Error al procesar',
+          parsed.error || 'No se pudieron extraer los datos. Ingresa los datos manualmente.',
+        );
+        setUploading(false);
+        return;
+      }
+
+      // Pre-fill fields
+      if (parsed.rfc) setRfc(parsed.rfc);
+      if (parsed.razonSocial) setRazonSocial(parsed.razonSocial);
+      if (parsed.fiscalRegime) {
+        setSelectedRegime(parsed.fiscalRegime);
+        if (!PRIMARY_REGIMES.some(r => r.value === parsed.fiscalRegime)) {
+          setShowMoreRegimes(true);
+        }
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      await setFiscalProfile({
+        constanciaUri: file.uri,
+        constanciaUploadDate: today,
+        ...(parsed.razonSocial && { razonSocial: parsed.razonSocial }),
+        ...(parsed.fiscalRegime && { fiscalRegime: parsed.fiscalRegime }),
+      });
+
+      const details = [
+        parsed.rfc && `RFC: ${parsed.rfc}`,
+        parsed.razonSocial && `Nombre: ${parsed.razonSocial}`,
+        parsed.regimeLabel && `Régimen: ${parsed.regimeLabel}`,
+      ].filter(Boolean).join('\n');
+
+      Alert.alert('Constancia procesada', details || 'Datos extraídos correctamente.');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Error al procesar el archivo.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleClearConstancia = () => {
+    Alert.alert('Eliminar constancia', '¿Deseas eliminar la constancia cargada?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          await clearConstancia();
+          setRazonSocial('');
+        },
+      },
+    ]);
   };
 
   const handleSave = async () => {
@@ -127,11 +220,11 @@ export function ProfileEditScreen() {
         </View>
       </View>
 
-      {/* Fiscal Regime */}
+      {/* Fiscal Regime — Primary */}
       <View style={s.field}>
         <Text style={s.label}>Régimen fiscal</Text>
         <View style={s.regimeList}>
-          {REGIMES.map(r => (
+          {PRIMARY_REGIMES.map(r => (
             <Pressable
               key={r.value}
               style={[s.regimeCard, selectedRegime === r.value && s.regimeCardActive]}
@@ -153,7 +246,99 @@ export function ProfileEditScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* More regimes toggle */}
+        <Pressable
+          style={s.moreRegimesButton}
+          onPress={() => setShowMoreRegimes(v => !v)}
+        >
+          <Icon
+            name={showMoreRegimes ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={colors.primary}
+          />
+          <Text style={s.moreRegimesText}>
+            {showMoreRegimes ? 'Menos regímenes' : 'Más regímenes'}
+          </Text>
+        </Pressable>
+
+        {/* Secondary regimes */}
+        {showMoreRegimes ? (
+          <View style={s.secondaryRow}>
+            {SECONDARY_REGIMES.map(r => (
+              <Pressable
+                key={r.value}
+                style={[
+                  s.secondaryChip,
+                  selectedRegime === r.value && s.secondaryChipActive,
+                ]}
+                onPress={() => setSelectedRegime(r.value)}
+              >
+                <Icon
+                  name={r.icon}
+                  size={16}
+                  color={selectedRegime === r.value ? colors.white : colors.text}
+                />
+                <Text
+                  style={[
+                    s.secondaryChipText,
+                    selectedRegime === r.value && s.secondaryChipTextActive,
+                  ]}
+                >
+                  {r.title}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
+
+      {/* Constancia Upload — only if regime != no_facturo */}
+      {selectedRegime !== 'no_facturo' ? (
+        <View style={s.field}>
+          <Text style={s.label}>Constancia de Situación Fiscal</Text>
+          {storeConstanciaUri ? (
+            <View style={s.constanciaCard}>
+              <Icon name="check-circle" size={24} color={colors.primary} />
+              <View style={s.constanciaInfo}>
+                <Text style={s.constanciaTitle}>Constancia cargada</Text>
+                {storeConstanciaDate ? (
+                  <Text style={s.constanciaDate}>Subida el {storeConstanciaDate}</Text>
+                ) : null}
+              </View>
+              <Pressable onPress={handleClearConstancia} hitSlop={8}>
+                <Icon name="close-circle" size={22} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={[s.uploadCard, uploading && s.uploadCardDisabled]}
+              onPress={handleUploadConstancia}
+              disabled={uploading}
+            >
+              <Icon name="file-pdf-box" size={32} color={colors.primary} />
+              <View style={s.uploadInfo}>
+                <Text style={s.uploadTitle}>
+                  {uploading ? 'Procesando...' : 'Subir PDF del SAT'}
+                </Text>
+                <Text style={s.uploadHint}>
+                  Extrae automáticamente tu RFC y régimen fiscal
+                </Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
+
+      {/* Razón Social (readonly if from constancia) */}
+      {razonSocial ? (
+        <View style={s.field}>
+          <Text style={s.label}>Razón Social</Text>
+          <View style={s.readonlyField}>
+            <Text style={s.readonlyText}>{razonSocial}</Text>
+          </View>
+        </View>
+      ) : null}
 
       {/* RFC — only if regime != no_facturo */}
       {selectedRegime !== 'no_facturo' ? (
@@ -250,6 +435,93 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     regimeDescActive: {
       color: colors.white,
       opacity: 0.8,
+    },
+    moreRegimesButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 8,
+    },
+    moreRegimesText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    secondaryRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    secondaryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+    },
+    secondaryChipActive: {
+      backgroundColor: colors.primary,
+    },
+    secondaryChipText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    secondaryChipTextActive: {
+      color: colors.white,
+    },
+    uploadCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1.5,
+      borderColor: colors.primary + '40',
+      borderStyle: 'dashed',
+      padding: 16,
+    },
+    uploadCardDisabled: {
+      opacity: 0.6,
+    },
+    uploadInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    uploadTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    uploadHint: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    constanciaCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.primary + '14',
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.primary + '30',
+      padding: 16,
+    },
+    constanciaInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    constanciaTitle: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    constanciaDate: {
+      color: colors.textMuted,
+      fontSize: 12,
     },
     saveButton: {
       backgroundColor: colors.primary,

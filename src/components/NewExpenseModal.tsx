@@ -165,7 +165,7 @@ export function NewExpenseModal({ visible, onClose, onSaved, onScanPress }: NewE
           keyboardShouldPersistTaps="handled"
         >
           {/* Tip */}
-          <Text style={s.tip}>Sugerencia: escribe monto + descripcion</Text>
+          <Text style={s.tip}>Sugerencia: escribe monto + descripción</Text>
 
           {/* Big Input */}
           <View style={s.inputContainer}>
@@ -216,7 +216,7 @@ export function NewExpenseModal({ visible, onClose, onSaved, onScanPress }: NewE
               {/* Banner */}
               <View style={s.banner}>
                 <Icon name="check-circle" size={18} color={colors.success} />
-                <Text style={s.bannerText}>Detectado automaticamente</Text>
+                <Text style={s.bannerText}>Detectado automáticamente</Text>
                 <Icon name="chevron-right" size={18} color={colors.success} />
               </View>
 
@@ -236,7 +236,7 @@ export function NewExpenseModal({ visible, onClose, onSaved, onScanPress }: NewE
                     <Text style={s.fieldValue}>{displayCategory}</Text>
                     <Icon name="chevron-down" size={16} color={colors.textMuted} />
                   </View>
-                  <Text style={s.fieldLabel}>Categoria</Text>
+                  <Text style={s.fieldLabel}>Categoría</Text>
                 </Pressable>
               </View>
 

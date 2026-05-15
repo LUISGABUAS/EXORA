@@ -11,6 +11,7 @@ import { useExpenseStore } from './src/store/useExpenseStore';
 import { usePremiumStore } from './src/store/usePremiumStore';
 import { useTemplateStore } from './src/store/useTemplateStore';
 import { initRevenueCat } from './src/services/revenuecatService';
+import { useBudgetStore } from './src/store/useBudgetStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
@@ -22,28 +23,31 @@ function AppContent() {
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
   const premiumLoaded = usePremiumStore(state => state.loaded);
   const hydrateTemplates = useTemplateStore(state => state.hydrate);
+  const hydrateBudgets = useBudgetStore(state => state.hydrate);
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
     const bootstrap = async () => {
-      try {
-        // Auth (network) and DB (local) are independent — run in parallel
-        await Promise.all([
-          initializeAuth(),
-          initDatabase().then(() => loadExpenses()),
-          hydratePremium(),
-          hydrateTemplates(),
-        ]);
-        await updateStreak();
-        configureNotifications();
-        startSyncService();
+      // Auth (network) and DB (local) are independent — run in parallel
+      // Each promise handles its own errors so one failure can't block the others
+      await Promise.allSettled([
+        initializeAuth(),
+        initDatabase().then(() => loadExpenses()).catch(e => console.error('DB error:', e)),
+        hydratePremium(),
+        hydrateTemplates(),
+        hydrateBudgets(),
+      ]);
+      await updateStreak().catch(() => {});
+      configureNotifications();
+      startSyncService();
 
-        // Init RevenueCat + sync premium status
+      // Init RevenueCat + sync premium status (best-effort)
+      try {
         const currentSession = useAuthStore.getState().session;
         await initRevenueCat(currentSession?.user?.id);
         await syncWithRevenueCat();
       } catch (error) {
-        console.error('Bootstrap error:', error);
+        if (__DEV__) console.warn('RevenueCat bootstrap error:', error);
       }
     };
     void bootstrap();

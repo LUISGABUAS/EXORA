@@ -34,11 +34,17 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Expensia necesita acceso a la camara para escanear tickets y facturas.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Expensia necesita acceso a la cámara para escanear tickets y facturas.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Expensia necesita acceso al micrófono para registrar gastos por voz.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Expensia usa reconocimiento de voz para capturar gastos rápidamente.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Expensia necesita acceso a tus fotos para seleccionar tickets.</string>
+	<string>Expensia necesita acceso a tus fotos para seleccionar tickets y tu foto de perfil.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Expensia puede guardar imágenes de tus tickets en tu galería.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

@@ -19,6 +19,7 @@ import { useExpenseStore } from '../store/useExpenseStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { ThemeMode, useTheme } from '../theme/ThemeContext';
+import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
 import { localDateString } from '../utils/format';
 
 const REMINDER_KEY = '@smartexpense_reminders';
@@ -47,6 +48,7 @@ export function SettingsScreen() {
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
+  const constanciaUri = usePremiumStore(state => state.constanciaUri);
   const [remindersOn, setRemindersOn] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
 
@@ -102,6 +104,12 @@ export function SettingsScreen() {
         <Avatar size={72} name={userName} />
         <Text style={s.userName}>{userName}</Text>
         {userEmail ? <Text style={s.userEmail}>{userEmail}</Text> : null}
+        {constanciaUri ? (
+          <View style={s.constanciaBadge}>
+            <Icon name="check-decagram" size={14} color={colors.primary} />
+            <Text style={s.constanciaBadgeText}>Constancia verificada</Text>
+          </View>
+        ) : null}
         <Text style={s.editHint}>Toca para editar</Text>
       </Pressable>
 
@@ -147,6 +155,24 @@ export function SettingsScreen() {
             </Pressable>
           ))}
         </View>
+        {!fiscalModes.some(fm => fm.value === fiscalRegime) ? (
+          <View style={s.currentRegimeRow}>
+            <Text style={s.currentRegimeLabel}>
+              Régimen actual: {FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime)?.title || fiscalRegime}
+            </Text>
+            <Text style={s.currentRegimeHint}>(cambiar en editar perfil)</Text>
+          </View>
+        ) : null}
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('ReporteFiscal')}>
+          <Icon name="chart-bar" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Ver Reporte Fiscal</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Presupuesto')}>
+          <Icon name="gauge" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Presupuestos mensuales</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
       </View>
 
       <View style={s.card}>
@@ -301,5 +327,43 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
     },
     signOutText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
+    constanciaBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 2,
+    },
+    constanciaBadgeText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    currentRegimeRow: {
+      paddingTop: 4,
+    },
+    currentRegimeLabel: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    currentRegimeHint: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    reportButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.primary + '12',
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+    },
+    reportButtonText: {
+      color: colors.primary,
+      fontWeight: '700',
+      fontSize: 14,
+      flex: 1,
+    },
     version: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
   });

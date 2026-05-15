@@ -48,9 +48,38 @@ export async function pickXMLFile(): Promise<FilePickerResult | null> {
 }
 
 /**
- * Abre la galeria de imagenes para seleccionar una foto.
- * Redimensiona a max 1600px de ancho y comprime al 70% para mejor rendimiento OCR.
+ * Abre el selector de documentos para elegir un archivo PDF
  */
+export async function pickPdfFile(): Promise<FilePickerResult | null> {
+  try {
+    const DocumentPicker = require('react-native-document-picker').default;
+    const result = await DocumentPicker.pick({
+      type: [DocumentPicker.types.pdf],
+    });
+
+    if (result && result.length > 0) {
+      const file = result[0];
+      const name = file.name || 'document.pdf';
+
+      if (!name.toLowerCase().endsWith('.pdf')) {
+        throw new Error('El archivo seleccionado no es un PDF válido.');
+      }
+
+      return {
+        uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+        name,
+        type: file.type || undefined,
+      };
+    }
+    return null;
+  } catch (error: any) {
+    if (error?.code === 'E_DOCUMENT_PICKER_CANCELLED') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 /**
  * Abre la galeria para seleccionar una foto de perfil (400x400, 80% quality).
  */

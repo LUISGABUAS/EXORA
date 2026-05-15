@@ -10,6 +10,8 @@ import { HistoryScreen } from '../screens/HistoryScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
+import { PresupuestoScreen } from '../screens/PresupuestoScreen';
+import { ReporteFiscalScreen } from '../screens/ReporteFiscalScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAuthStore } from '../store/useAuthStore';
@@ -24,6 +26,8 @@ export type RootStackParamList = {
   ExpenseDetail: { expenseId: number };
   Scan: undefined;
   ProfileEdit: undefined;
+  ReporteFiscal: undefined;
+  Presupuesto: undefined;
 };
 
 export type TabParamList = {
@@ -132,6 +136,16 @@ export function AppNavigator() {
               name="ProfileEdit"
               component={ProfileEditScreen}
               options={{ title: 'Editar perfil', headerBackTitle: 'Atras' }}
+            />
+            <Stack.Screen
+              name="ReporteFiscal"
+              component={ReporteFiscalScreen}
+              options={{ title: 'Reporte Fiscal', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="Presupuesto"
+              component={PresupuestoScreen}
+              options={{ title: 'Presupuestos', headerBackTitle: 'Inicio' }}
             />
           </>
         )}

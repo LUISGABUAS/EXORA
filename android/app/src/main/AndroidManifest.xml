@@ -1,6 +1,29 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Red -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Cámara (escáner OCR) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Micrófono (entrada de voz) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Almacenamiento — imágenes Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Almacenamiento — imágenes Android < 13 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Escritura para exportar CSV (solo necesario hasta SDK 28) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Notificaciones -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
       android:name=".MainApplication"
@@ -23,5 +46,15 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Reactivar notificaciones programadas tras reinicio del dispositivo -->
+      <receiver
+        android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationBootEventReceiver"
+        android:exported="false">
+        <intent-filter>
+          <action android:name="android.intent.action.BOOT_COMPLETED" />
+          <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+        </intent-filter>
+      </receiver>
     </application>
 </manifest>

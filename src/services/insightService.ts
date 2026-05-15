@@ -64,7 +64,7 @@ export function generateLocalInsights(
       type: 'warning',
       icon: 'trending-up',
       title: `${maxCat} en aumento`,
-      message: `Gastaste ${formatCurrency(maxIncrease)} mas en ${maxCat.toLowerCase()} que el mes pasado.`,
+      message: `Gastaste ${formatCurrency(maxIncrease)} más en ${maxCat.toLowerCase()} que el mes pasado.`,
       isPremium: false,
     });
   }
@@ -88,7 +88,7 @@ export function generateLocalInsights(
           type: 'tip',
           icon: 'repeat',
           title: 'Gasto recurrente detectado',
-          message: `"${key}" aparece ${amounts.length} veces (~${formatCurrency(avg)} c/u). ¿Es una suscripcion?`,
+          message: `"${key}" aparece ${amounts.length} veces (~${formatCurrency(avg)} c/u). ¿Es una suscripción?`,
           isPremium: false,
         });
         break; // Only show first recurring
@@ -110,15 +110,15 @@ export function generateLocalInsights(
     }
   }
   if (maxDay && maxDayTotal > 0) {
-    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const d = new Date(maxDay + 'T12:00:00');
     const dayName = dayNames[d.getDay()];
     insights.push({
       id: 'local_max_day',
       type: 'tip',
       icon: 'calendar-alert',
-      title: 'Dia de mayor gasto',
-      message: `Tu dia mas caro fue ${dayName} ${maxDay.slice(5)} con ${formatCurrency(maxDayTotal)}.`,
+      title: 'Día de mayor gasto',
+      message: `Tu día más caro fue ${dayName} ${maxDay.slice(5)} con ${formatCurrency(maxDayTotal)}.`,
       isPremium: false,
     });
   }
@@ -141,13 +141,18 @@ export function generateLocalInsights(
   return insights.slice(0, limit);
 }
 
+const SUPABASE_URL = 'https://oxefxfwwwrdypjnbnzdy.supabase.co';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94ZWZ4Znd3d3JkeXBqbmJuemR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MjI2MzYsImV4cCI6MjA5MDQ5ODYzNn0.g3raLrkTnk9ZraNX5IVhrJ25HotfNuSuME7nAWtvT2c';
+
 /**
- * Genera insights con IA (Claude Haiku) — solo premium + online.
+ * Genera insights con IA (Claude Haiku) via Supabase Edge Function — solo premium.
+ * La API key de Anthropic vive en el servidor, nunca en el cliente.
  */
 export async function generateAIInsights(
   expenses: Expense[],
   regime: FiscalRegime,
-  apiKey: string,
+  authToken: string,
 ): Promise<Insight[]> {
   // Check cache
   try {
@@ -169,7 +174,7 @@ export async function generateAIInsights(
 
   if (recent.length < 3) return [];
 
-  // Build anonymized summary
+  // Build anonymized summary (sin datos personales)
   const byCat: Record<string, number> = {};
   const byMerchant: Record<string, number> = {};
   let deductibleTotal = 0;
@@ -193,42 +198,32 @@ export async function generateAIInsights(
     .map(([cat, total]) => `${cat}: $${total.toFixed(0)}`)
     .join(', ');
 
-  const prompt = `Eres un asesor financiero mexicano. Analiza estos gastos y da 2-3 recomendaciones practicas en JSON.
-
-Regimen fiscal: ${regime}
-Gastos ultimos 30 dias por categoria: ${catSummary}
-Top comercios: ${topMerchants}
-Deducibles: $${deductibleTotal.toFixed(0)}, No deducibles: $${nonDeductibleTotal.toFixed(0)}
-Total gastos: ${recent.length}
-
-Responde SOLO con un array JSON:
-[{"type":"tip|warning|saving","title":"titulo corto","message":"recomendacion practica de max 80 chars"}]`;
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/ai-insights`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          catSummary,
+          topMerchants,
+          deductibleTotal: deductibleTotal.toFixed(0),
+          nonDeductibleTotal: nonDeductibleTotal.toFixed(0),
+          totalExpenses: recent.length,
+          regime,
+        }),
       },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
+    );
 
     if (!response.ok) return [];
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || '';
-
-    // Extract JSON array from response
-    const match = text.match(/\[[\s\S]*\]/);
-    if (!match) return [];
-
-    const parsed: Array<{ type: string; title: string; message: string }> = JSON.parse(match[0]);
+    const parsed: Array<{ type: string; title: string; message: string }> =
+      data.insights || [];
 
     const ICONS: Record<string, string> = {
       warning: 'alert-circle-outline',
@@ -245,7 +240,7 @@ Responde SOLO con un array JSON:
       isPremium: true,
     }));
 
-    // Cache
+    // Cache 24h
     await AsyncStorage.setItem(
       AI_CACHE_KEY,
       JSON.stringify({ insights, timestamp: Date.now() }),

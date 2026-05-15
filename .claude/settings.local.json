@@ -16,7 +16,9 @@
       "Bash(npx react-native config:*)",
       "Bash(pod install)",
       "Bash(pod install:*)",
-      "Bash(pod update:*)"
+      "Bash(pod update:*)",
+      "Bash(npm run lint:*)",
+      "Bash(convert --version)"
     ]
   }
 }

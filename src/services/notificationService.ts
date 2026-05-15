@@ -54,7 +54,7 @@ export function scheduleDailyReminder() {
       channelId: CHANNEL_ID,
       title: 'Registra tus gastos',
       message:
-        'No olvides registrar los gastos del dia para maximizar tus deducciones.',
+        'No olvides registrar los gastos del día para maximizar tus deducciones.',
       date: fireDate,
       repeatType: 'day',
       allowWhileIdle: true,

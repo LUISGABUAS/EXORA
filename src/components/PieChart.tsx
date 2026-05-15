@@ -89,7 +89,7 @@ export function PieChart({ data }: PieChartProps) {
 
   return (
     <View style={s.container}>
-      <Text style={s.title}>Desglose por categoria</Text>
+      <Text style={s.title}>Desglose por categoría</Text>
       <View style={s.chartRow}>
         <View style={s.pieWrap}>
           <View style={s.pieContainer}>

@@ -34,7 +34,7 @@ export function ExpenseCard({ expense, onPress, index = 0 }: ExpenseCardProps) {
             />
           </View>
           <Text style={s.merchant} numberOfLines={1}>
-            {expense.merchantName || expense.description || 'Gasto sin titulo'}
+            {expense.merchantName || expense.description || 'Gasto sin título'}
           </Text>
           <Text style={s.amount}>{formatCurrency(expense.amount)}</Text>
         </View>
@@ -44,7 +44,7 @@ export function ExpenseCard({ expense, onPress, index = 0 }: ExpenseCardProps) {
         </View>
         <View style={s.footer}>
           <Text style={s.description} numberOfLines={1}>
-            {expense.description || expense.conceptsText || 'Sin descripcion'}
+            {expense.description || expense.conceptsText || 'Sin descripción'}
           </Text>
           <View style={[s.badge, expense.deductible ? s.deductible : s.nonDeductible]}>
             <Text style={s.badgeText}>{expense.deductible ? 'Deducible' : 'No deducible'}</Text>

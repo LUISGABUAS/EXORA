@@ -27,10 +27,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       forceCodeForRefreshToken: true,
     });
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    set({ session, loading: false });
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      set({ session, loading: false });
+    } catch {
+      // Red no disponible o proyecto pausado — arrancar sin sesión
+      set({ session: null, loading: false });
+    }
 
     supabase.auth.onAuthStateChange((_event, newSession) => {
       set({ session: newSession });

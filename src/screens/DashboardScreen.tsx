@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Avatar } from '../components/Avatar';
+import { BudgetCard } from '../components/BudgetCard';
 import { EmptyState } from '../components/EmptyState';
 import { InsightCard } from '../components/InsightCard';
 import { LineChart } from '../components/LineChart';
@@ -22,7 +23,7 @@ import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
-import { generateLocalInsights, Insight } from '../services/insightService';
+import { generateAIInsights, generateLocalInsights, Insight } from '../services/insightService';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
 
@@ -124,11 +125,27 @@ export function DashboardScreen() {
     [expenses],
   );
 
-  // Insights: local pattern analysis
-  const insights: Insight[] = useMemo(() => {
+  // Insights locales (free + premium)
+  const localInsights: Insight[] = useMemo(() => {
     if (expenses.length === 0) return [];
     return generateLocalInsights(expenses, fiscalRegime, hasFullAccess());
   }, [expenses, fiscalRegime, hasFullAccess]);
+
+  // AI insights (solo premium) — se cargan en background
+  const [aiInsights, setAiInsights] = useState<Insight[]>([]);
+  useEffect(() => {
+    if (!hasFullAccess() || expenses.length < 3) return;
+    const token = session?.access_token;
+    if (!token) return;
+    generateAIInsights(expenses, fiscalRegime, token)
+      .then(setAiInsights)
+      .catch(() => {});
+  }, [expenses, fiscalRegime, hasFullAccess, session]);
+
+  const insights: Insight[] = useMemo(
+    () => [...localInsights, ...aiInsights],
+    [localInsights, aiInsights],
+  );
 
   // Weekly chart data (last 7 days)
   const chartData = useMemo(() => {
@@ -285,6 +302,11 @@ export function DashboardScreen() {
                   );
                 })}
               </View>
+            </Animated.View>
+
+            {/* Budget Card */}
+            <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+              <BudgetCard onPress={() => navigation.navigate('Presupuesto')} />
             </Animated.View>
 
             {/* Insight Cards */}

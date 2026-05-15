@@ -26,7 +26,14 @@ AppState.addEventListener('change', state => {
 
 export async function updateProfile(
   userId: string,
-  data: { rfc?: string; full_name?: string; is_adult?: boolean },
+  data: {
+    rfc?: string;
+    full_name?: string;
+    is_adult?: boolean;
+    razon_social?: string;
+    fiscal_regime?: string;
+    constancia_uploaded?: boolean;
+  },
 ) {
   const { error } = await supabase
     .from('profiles')

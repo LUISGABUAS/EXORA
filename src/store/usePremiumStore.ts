@@ -3,7 +3,16 @@ import { create } from 'zustand';
 import { checkPremiumStatus } from '../services/revenuecatService';
 
 export type PremiumPlan = 'free' | 'monthly' | 'yearly';
-export type FiscalRegime = 'resico' | 'actividad_empresarial' | 'no_facturo';
+export type FiscalRegime =
+  | 'resico'
+  | 'actividad_empresarial'
+  | 'no_facturo'
+  | 'sueldos_salarios'
+  | 'arrendamiento'
+  | 'plataformas_digitales'
+  | 'honorarios'
+  | 'regimen_general'
+  | 'incorporacion_fiscal';
 
 interface PremiumState {
   // Persisted data
@@ -15,6 +24,9 @@ interface PremiumState {
   streak: number;
   lastActiveDate: string;
   fiscalRegime: FiscalRegime;
+  razonSocial: string | null;
+  constanciaUri: string | null;
+  constanciaUploadDate: string | null;
   onboardingComplete: boolean;
   avatarUri: string | null;
   // Runtime
@@ -26,6 +38,13 @@ interface PremiumState {
   hasFullAccess: () => boolean;
   updateStreak: () => Promise<void>;
   setFiscalRegime: (r: FiscalRegime) => Promise<void>;
+  setFiscalProfile: (data: {
+    fiscalRegime?: FiscalRegime;
+    razonSocial?: string | null;
+    constanciaUri?: string | null;
+    constanciaUploadDate?: string | null;
+  }) => Promise<void>;
+  clearConstancia: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
   setPlan: (p: PremiumPlan) => Promise<void>;
   setAvatarUri: (uri: string | null) => Promise<void>;
@@ -71,6 +90,9 @@ const defaults = {
   streak: 0,
   lastActiveDate: '',
   fiscalRegime: 'no_facturo' as FiscalRegime,
+  razonSocial: null as string | null,
+  constanciaUri: null as string | null,
+  constanciaUploadDate: null as string | null,
   onboardingComplete: false,
   avatarUri: null as string | null,
 };
@@ -91,6 +113,9 @@ function getData(state: PremiumState): PersistData {
     streak: state.streak,
     lastActiveDate: state.lastActiveDate,
     fiscalRegime: state.fiscalRegime,
+    razonSocial: state.razonSocial,
+    constanciaUri: state.constanciaUri,
+    constanciaUploadDate: state.constanciaUploadDate,
     onboardingComplete: state.onboardingComplete,
     avatarUri: state.avatarUri,
   };
@@ -164,6 +189,21 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   setFiscalRegime: async r => {
     set({ fiscalRegime: r });
+    await persist(getData(get()));
+  },
+
+  setFiscalProfile: async data => {
+    set({
+      ...(data.fiscalRegime !== undefined && { fiscalRegime: data.fiscalRegime }),
+      ...(data.razonSocial !== undefined && { razonSocial: data.razonSocial }),
+      ...(data.constanciaUri !== undefined && { constanciaUri: data.constanciaUri }),
+      ...(data.constanciaUploadDate !== undefined && { constanciaUploadDate: data.constanciaUploadDate }),
+    });
+    await persist(getData(get()));
+  },
+
+  clearConstancia: async () => {
+    set({ constanciaUri: null, constanciaUploadDate: null, razonSocial: null });
     await persist(getData(get()));
   },
 
