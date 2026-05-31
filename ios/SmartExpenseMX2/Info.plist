@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>MaterialCommunityIcons.ttf</string>
+		<string>Inter_800ExtraBold.ttf</string>
+		<string>Inter_600SemiBold.ttf</string>
+		<string>Inter_500Medium.ttf</string>
+		<string>Inter_400Regular.ttf</string>
+		<string>Inter_700Bold.ttf</string>
+		<string>Inter_900Black.ttf</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -49,10 +59,6 @@
 	<false/>
 	<key>RCTNewArchEnabled</key>
 	<true/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>MaterialCommunityIcons.ttf</string>
-	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -23,6 +23,7 @@ import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
 import { generateAIInsights, generateLocalInsights, Insight } from '../services/insightService';
+import { font } from '../theme/typography';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
 import { estimateTaxSavings } from '../utils/taxCalculator';
@@ -457,12 +458,13 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     headerGreeting: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       letterSpacing: -0.3,
     },
     headerSub: {
       color: colors.textMuted,
       fontSize: 12,
+      fontFamily: font.medium,
       marginTop: 1,
     },
 
@@ -470,10 +472,13 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     heroCard: {
       backgroundColor: isDark ? '#111111' : colors.surface,
       borderRadius: 24,
-      borderWidth: 1,
-      borderColor: isDark ? '#222222' : colors.border,
       padding: 24,
       overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.07,
+      shadowRadius: 12,
+      elevation: 4,
     },
     heroCircle: {
       position: 'absolute',
@@ -489,16 +494,16 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     heroLabel: {
       color: colors.textMuted,
-      fontSize: 13,
-      fontWeight: '600',
-      letterSpacing: 0.4,
+      fontSize: 11,
+      fontFamily: font.semibold,
+      letterSpacing: 1,
       textTransform: 'uppercase',
     },
     heroAmount: {
       color: colors.text,
-      fontSize: 42,
-      fontWeight: '900',
-      letterSpacing: -1.5,
+      fontSize: 44,
+      fontFamily: font.black,
+      letterSpacing: -2,
       marginTop: 4,
     },
     heroMeta: {
@@ -543,10 +548,13 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       width: '48%',
       backgroundColor: isDark ? '#111111' : colors.surface,
       borderRadius: 20,
-      borderWidth: 1,
-      borderColor: isDark ? '#1E1E1E' : colors.border,
       padding: 16,
       gap: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.25 : 0.05,
+      shadowRadius: 8,
+      elevation: 2,
     },
     gridIcon: {
       marginBottom: 6,
@@ -554,13 +562,13 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     gridValue: {
       color: colors.text,
       fontSize: 22,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       letterSpacing: -0.5,
     },
     gridLabel: {
       color: colors.textMuted,
       fontSize: 12,
-      fontWeight: '500',
+      fontFamily: font.medium,
     },
     gridBadge: {
       flexDirection: 'row',
@@ -600,9 +608,12 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     txList: {
       backgroundColor: isDark ? '#111111' : colors.surface,
       borderRadius: 20,
-      borderWidth: 1,
-      borderColor: isDark ? '#1E1E1E' : colors.border,
       overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.25 : 0.05,
+      shadowRadius: 8,
+      elevation: 2,
     },
     txItem: {
       flexDirection: 'row',

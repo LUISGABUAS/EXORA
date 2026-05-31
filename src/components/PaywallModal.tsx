@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { PurchasesPackage } from 'react-native-purchases';
-import {
-  getOfferings,
-  purchasePackage,
-  restorePurchases,
-} from '../services/revenuecatService';
+import { getOfferings, purchasePackage, restorePurchases } from '../services/revenuecatService';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 
 type PaywallTrigger = 'ocr_limit' | 'history' | 'fiscal_report' | 'export' | 'tax_detail';
@@ -16,16 +14,16 @@ type PaywallTrigger = 'ocr_limit' | 'history' | 'fiscal_report' | 'export' | 'ta
 interface Props {
   visible: boolean;
   onClose: () => void;
-  trigger: PaywallTrigger;
+  trigger?: PaywallTrigger;
 }
 
 const BENEFITS = [
-  { icon: 'camera-iris', text: 'Escaneos de tickets ilimitados' },
-  { icon: 'bank-transfer-in', text: 'Importar estados de cuenta bancarios' },
-  { icon: 'file-chart-outline', text: 'Exportar reporte fiscal en PDF y CSV' },
-  { icon: 'calculator-variant', text: 'Cálculo de ahorro fiscal automático' },
+  { icon: 'camera-iris',       text: 'Escaneos de tickets ilimitados' },
+  { icon: 'bank-transfer-in',  text: 'Importar estados de cuenta' },
+  { icon: 'file-chart-outline',text: 'Reporte fiscal en PDF y CSV' },
+  { icon: 'shield-check-outline', text: 'Detecta deducciones al escanear' },
   { icon: 'lightbulb-on-outline', text: 'Todos los insights personalizados' },
-  { icon: 'shield-check-outline', text: 'Detecta deducciones al escanear tickets' },
+  { icon: 'cloud-sync-outline',text: 'Sync en la nube ilimitado' },
 ];
 
 interface PackageInfo {
@@ -33,22 +31,22 @@ interface PackageInfo {
   label: string;
   price: string;
   period: string;
+  isAnnual: boolean;
 }
 
 export function PaywallModal({ visible, onClose }: Props) {
-  const { colors } = useTheme();
-  const s = useStyles(colors);
+  const { colors, isDark } = useTheme();
+  const s = useStyles(colors, isDark);
   const setPlan = usePremiumStore(state => state.setPlan);
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
 
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [packages, setPackages] = useState<PackageInfo[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
 
   useEffect(() => {
-    if (visible) {
-      loadOfferings();
-    }
+    if (visible) loadOfferings();
   }, [visible]);
 
   const loadOfferings = async () => {
@@ -57,42 +55,41 @@ export function PaywallModal({ visible, onClose }: Props) {
       const offering = await getOfferings();
       if (offering?.availablePackages) {
         const pkgs: PackageInfo[] = offering.availablePackages.map(pkg => {
-          const product = pkg.product;
           const isAnnual = pkg.packageType === 'ANNUAL';
           return {
             pkg,
             label: isAnnual ? 'Anual' : 'Mensual',
-            price: product.priceString,
+            price: pkg.product.priceString,
             period: isAnnual ? '/año' : '/mes',
+            isAnnual,
           };
         });
         setPackages(pkgs);
       }
-    } catch {
-      // Fallback to hardcoded prices
-    } finally {
+    } catch { } finally {
       setLoading(false);
     }
   };
 
-  const handlePurchase = async (pkgInfo?: PackageInfo) => {
-    if (pkgInfo) {
-      setPurchasing(true);
-      try {
-        const success = await purchasePackage(pkgInfo.pkg);
-        if (success) {
-          await syncWithRevenueCat();
-          Alert.alert('Bienvenido a Premium', 'Tu suscripción se activó correctamente.');
-          onClose();
-        }
-      } catch (error) {
-        Alert.alert('Error', 'No se pudo completar la compra. Intenta de nuevo.');
-      } finally {
-        setPurchasing(false);
-      }
-    } else {
-      // Fallback if no RC packages available
+  const handlePurchase = async () => {
+    const isYearly = selectedPlan === 'yearly';
+    const pkg = packages.find(p => p.isAnnual === isYearly) ?? packages[0];
+    if (!pkg) {
       Alert.alert('Próximamente', 'Las suscripciones estarán disponibles pronto.');
+      return;
+    }
+    setPurchasing(true);
+    try {
+      const success = await purchasePackage(pkg.pkg);
+      if (success) {
+        await syncWithRevenueCat();
+        Alert.alert('¡Bienvenido a Pro!', 'Tu suscripción se activó correctamente.');
+        onClose();
+      }
+    } catch {
+      Alert.alert('Error', 'No se pudo completar la compra. Intenta de nuevo.');
+    } finally {
+      setPurchasing(false);
     }
   };
 
@@ -102,7 +99,7 @@ export function PaywallModal({ visible, onClose }: Props) {
       const success = await restorePurchases();
       if (success) {
         await syncWithRevenueCat();
-        Alert.alert('Compra restaurada', 'Tu suscripción Premium se restauró correctamente.');
+        Alert.alert('Compra restaurada', 'Tu suscripción Pro se restauró correctamente.');
         onClose();
       } else {
         Alert.alert('Sin compras', 'No se encontraron compras anteriores.');
@@ -114,8 +111,10 @@ export function PaywallModal({ visible, onClose }: Props) {
     }
   };
 
-  const monthlyPkg = packages.find(p => p.label === 'Mensual');
-  const yearlyPkg = packages.find(p => p.label === 'Anual');
+  const yearlyPkg  = packages.find(p => p.isAnnual);
+  const monthlyPkg = packages.find(p => !p.isAnnual);
+  const yearlyPrice  = yearlyPkg?.price  ?? '$599 MXN';
+  const monthlyPrice = monthlyPkg?.price ?? '$79 MXN';
 
   return (
     <Modal
@@ -124,223 +123,299 @@ export function PaywallModal({ visible, onClose }: Props) {
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={s.container}>
-        <Pressable style={s.closeButton} onPress={onClose} hitSlop={12}>
-          <Icon name="close" size={24} color={colors.textMuted} />
+      <View style={s.root}>
+        <Pressable style={s.closeBtn} onPress={onClose} hitSlop={16}>
+          <Icon name="close" size={20} color={colors.textMuted} />
         </Pressable>
 
-        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
           {/* Hero */}
-          <View style={s.heroSection}>
-            <View style={s.heroIcon}>
-              <Icon name="shield-crown-outline" size={48} color={colors.primary} />
+          <Animated.View entering={FadeIn.duration(400)} style={s.hero}>
+            <View style={s.heroIconWrap}>
+              <Icon name="shield-crown-outline" size={44} color={colors.primary} />
             </View>
-            <Text style={s.heroTitle}>
-              Podrías estar ahorrando en impuestos y no lo sabes
+            <Text style={s.heroTitle}>EXPENSIA Pro</Text>
+            <Text style={s.heroSub}>
+              Paga menos impuestos.{'\n'}Lleva tus finanzas en serio.
             </Text>
-          </View>
+          </Animated.View>
 
           {/* Benefits */}
-          <View style={s.benefitsList}>
-            {BENEFITS.map(b => (
-              <View key={b.icon} style={s.benefitRow}>
-                <Icon name={b.icon} size={20} color={colors.primary} />
+          <Animated.View entering={FadeInDown.delay(100).duration(350)} style={s.benefitsCard}>
+            {BENEFITS.map((b, i) => (
+              <View key={b.icon} style={[s.benefitRow, i < BENEFITS.length - 1 && s.benefitBorder]}>
+                <View style={s.benefitIconWrap}>
+                  <Icon name={b.icon} size={18} color={colors.primary} />
+                </View>
                 <Text style={s.benefitText}>{b.text}</Text>
+                <Icon name="check" size={16} color={colors.primary} />
               </View>
             ))}
-          </View>
+          </Animated.View>
 
-          {/* Loading */}
-          {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : null}
-
-          {/* Pricing Cards */}
-          <View style={s.pricingRow}>
-            {/* Monthly */}
+          {/* Plan selector */}
+          <Animated.View entering={FadeInDown.delay(200).duration(350)} style={s.plans}>
+            {/* Anual */}
             <Pressable
-              style={s.pricingCard}
-              onPress={() => handlePurchase(monthlyPkg)}
-              disabled={purchasing}
+              style={[s.planCard, selectedPlan === 'yearly' && s.planCardSelected]}
+              onPress={() => setSelectedPlan('yearly')}
             >
-              <Text style={s.pricingPeriod}>Mensual</Text>
-              <Text style={s.pricingPrice}>{monthlyPkg?.price || '$79 MXN'}</Text>
-              <Text style={s.pricingUnit}>/mes</Text>
-            </Pressable>
-
-            {/* Yearly (highlighted) */}
-            <Pressable
-              style={[s.pricingCard, s.pricingCardHighlight]}
-              onPress={() => handlePurchase(yearlyPkg)}
-              disabled={purchasing}
-            >
-              <View style={s.saveBadge}>
-                <Text style={s.saveBadgeText}>Ahorra 37%</Text>
+              <View style={s.planTop}>
+                <View style={s.popularBadge}>
+                  <Text style={s.popularText}>MEJOR PRECIO</Text>
+                </View>
+                <View style={[s.radio, selectedPlan === 'yearly' && s.radioSelected]}>
+                  {selectedPlan === 'yearly' && <View style={s.radioDot} />}
+                </View>
               </View>
-              <Text style={s.pricingPeriod}>Anual</Text>
-              <Text style={s.pricingPrice}>{yearlyPkg?.price || '$599 MXN'}</Text>
-              <Text style={s.pricingUnit}>/año</Text>
-              <Text style={s.pricingEquiv}>$49.90 MXN/mes</Text>
+              <Text style={s.planName}>Anual</Text>
+              <Text style={s.planPrice}>{yearlyPrice}</Text>
+              <Text style={s.planEquiv}>$49.90/mes · Ahorra 37%</Text>
             </Pressable>
-          </View>
+
+            {/* Mensual */}
+            <Pressable
+              style={[s.planCard, selectedPlan === 'monthly' && s.planCardSelected]}
+              onPress={() => setSelectedPlan('monthly')}
+            >
+              <View style={s.planTop}>
+                <View style={[s.radio, selectedPlan === 'monthly' && s.radioSelected]}>
+                  {selectedPlan === 'monthly' && <View style={s.radioDot} />}
+                </View>
+              </View>
+              <Text style={s.planName}>Mensual</Text>
+              <Text style={s.planPrice}>{monthlyPrice}</Text>
+              <Text style={s.planEquiv}>Sin compromiso anual</Text>
+            </Pressable>
+          </Animated.View>
 
           {/* CTA */}
-          <Pressable
-            style={[s.ctaButton, purchasing && s.ctaDisabled]}
-            onPress={() => handlePurchase(yearlyPkg || monthlyPkg)}
-            disabled={purchasing}
-          >
-            {purchasing ? (
-              <ActivityIndicator size="small" color={colors.white} />
-            ) : (
-              <>
-                <Icon name="lock-open-outline" size={20} color={colors.white} />
-                <Text style={s.ctaText}>Desbloquear ahorro</Text>
-              </>
-            )}
-          </Pressable>
+          <Animated.View entering={FadeInDown.delay(280).duration(350)}>
+            <Pressable
+              style={[s.cta, purchasing && s.ctaDisabled]}
+              onPress={handlePurchase}
+              disabled={purchasing}
+            >
+              {purchasing ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={s.ctaText}>
+                  Suscribirme {selectedPlan === 'yearly' ? '· Anual' : '· Mensual'}
+                </Text>
+              )}
+            </Pressable>
 
-          {/* Restore */}
-          <Pressable style={s.restoreButton} onPress={handleRestore} disabled={purchasing}>
+            <Text style={s.ctaNote}>
+              Cancela cuando quieras · Sin compromisos
+            </Text>
+          </Animated.View>
+
+          <Pressable style={s.restoreBtn} onPress={handleRestore} disabled={purchasing}>
             <Text style={s.restoreText}>Restaurar compra</Text>
           </Pressable>
+
         </ScrollView>
       </View>
     </Modal>
   );
 }
 
-const useStyles = (colors: ColorPalette) =>
+const useStyles = (colors: ColorPalette, isDark: boolean) =>
   StyleSheet.create({
-    container: {
+    root: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    closeButton: {
+    closeBtn: {
       position: 'absolute',
       top: 16,
       right: 16,
       zIndex: 10,
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       backgroundColor: colors.surfaceAlt,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    content: {
-      paddingHorizontal: 24,
-      paddingTop: 60,
-      paddingBottom: 40,
-      gap: 28,
+    scroll: {
+      paddingHorizontal: 20,
+      paddingTop: 56,
+      paddingBottom: 48,
+      gap: 20,
     },
-    heroSection: {
+
+    // Hero
+    hero: {
       alignItems: 'center',
-      gap: 16,
+      gap: 10,
     },
-    heroIcon: {
-      width: 88,
-      height: 88,
-      borderRadius: 44,
+    heroIconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
       backgroundColor: colors.primary + '15',
       alignItems: 'center',
       justifyContent: 'center',
     },
     heroTitle: {
       color: colors.text,
-      fontSize: 22,
-      fontWeight: '800',
-      textAlign: 'center',
-      lineHeight: 30,
+      fontSize: 28,
+      fontFamily: font.black,
+      letterSpacing: -0.5,
     },
-    benefitsList: {
-      gap: 14,
+    heroSub: {
+      color: colors.textMuted,
+      fontSize: 15,
+      fontFamily: font.regular,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+
+    // Benefits
+    benefitsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      paddingHorizontal: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.06,
+      shadowRadius: 10,
+      elevation: 3,
     },
     benefitRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      paddingVertical: 14,
+    },
+    benefitBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    benefitIconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: colors.primary + '12',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     benefitText: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: '600',
       flex: 1,
+      color: colors.text,
+      fontSize: 14,
+      fontFamily: font.medium,
     },
-    pricingRow: {
+
+    // Plans
+    plans: {
       flexDirection: 'row',
       gap: 12,
     },
-    pricingCard: {
+    planCard: {
       flex: 1,
       backgroundColor: colors.surface,
       borderRadius: 20,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.border,
-      padding: 18,
-      alignItems: 'center',
+      padding: 16,
       gap: 4,
     },
-    pricingCardHighlight: {
+    planCardSelected: {
       borderColor: colors.primary,
-      borderWidth: 2,
+      backgroundColor: isDark ? colors.surface : colors.primary + '08',
     },
-    saveBadge: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
-      borderRadius: 999,
-      marginBottom: 4,
-    },
-    saveBadgeText: {
-      color: colors.white,
-      fontSize: 11,
-      fontWeight: '800',
-    },
-    pricingPeriod: {
-      color: colors.textMuted,
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    pricingPrice: {
-      color: colors.text,
-      fontSize: 28,
-      fontWeight: '800',
-    },
-    pricingUnit: {
-      color: colors.textMuted,
-      fontSize: 13,
-    },
-    pricingEquiv: {
-      color: colors.primary,
-      fontSize: 12,
-      fontWeight: '700',
-      marginTop: 2,
-    },
-    ctaButton: {
+    planTop: {
       flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+      minHeight: 24,
+    },
+    popularBadge: {
       backgroundColor: colors.primary,
-      paddingVertical: 16,
-      borderRadius: 16,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    popularText: {
+      color: '#fff',
+      fontSize: 9,
+      fontFamily: font.black,
+      letterSpacing: 0.5,
+    },
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.border,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
     },
-    ctaDisabled: {
-      opacity: 0.6,
+    radioSelected: {
+      borderColor: colors.primary,
     },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+    },
+    planName: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.semibold,
+    },
+    planPrice: {
+      color: colors.text,
+      fontSize: 22,
+      fontFamily: font.black,
+      letterSpacing: -0.5,
+      marginTop: 2,
+    },
+    planEquiv: {
+      color: colors.primary,
+      fontSize: 11,
+      fontFamily: font.semibold,
+      marginTop: 2,
+    },
+
+    // CTA
+    cta: {
+      backgroundColor: colors.primary,
+      paddingVertical: 18,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+      elevation: 6,
+    },
+    ctaDisabled: { opacity: 0.6 },
     ctaText: {
-      color: colors.white,
-      fontSize: 16,
-      fontWeight: '800',
+      color: '#fff',
+      fontSize: 17,
+      fontFamily: font.bold,
     },
-    restoreButton: {
+    ctaNote: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.regular,
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    restoreBtn: {
       alignItems: 'center',
       paddingVertical: 8,
     },
     restoreText: {
       color: colors.textMuted,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.medium,
     },
   });

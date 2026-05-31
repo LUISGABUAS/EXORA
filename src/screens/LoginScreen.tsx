@@ -22,6 +22,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { GoogleLogo } from '../components/GoogleLogo';
 import { useAuthStore } from '../store/useAuthStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 
 const logo = require('../assets/logo_new.png');
@@ -193,7 +194,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     appName: {
       color: colors.text,
       fontSize: 32,
-      fontWeight: '800',
+      fontFamily: font.black,
       letterSpacing: 6,
       marginTop: 4,
     },
@@ -202,7 +203,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       fontSize: 15,
       textAlign: 'center',
       lineHeight: 23,
-      fontWeight: '400',
+      fontFamily: font.regular,
     },
 
     // Buttons
