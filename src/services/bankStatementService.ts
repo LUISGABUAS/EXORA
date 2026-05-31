@@ -2,8 +2,7 @@ import RNFS from 'react-native-fs';
 
 const DocumentPicker = require('react-native-document-picker').default;
 
-// OCR.Space free-tier demo key — replace with your own from ocr.space/ocrapi
-const OCR_API_KEY = 'helloworld';
+const OCR_API_KEY = 'K86586803988957';
 const OCR_ENDPOINT = 'https://api.ocr.space/parse/image';
 
 export interface BankTransaction {
