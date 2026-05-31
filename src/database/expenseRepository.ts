@@ -16,6 +16,7 @@ function normalizeExpense(row: any): Expense {
     usoCFDI: row.usoCFDI ?? '',
     source: row.source,
     createdAt: row.createdAt,
+    receiptImageUri: row.receiptImageUri || undefined,
   };
 }
 
@@ -43,8 +44,8 @@ export async function createExpense(expense: ExpenseInput): Promise<number> {
   const createdAt = new Date().toISOString();
   const [result] = await db.executeSql(
     `INSERT INTO expenses
-      (amount, date, category, description, merchantName, conceptsText, ocrRawText, deductible, rfc, usoCFDI, source, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      (amount, date, category, description, merchantName, conceptsText, ocrRawText, deductible, rfc, usoCFDI, source, createdAt, receiptImageUri)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       expense.amount,
       expense.date,
@@ -58,6 +59,7 @@ export async function createExpense(expense: ExpenseInput): Promise<number> {
       expense.usoCFDI,
       expense.source,
       createdAt,
+      expense.receiptImageUri ?? '',
     ],
   );
   return result.insertId;
@@ -68,7 +70,8 @@ export async function updateExpense(id: number, expense: ExpenseInput): Promise<
   await db.executeSql(
     `UPDATE expenses SET
       amount = ?, date = ?, category = ?, description = ?, merchantName = ?,
-      conceptsText = ?, ocrRawText = ?, deductible = ?, rfc = ?, usoCFDI = ?, source = ?
+      conceptsText = ?, ocrRawText = ?, deductible = ?, rfc = ?, usoCFDI = ?, source = ?,
+      receiptImageUri = ?
       WHERE id = ?;`,
     [
       expense.amount,
@@ -82,6 +85,7 @@ export async function updateExpense(id: number, expense: ExpenseInput): Promise<
       expense.rfc,
       expense.usoCFDI,
       expense.source,
+      expense.receiptImageUri ?? '',
       id,
     ],
   );

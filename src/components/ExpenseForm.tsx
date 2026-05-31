@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {
+  CURRENCY_SYMBOLS,
+  Currency,
+  convertToMXN,
+} from '../services/exchangeRateService';
+import { useCurrencyStore } from '../store/useCurrencyStore';
 import { ExpenseCategory, ExpenseInput } from '../types/expense';
 import { ColorPalette } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { categoryIcons } from '../theme/icons';
-import { toInputDate } from '../utils/format';
+import { formatCurrency, toInputDate } from '../utils/format';
 
 const categories: ExpenseCategory[] = ['Comida', 'Transporte', 'Entretenimiento', 'Salud', 'Educacion', 'Otros'];
 
@@ -15,11 +21,18 @@ interface ExpenseFormProps {
   onSubmit: (payload: ExpenseInput) => Promise<void> | void;
 }
 
+// Currencies shown as quick-select pills (most common ones for Mexico)
+const QUICK_CURRENCIES: Currency[] = ['MXN', 'USD', 'EUR'];
+
 export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFormProps) {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
 
+  const defaultCurrency = useCurrencyStore(state => state.defaultCurrency);
+
   const [amount, setAmount] = useState(initialValues?.amount ? String(initialValues.amount) : '');
+  const [currency, setCurrency] = useState<Currency>(defaultCurrency);
+  const [convertedMXN, setConvertedMXN] = useState<number | null>(null);
   const [date, setDate] = useState(toInputDate(initialValues?.date));
   const [category, setCategory] = useState<ExpenseCategory>(initialValues?.category ?? 'Otros');
   const [description, setDescription] = useState(initialValues?.description ?? '');
@@ -46,7 +59,21 @@ export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFor
     setUsoCFDI(initialValues.usoCFDI ?? '');
   }, [initialValues]);
 
-  const handleSubmit = () => {
+  // Recalculate converted amount whenever amount or currency changes
+  useEffect(() => {
+    const num = parseFloat(amount);
+    if (!amount || isNaN(num) || num <= 0 || currency === 'MXN') {
+      setConvertedMXN(null);
+      return;
+    }
+    let cancelled = false;
+    convertToMXN(num, currency).then(mxn => {
+      if (!cancelled) setConvertedMXN(mxn);
+    });
+    return () => { cancelled = true; };
+  }, [amount, currency]);
+
+  const handleSubmit = async () => {
     const next: typeof errors = {};
     const parsedAmount = Number(amount);
     if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -58,7 +85,30 @@ export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFor
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    onSubmit({ amount: parsedAmount, date, category, description, merchantName, conceptsText, ocrRawText, deductible, rfc, usoCFDI, source });
+    let finalAmount = parsedAmount;
+    let finalDescription = description;
+
+    if (currency !== 'MXN') {
+      finalAmount = convertedMXN ?? (await convertToMXN(parsedAmount, currency));
+      const originalLabel = `(${CURRENCY_SYMBOLS[currency]}${parsedAmount.toFixed(2)})`;
+      finalDescription = finalDescription
+        ? `${originalLabel} ${finalDescription}`
+        : originalLabel;
+    }
+
+    onSubmit({
+      amount: finalAmount,
+      date,
+      category,
+      description: finalDescription,
+      merchantName,
+      conceptsText,
+      ocrRawText,
+      deductible,
+      rfc,
+      usoCFDI,
+      source,
+    });
   };
 
   return (
@@ -68,19 +118,40 @@ export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFor
         <Text style={s.title}>Registrar gasto</Text>
       </View>
 
+      {/* Currency selector */}
+      <View style={s.inputGroup}>
+        <Text style={s.label}>Moneda</Text>
+        <View style={s.currencyRow}>
+          {QUICK_CURRENCIES.map(cur => (
+            <Pressable
+              key={cur}
+              style={[s.currencyPill, currency === cur && s.currencyPillActive]}
+              onPress={() => setCurrency(cur)}
+            >
+              <Text style={[s.currencyPillText, currency === cur && s.currencyPillTextActive]}>
+                {CURRENCY_SYMBOLS[cur]} {cur}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       {/* Amount + Date row */}
       <View style={s.row}>
         <View style={s.inputGroupFlex}>
-          <Text style={s.label}>Monto</Text>
+          <Text style={s.label}>Monto {currency !== 'MXN' ? `(${currency})` : ''}</Text>
           <TextInput
             keyboardType="decimal-pad"
-            placeholder="$0.00"
+            placeholder={currency === 'MXN' ? '$0.00' : '0.00'}
             placeholderTextColor={colors.textMuted}
             style={[s.input, errors.amount && s.inputError]}
             value={amount}
             onChangeText={t => { setAmount(t); setErrors(e => ({ ...e, amount: undefined })); }}
           />
           {errors.amount ? <Text style={s.errorText}>{errors.amount}</Text> : null}
+          {currency !== 'MXN' && convertedMXN !== null ? (
+            <Text style={s.convertedText}>≈ {formatCurrency(convertedMXN)} MXN</Text>
+          ) : null}
         </View>
         <View style={s.inputGroupFlex}>
           <Text style={s.label}>Fecha</Text>
@@ -145,7 +216,7 @@ export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFor
       </View>
 
       <View style={s.inputGroup}>
-        <Text style={s.label}>Texto OCR</Text>
+        <Text style={s.label}>Texto del ticket</Text>
         <TextInput placeholder="Texto original del escaneo" placeholderTextColor={colors.textMuted} style={[s.input, s.multiline]} multiline value={ocrRawText} onChangeText={setOcrRawText} />
       </View>
 
@@ -228,4 +299,30 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 16,
     },
     buttonText: { color: colors.white, fontSize: 15, fontWeight: '700' },
+    currencyRow: { flexDirection: 'row', gap: 8 },
+    currencyPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: colors.surfaceAlt,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    currencyPillActive: {
+      backgroundColor: colors.primary + '18',
+      borderColor: colors.primary,
+    },
+    currencyPillText: {
+      color: colors.textMuted,
+      fontWeight: '700',
+      fontSize: 13,
+    },
+    currencyPillTextActive: { color: colors.primary },
+    convertedText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '600',
+      marginTop: 4,
+      marginLeft: 4,
+    },
   });

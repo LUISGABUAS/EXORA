@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -61,6 +61,7 @@ export function ExpenseDetailScreen({ route, navigation }: Props) {
   const removeExpense = useExpenseStore(state => state.removeExpense);
   const expense = getExpense(expenseId);
   const [editing, setEditing] = useState(false);
+  const [imageFullscreen, setImageFullscreen] = useState(false);
 
   if (!expense) {
     return (
@@ -165,12 +166,43 @@ export function ExpenseDetailScreen({ route, navigation }: Props) {
         ) : null}
       </Animated.View>
 
-      {/* OCR text */}
+      {/* Receipt image */}
+      {expense.receiptImageUri ? (
+        <Animated.View entering={FadeInDown.delay(250).duration(350)}>
+          <Pressable onPress={() => setImageFullscreen(true)} style={s.receiptImageWrap}>
+            <Image
+              source={{ uri: expense.receiptImageUri }}
+              style={s.receiptImage}
+              resizeMode="cover"
+            />
+            <View style={s.receiptImageOverlay}>
+              <Icon name="magnify-plus-outline" size={20} color="#fff" />
+              <Text style={s.receiptImageHint}>Toca para ampliar</Text>
+            </View>
+          </Pressable>
+        </Animated.View>
+      ) : null}
+
+      {/* Fullscreen image viewer */}
+      <Modal visible={imageFullscreen} transparent animationType="fade" onRequestClose={() => setImageFullscreen(false)}>
+        <Pressable style={s.fullscreenOverlay} onPress={() => setImageFullscreen(false)}>
+          <Image
+            source={{ uri: expense.receiptImageUri }}
+            style={s.fullscreenImage}
+            resizeMode="contain"
+          />
+          <Pressable style={s.fullscreenClose} onPress={() => setImageFullscreen(false)} hitSlop={12}>
+            <Icon name="close-circle" size={32} color="#fff" />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Texto escaneado */}
       {expense.ocrRawText ? (
         <Animated.View entering={FadeInDown.delay(300).duration(350)} style={s.section}>
           <View style={s.sectionHeader}>
             <Icon name="text-recognition" size={18} color={colors.text} />
-            <Text style={s.sectionTitle}>Texto OCR</Text>
+            <Text style={s.sectionTitle}>Texto del ticket</Text>
           </View>
           <View style={s.divider} />
           <Text style={s.ocrText}>{expense.ocrRawText}</Text>
@@ -257,6 +289,48 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       lineHeight: 22,
       fontSize: 13,
       marginTop: 8,
+    },
+    receiptImageWrap: {
+      borderRadius: 18,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    receiptImage: {
+      width: '100%',
+      height: 220,
+    },
+    receiptImageOverlay: {
+      position: 'absolute',
+      bottom: 10,
+      right: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    receiptImageHint: {
+      color: '#fff',
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    fullscreenOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.95)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    fullscreenImage: {
+      width: '100%',
+      height: '85%',
+    },
+    fullscreenClose: {
+      position: 'absolute',
+      top: 52,
+      right: 20,
     },
     actions: {
       flexDirection: 'row',

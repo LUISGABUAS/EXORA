@@ -4,6 +4,10 @@ import { DarkTheme, DefaultTheme, NavigationContainer, NavigatorScreenParams } f
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { BackupScreen } from '../screens/BackupScreen';
+import { BankImportScreen } from '../screens/BankImportScreen';
+import { CurrencySettingsScreen } from '../screens/CurrencySettingsScreen';
+import { CustomCategoriesScreen } from '../screens/CustomCategoriesScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { ExpenseDetailScreen } from '../screens/ExpenseDetailScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
@@ -11,9 +15,13 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { PresupuestoScreen } from '../screens/PresupuestoScreen';
+import { RecurringScreen } from '../screens/RecurringScreen';
+import { SavingsScreen } from '../screens/SavingsScreen';
 import { ReporteFiscalScreen } from '../screens/ReporteFiscalScreen';
+import { ResicoCalculatorScreen } from '../screens/ResicoCalculatorScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { SplitScreen } from '../screens/SplitScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -28,6 +36,14 @@ export type RootStackParamList = {
   ProfileEdit: undefined;
   ReporteFiscal: undefined;
   Presupuesto: undefined;
+  Recurrentes: undefined;
+  Ahorros: undefined;
+  ResicoCalculator: undefined;
+  Split: undefined;
+  CustomCategories: undefined;
+  Backup: undefined;
+  CurrencySettings: undefined;
+  BankImport: undefined;
 };
 
 export type TabParamList = {
@@ -146,6 +162,46 @@ export function AppNavigator() {
               name="Presupuesto"
               component={PresupuestoScreen}
               options={{ title: 'Presupuestos', headerBackTitle: 'Inicio' }}
+            />
+            <Stack.Screen
+              name="Recurrentes"
+              component={RecurringScreen}
+              options={{ title: 'Gastos recurrentes', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="Ahorros"
+              component={SavingsScreen}
+              options={{ title: 'Metas de ahorro', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="ResicoCalculator"
+              component={ResicoCalculatorScreen}
+              options={{ title: 'Calculadora Fiscal', headerBackTitle: 'Atras' }}
+            />
+            <Stack.Screen
+              name="Split"
+              component={SplitScreen}
+              options={{ title: 'Dividir Gastos', headerBackTitle: 'Atras' }}
+            />
+            <Stack.Screen
+              name="CustomCategories"
+              component={CustomCategoriesScreen}
+              options={{ title: 'Categorías personalizadas', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="Backup"
+              component={BackupScreen}
+              options={{ title: 'Backup y Restauración', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="CurrencySettings"
+              component={CurrencySettingsScreen}
+              options={{ title: 'Moneda y tipo de cambio', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="BankImport"
+              component={BankImportScreen}
+              options={{ title: 'Importar estado de cuenta', headerBackTitle: 'Perfil' }}
             />
           </>
         )}

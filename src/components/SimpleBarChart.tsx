@@ -33,19 +33,28 @@ export function SimpleBarChart({ data, highlightLast }: SimpleBarChartProps) {
       <View style={s.chart}>
         {data.map((item, index) => {
           const isHighlighted = highlightLast && index === data.length - 1;
+          const hasValue = item.value > 0;
           return (
             <View key={index} style={s.barWrapper}>
-              {item.value > 0 ? (
+              {isHighlighted && hasValue ? (
+                <Text style={s.valueLabelHighlighted}>{formatCurrency(item.value)}</Text>
+              ) : hasValue ? (
                 <Text style={s.valueLabel}>{formatCurrency(item.value)}</Text>
-              ) : null}
+              ) : (
+                <View style={s.valuePlaceholder} />
+              )}
               <View style={s.barTrack}>
-                <View
-                  style={[
-                    s.bar,
-                    { height: `${(item.value / max) * 100}%` },
-                    isHighlighted && s.barHighlighted,
-                  ]}
-                />
+                {hasValue ? (
+                  <View
+                    style={[
+                      s.bar,
+                      { height: `${(item.value / max) * 100}%` },
+                      isHighlighted && s.barHighlighted,
+                    ]}
+                  />
+                ) : (
+                  <View style={s.emptyDot} />
+                )}
               </View>
               <Text style={[s.barLabel, isHighlighted && s.barLabelHighlighted]}>
                 {item.label}
@@ -91,21 +100,35 @@ const useStyles = (colors: ColorPalette) =>
       fontSize: 8,
       fontWeight: '600',
     },
+    valueLabelHighlighted: {
+      color: colors.primary,
+      fontSize: 8,
+      fontWeight: '700',
+    },
+    valuePlaceholder: {
+      height: 12,
+    },
     barTrack: {
       flex: 1,
       width: '100%',
       justifyContent: 'flex-end',
+      alignItems: 'center',
     },
     bar: {
       backgroundColor: colors.primary,
       borderRadius: 6,
       minHeight: 4,
       width: '100%',
-      opacity: 0.85,
+      opacity: 0.55,
     },
     barHighlighted: {
-      backgroundColor: colors.secondary,
       opacity: 1,
+    },
+    emptyDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.border,
     },
     barLabel: {
       color: colors.textMuted,

@@ -6,7 +6,11 @@ import {
   deleteExpense,
 } from '../database/expenseRepository';
 import { addToSyncQueue } from '../database/syncQueue';
-import { Expense, ExpenseInput } from '../types/expense';
+import { trackExpenseForRating } from '../services/ratingService';
+import { notifyBudgetAlert } from '../services/notificationService';
+import { useBudgetStore } from './useBudgetStore';
+import { Expense, ExpenseCategory, ExpenseInput } from '../types/expense';
+import { localDateString } from '../utils/format';
 
 interface ExpenseState {
   expenses: Expense[];
@@ -37,6 +41,23 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     await addToSyncQueue('insert', id, expense as Record<string, any>);
     const expenses = await getAllExpenses();
     set({ expenses });
+    // Tracking para el rating prompt
+    trackExpenseForRating().catch(() => {});
+    // Budget alert — check if category crossed 80% or 100%
+    try {
+      const budgets = useBudgetStore.getState().budgets;
+      const limit = budgets[expense.category as ExpenseCategory];
+      if (limit && limit > 0) {
+        const now = new Date();
+        const monthPrefix = localDateString(now).slice(0, 7);
+        const spent = expenses
+          .filter(e => e.category === expense.category && e.date.startsWith(monthPrefix))
+          .reduce((sum, e) => sum + e.amount, 0);
+        notifyBudgetAlert(expense.category, spent, limit);
+      }
+    } catch {
+      // never block the main flow
+    }
   },
 
   editExpense: async (id, expense) => {

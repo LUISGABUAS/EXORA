@@ -5,10 +5,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Avatar } from '../components/Avatar';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { supabase } from '../lib/supabase';
+import { supabase, updateProfile } from '../lib/supabase';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { parseConstanciaText, readPdfText, validateIsConstancia } from '../services/constanciaService';
-import { pickPdfFile, pickProfilePhoto, takeProfilePhoto } from '../services/fileService';
+import { pickPdfFile, pickProfilePhoto, takeProfilePhoto, uploadAvatarToSupabase } from '../services/fileService';
 import { useAuthStore } from '../store/useAuthStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
@@ -45,6 +45,22 @@ export function ProfileEditScreen() {
   const [uploading, setUploading] = useState(false);
   const setAvatarUri = usePremiumStore(state => state.setAvatarUri);
 
+  // Solo carga desde Supabase si no hay avatar guardado localmente
+  React.useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    const localUri = usePremiumStore.getState().avatarUri;
+    if (localUri) return; // Ya tenemos foto local, no sobreescribir
+    supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        if (data?.avatar_url) setAvatarUri(data.avatar_url);
+      });
+  }, [session?.user?.id]);
+
   const handleAvatarPress = () => {
     const options = ['Tomar foto', 'Elegir de galeria', 'Cancelar'];
     const cancelIndex = 2;
@@ -66,10 +82,39 @@ export function ProfileEditScreen() {
     }
   };
 
+  const saveAvatar = async (result: { uri: string; base64?: string }) => {
+    // 1. Copiar a path permanente en Documents para que persista tras reinicios
+    let permanentUri = result.uri;
+    try {
+      const RNFS = require('react-native-fs').default;
+      const destPath = `${RNFS.DocumentDirectoryPath}/profile_avatar.jpg`;
+      const srcPath = result.uri.startsWith('file://') ? result.uri.slice(7) : result.uri;
+      await RNFS.copyFile(srcPath, destPath);
+      permanentUri = `file://${destPath}`;
+    } catch {
+      // Si falla la copia, usar el URI original
+    }
+
+    // 2. Guardar permanentemente en local (AsyncStorage) de inmediato
+    await setAvatarUri(permanentUri);
+
+    // 3. Intentar subir a Supabase en background (opcional — no bloquea)
+    const userId = session?.user?.id;
+    if (!userId || !result.base64) return;
+    try {
+      const publicUrl = await uploadAvatarToSupabase(result.base64, userId);
+      await setAvatarUri(publicUrl);
+      await supabase.from('profiles').upsert({ id: userId, avatar_url: publicUrl });
+    } catch (e) {
+      if (__DEV__) console.warn('Avatar upload error (kept local):', e);
+      // Se queda con el archivo local — está bien
+    }
+  };
+
   const handleTakePhoto = async () => {
     try {
       const result = await takeProfilePhoto();
-      if (result) await setAvatarUri(result.uri);
+      if (result) await saveAvatar(result);
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'No se pudo tomar la foto.');
     }
@@ -78,7 +123,7 @@ export function ProfileEditScreen() {
   const handlePickPhoto = async () => {
     try {
       const result = await pickProfilePhoto();
-      if (result) await setAvatarUri(result.uri);
+      if (result) await saveAvatar(result);
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'No se pudo seleccionar la foto.');
     }
@@ -171,16 +216,24 @@ export function ProfileEditScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const userId = session?.user?.id;
+      const rfcClean = rfc.trim().toUpperCase();
       const updateData: Record<string, string> = { full_name: name.trim() };
-      if (selectedRegime !== 'no_facturo' && rfc.trim()) {
-        updateData.rfc = rfc.trim().toUpperCase();
-      }
+      if (selectedRegime !== 'no_facturo' && rfcClean) updateData.rfc = rfcClean;
+
       const { error } = await supabase.auth.updateUser({ data: updateData });
-      if (error) {
-        Alert.alert('Error', error.message);
-        setSaving(false);
-        return;
+      if (error) { Alert.alert('Error', error.message); return; }
+
+      // Sincronizar perfil extendido en tabla profiles
+      if (userId) {
+        await updateProfile(userId, {
+          full_name: name.trim(),
+          rfc: rfcClean || undefined,
+          razon_social: razonSocial.trim() || undefined,
+          fiscal_regime: selectedRegime,
+        });
       }
+
       await setFiscalRegime(selectedRegime);
       Alert.alert('Listo', 'Tu perfil se actualizó correctamente.', [
         { text: 'OK', onPress: () => navigation.goBack() },

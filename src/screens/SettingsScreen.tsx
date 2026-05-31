@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,12 @@ import { PaywallModal } from '../components/PaywallModal';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { exportExpensesToCsv } from '../services/exportService';
+import { getAvailableBiometric, getBiometricLabel } from '../services/biometricService';
+import {
+  applyReferralCode,
+  getOrCreateReferralCode,
+  REFERRAL_ERROR_MESSAGES,
+} from '../services/referralService';
 import {
   cancelAllReminders,
   scheduleDailyReminder,
@@ -49,8 +55,22 @@ export function SettingsScreen() {
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
   const constanciaUri = usePremiumStore(state => state.constanciaUri);
+  const biometricEnabled = usePremiumStore(state => state.biometricEnabled);
+  const setBiometricEnabled = usePremiumStore(state => state.setBiometricEnabled);
+  const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
+  const extendTrial = usePremiumStore(state => state.extendTrial);
   const [remindersOn, setRemindersOn] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [biometricType, setBiometricTypeLocal] = useState<string>('none');
+  const [referralCode, setReferralCode] = useState('');
+  const [myCode, setMyCode] = useState('');
+  const [referralInput, setReferralInput] = useState('');
+  const [referralLoading, setReferralLoading] = useState(false);
+
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
+    : 0;
+  const trialActive = trialDaysLeft > 0 && !isPremium;
 
   const userName = session?.user?.user_metadata?.full_name
     || session?.user?.email?.split('@')[0]
@@ -61,7 +81,40 @@ export function SettingsScreen() {
     AsyncStorage.getItem(REMINDER_KEY).then(val => {
       if (val === 'true') setRemindersOn(true);
     });
-  }, []);
+    getAvailableBiometric().then(t => setBiometricTypeLocal(t));
+    if (session?.user?.id) {
+      getOrCreateReferralCode(session.user.id).then(setMyCode).catch(() => {});
+    }
+  }, [session?.user?.id]);
+
+  const handleShareReferral = async () => {
+    if (!myCode) return;
+    await Share.share({
+      message:
+        `¡Únete a EXPENSIA y lleva tus gastos al SAT en automático! 🇲🇽\n` +
+        `Usa mi código *${myCode}* y ambos obtenemos 7 días gratis de Pro.\n` +
+        `Descárgala en App Store y Google Play.`,
+    });
+  };
+
+  const handleApplyCode = async () => {
+    if (!referralInput.trim()) return;
+    setReferralLoading(true);
+    try {
+      const result = await applyReferralCode(referralInput.trim());
+      if (result.ok) {
+        await extendTrial(7);
+        Alert.alert('¡Código aplicado!', '7 días de Pro agregados a tu cuenta.');
+        setReferralInput('');
+      } else {
+        Alert.alert('Código inválido', REFERRAL_ERROR_MESSAGES[result.error] ?? 'Error desconocido.');
+      }
+    } catch {
+      Alert.alert('Error', 'No se pudo aplicar el código. Intenta de nuevo.');
+    } finally {
+      setReferralLoading(false);
+    }
+  };
 
   const toggleReminders = async (value: boolean) => {
     setRemindersOn(value);
@@ -141,11 +194,11 @@ export function SettingsScreen() {
           <Text style={s.cardTitle}>Régimen fiscal</Text>
         </View>
         <Text style={s.cardText}>Selecciona cómo facturas para calcular tu ahorro fiscal.</Text>
-        <View style={s.themeRow}>
+        <View style={s.fiscalRow}>
           {fiscalModes.map(item => (
             <Pressable
               key={item.value}
-              style={[s.themeChip, fiscalRegime === item.value && s.themeChipActive]}
+              style={[s.fiscalChip, fiscalRegime === item.value && s.themeChipActive]}
               onPress={() => setFiscalRegime(item.value)}
             >
               <Icon name={item.icon} size={16} color={fiscalRegime === item.value ? colors.white : colors.text} />
@@ -173,7 +226,79 @@ export function SettingsScreen() {
           <Text style={s.reportButtonText}>Presupuestos mensuales</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Recurrentes')}>
+          <Icon name="repeat" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Gastos recurrentes</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Ahorros')}>
+          <Icon name="piggy-bank-outline" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Metas de ahorro</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('ResicoCalculator')}>
+          <Icon name="calculator-variant" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Calculadora RESICO</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
       </View>
+
+      <View style={s.card}>
+        <View style={s.cardHeader}>
+          <Icon name="account-group-outline" size={22} color={colors.text} />
+          <Text style={s.cardTitle}>Herramientas</Text>
+        </View>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Split')}>
+          <Icon name="call-split" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Dividir gastos</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('CustomCategories')}>
+          <Icon name="tag-plus" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Categorías personalizadas</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Backup')}>
+          <Icon name="database-export" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Backup y restauración</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('CurrencySettings')}>
+          <Icon name="currency-usd" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Moneda y tipo de cambio</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('BankImport')}>
+          <Icon name="bank-transfer-in" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Importar estado de cuenta</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+      </View>
+
+      {/* Security Card */}
+      {biometricType !== 'none' ? (
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Icon name="shield-lock-outline" size={22} color={colors.text} />
+            <Text style={s.cardTitle}>Seguridad</Text>
+          </View>
+          <View style={s.switchRow}>
+            <View style={s.switchInfo}>
+              <Text style={s.switchLabel}>
+                Bloquear con {getBiometricLabel(biometricType as any)}
+              </Text>
+              <Text style={s.switchDesc}>
+                Se pedirá autenticación al abrir la app
+              </Text>
+            </View>
+            <Switch
+              value={biometricEnabled}
+              onValueChange={setBiometricEnabled}
+              trackColor={{ true: colors.primary }}
+            />
+          </View>
+        </View>
+      ) : null}
 
       <View style={s.card}>
         <View style={s.cardHeader}>
@@ -188,6 +313,60 @@ export function SettingsScreen() {
             onValueChange={toggleReminders}
             trackColor={{ true: colors.primary }}
           />
+        </View>
+      </View>
+
+      {/* Trial banner */}
+      {trialActive ? (
+        <View style={s.trialBanner}>
+          <Icon name="clock-fast" size={20} color={colors.warning} />
+          <View style={s.trialText}>
+            <Text style={s.trialTitle}>Prueba gratis activa — {trialDaysLeft} día{trialDaysLeft !== 1 ? 's' : ''} restante{trialDaysLeft !== 1 ? 's' : ''}</Text>
+            <Text style={s.trialSub}>Suscríbete antes de que termine para no perder el acceso.</Text>
+          </View>
+          <Pressable style={s.trialBtn} onPress={() => setPaywallVisible(true)}>
+            <Text style={s.trialBtnText}>Ver planes</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* Referidos */}
+      <View style={s.card}>
+        <View style={s.cardHeader}>
+          <Icon name="gift-outline" size={22} color={colors.secondary} />
+          <Text style={s.cardTitle}>Invita y gana Pro</Text>
+        </View>
+        <Text style={s.cardText}>
+          Comparte tu código. Cuando alguien lo use, ambos obtienen <Text style={{ color: colors.primary, fontWeight: '700' }}>7 días gratis de Pro</Text>.
+        </Text>
+
+        {myCode ? (
+          <Pressable style={s.codeBox} onPress={handleShareReferral}>
+            <Text style={s.codeText}>{myCode}</Text>
+            <View style={s.shareChip}>
+              <Icon name="share-variant" size={14} color={colors.white} />
+              <Text style={s.shareChipText}>Compartir</Text>
+            </View>
+          </Pressable>
+        ) : null}
+
+        <View style={s.codeInputRow}>
+          <TextInput
+            style={s.codeInput}
+            placeholder="Ingresa un código (EXP-XXXXXX)"
+            placeholderTextColor={colors.textMuted}
+            value={referralInput}
+            onChangeText={t => setReferralInput(t.toUpperCase())}
+            autoCapitalize="characters"
+            maxLength={12}
+          />
+          <Pressable
+            style={[s.applyBtn, (!referralInput.trim() || referralLoading) && s.applyBtnDisabled]}
+            onPress={handleApplyCode}
+            disabled={!referralInput.trim() || referralLoading}
+          >
+            <Text style={s.applyBtnText}>{referralLoading ? '…' : 'Aplicar'}</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -291,11 +470,95 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       borderRadius: 14,
       backgroundColor: colors.surfaceAlt,
     },
+    fiscalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    fiscalChip: {
+      width: '47%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceAlt,
+    },
     themeChipActive: { backgroundColor: colors.primary },
     themeChipText: { color: colors.text, fontWeight: '600', fontSize: 13 },
     themeChipTextActive: { color: colors.white },
     switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    switchInfo: { flex: 1, gap: 2 },
+    trialBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.warning + '15',
+      borderWidth: 1,
+      borderColor: colors.warning + '40',
+      borderRadius: 16,
+      padding: 14,
+    },
+    trialText: { flex: 1, gap: 2 },
+    trialTitle: { color: colors.text, fontSize: 13, fontWeight: '700' },
+    trialSub: { color: colors.textMuted, fontSize: 11 },
+    trialBtn: {
+      backgroundColor: colors.warning,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 10,
+    },
+    trialBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+    codeBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.primary + '12',
+      borderWidth: 1,
+      borderColor: colors.primary + '30',
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    codeText: {
+      color: colors.primary,
+      fontSize: 20,
+      fontWeight: '900',
+      letterSpacing: 2,
+    },
+    shareChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 10,
+    },
+    shareChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    codeInputRow: { flexDirection: 'row', gap: 8 },
+    codeInput: {
+      flex: 1,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+      letterSpacing: 1,
+    },
+    applyBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    applyBtnDisabled: { opacity: 0.4 },
+    applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
     switchLabel: { color: colors.text, fontWeight: '600' },
+    switchDesc: { color: colors.textMuted, fontSize: 12 },
     button: {
       flexDirection: 'row',
       gap: 8,

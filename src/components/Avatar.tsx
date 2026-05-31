@@ -19,31 +19,33 @@ export function Avatar({ size, name, showEdit, onPress }: AvatarProps) {
   const editSize = size * 0.3;
 
   const content = (
-    <View
-      style={[
-        styles.circle,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: colors.primary,
-        },
-      ]}
-    >
-      {avatarUri ? (
-        <Image
-          source={{ uri: avatarUri }}
-          style={{
+    <View style={{ width: size, height: size }}>
+      <View
+        style={[
+          styles.circle,
+          {
             width: size,
             height: size,
             borderRadius: size / 2,
-          }}
-        />
-      ) : (
-        <Text style={[styles.letter, { fontSize, color: colors.white }]}>
-          {letter}
-        </Text>
-      )}
+            backgroundColor: colors.primary,
+          },
+        ]}
+      >
+        {avatarUri ? (
+          <Image
+            source={{ uri: avatarUri }}
+            style={{
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+            }}
+          />
+        ) : (
+          <Text style={[styles.letter, { fontSize, color: colors.white }]}>
+            {letter}
+          </Text>
+        )}
+      </View>
       {showEdit ? (
         <View
           style={[
@@ -52,15 +54,15 @@ export function Avatar({ size, name, showEdit, onPress }: AvatarProps) {
               width: editSize,
               height: editSize,
               borderRadius: editSize / 2,
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              backgroundColor: colors.primary,
+              borderColor: colors.background,
             },
           ]}
         >
           <Icon
             name="camera"
-            size={editSize * 0.55}
-            color={colors.primary}
+            size={editSize * 0.52}
+            color={colors.white}
           />
         </View>
       ) : null}
@@ -89,10 +91,10 @@ const styles = StyleSheet.create({
   },
   editBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: -2,
+    right: -2,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
   },
 });

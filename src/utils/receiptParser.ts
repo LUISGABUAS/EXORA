@@ -1,6 +1,7 @@
 import { ParsedLineItem, ParsedReceiptData } from '../types/expense';
 import { classifyExpense } from './classifier';
 import { parseWithAI, AIParseResult } from './receiptAI';
+import { FiscalRegime } from '../store/usePremiumStore';
 import { inferDeductibility, isValidMexicanRfc } from './tax';
 
 // ═══════════════════════════════════════════
@@ -506,9 +507,18 @@ function mergeResults(ai: AIParseResult, rawText: string): ParsedReceiptData {
 // MAIN — Función principal de parsing
 // ═══════════════════════════════════════════
 
-export function parseReceiptText(rawText: string): ParsedReceiptData {
-  // Siempre ejecutar ambos: AI clasifica líneas, regex tiene brand DB.
-  // Merge: el mejor resultado por campo.
+export function parseReceiptText(rawText: string, regime?: FiscalRegime): ParsedReceiptData {
   const aiResult = parseWithAI(rawText);
-  return mergeResults(aiResult, rawText);
+  const result = mergeResults(aiResult, rawText);
+  // Re-evaluar deducibilidad con el régimen del usuario si está disponible
+  if (regime) {
+    result.deductible = inferDeductibility({
+      rawText,
+      merchantName: result.merchantName,
+      rfc: result.rfc,
+      usoCFDI: result.usoCFDI,
+      regime,
+    });
+  }
+  return result;
 }

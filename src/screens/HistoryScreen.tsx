@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AmountRangeFilter } from '../components/AmountRangeFilter';
+import { HistorySkeleton } from '../components/HistorySkeleton';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { DeductibleSummary } from '../components/DeductibleSummary';
 import { EmptyState } from '../components/EmptyState';
@@ -56,9 +57,11 @@ export function HistoryScreen() {
   const s = useStyles(colors, isDark);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const expenses = useExpenseStore((state) => state.expenses);
+  const loading = useExpenseStore((state) => state.loading);
   const addExpense = useExpenseStore((state) => state.addExpense);
   const removeExpense = useExpenseStore((state) => state.removeExpense);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
+  const premiumLoaded = usePremiumStore(state => state.loaded);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -95,11 +98,6 @@ export function HistoryScreen() {
 
   const filteredExpenses = useMemo(() => {
     let source = expenses;
-    if (!hasFullAccess()) {
-      const n = new Date();
-      const cutoff = localDateString(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 30));
-      source = source.filter(e => e.date >= cutoff);
-    }
     let result = source.filter(e => {
       const matchesQuery =
         !query ||
@@ -205,9 +203,15 @@ export function HistoryScreen() {
     }
   };
 
+  const isLoading = !premiumLoaded || loading;
+
   return (
     <View style={s.flex}>
     <ScreenContainer>
+      {isLoading ? (
+        <HistorySkeleton />
+      ) : (
+      <>
       <View style={s.header}>
         <Text style={s.title}>Movimientos</Text>
         <Pressable style={s.addButton} onPress={() => setShowForm(v => !v)}>
@@ -342,28 +346,41 @@ export function HistoryScreen() {
         )}
         ItemSeparatorComponent={SeparatorComponent}
         ListEmptyComponent={
-          <EmptyState
-            icon="receipt"
-            title="Sin resultados"
-            message="Aún no hay gastos para este filtro. Agrega uno nuevo o cambia el filtro."
-          />
+          expenses.length === 0 ? (
+            <EmptyState
+              variant="large"
+              icon="receipt-text-outline"
+              title="Sin movimientos aún"
+              message="Registra tu primer gasto para comenzar a ver tu historial y estadísticas."
+              actionLabel="Agregar gasto"
+              onAction={() => setShowForm(true)}
+            />
+          ) : (
+            <EmptyState
+              icon="filter-remove-outline"
+              title="Sin resultados"
+              message={
+                activeFilterCount > 0
+                  ? 'Ningún gasto coincide con los filtros aplicados. Prueba cambiando el criterio de búsqueda.'
+                  : 'No hay gastos en este período.'
+              }
+              actionLabel={activeFilterCount > 0 ? 'Limpiar filtros' : undefined}
+              onAction={activeFilterCount > 0 ? clearFilters : undefined}
+            />
+          )
         }
         scrollEnabled={false}
       />
       {/* Upgrade banner for free users */}
-      {!hasFullAccess() ? (
-        <Pressable style={s.upgradeBanner} onPress={() => setPaywallVisible(true)}>
-          <Icon name="lock-outline" size={18} color={colors.warning} />
-          <Text style={s.upgradeBannerText}>Historial limitado a 30 días</Text>
-          <Icon name="chevron-right" size={18} color={colors.textMuted} />
-        </Pressable>
-      ) : null}
+      {null}
 
       <PaywallModal
         visible={paywallVisible}
         onClose={() => setPaywallVisible(false)}
         trigger="history"
       />
+      </>
+      )}
     </ScreenContainer>
     <UndoToast
       visible={toastVisible}

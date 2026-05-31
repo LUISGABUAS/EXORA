@@ -8,6 +8,7 @@ import { PaywallModal } from '../components/PaywallModal';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { recognizeReceiptDetailed, OcrResult } from '../services/ocr/ocrService';
 import { pickXMLFile, pickImageFromGallery } from '../services/fileService';
+import { saveReceiptImage } from '../services/receiptImageService';
 import { parseCFDIXml, readXmlFile } from '../services/xmlService';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePremiumStore } from '../store/usePremiumStore';
@@ -37,6 +38,7 @@ export function ScanScreen() {
   const incrementScan = usePremiumStore(state => state.incrementScan);
   const weeklyScans = usePremiumStore(state => state.weeklyScans);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
+  const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const device = useCameraDevice('back');
   const camera = useRef<Camera>(null);
   const [mode, setMode] = useState<Mode>('options');
@@ -144,7 +146,7 @@ export function ScanScreen() {
       }
 
       setOcrConfidence(ocrResult.confidence);
-      const parsed = parseReceiptText(ocrResult.text);
+      const parsed = parseReceiptText(ocrResult.text, fiscalRegime);
       setLineItems(parsed.lineItems ?? []);
       setPrefill({
         amount: parsed.amount ?? 0,
@@ -177,7 +179,16 @@ export function ScanScreen() {
   };
 
   const doSave = async (payload: ExpenseInput) => {
-    await addExpense({ ...payload, source: 'ocr' });
+    let receiptImageUri = payload.receiptImageUri;
+    // Copy temp/gallery image to permanent storage
+    if (imageUri && !receiptImageUri) {
+      try {
+        receiptImageUri = await saveReceiptImage(imageUri);
+      } catch {
+        // Non-fatal: save without image if copy fails
+      }
+    }
+    await addExpense({ ...payload, source: 'ocr', receiptImageUri });
     await incrementScan();
     Alert.alert('Gasto guardado', 'El gasto se registró correctamente.');
     resetForm();
@@ -226,7 +237,7 @@ export function ScanScreen() {
                 <Icon name="camera" size={26} color={colors.primary} />
               </View>
               <View style={s.optionInfo}>
-                <Text style={s.optionTitle}>Escanear con OCR</Text>
+                <Text style={s.optionTitle}>Escanear ticket</Text>
                 <Text style={s.optionDesc}>Toma una foto y extrae datos automáticamente</Text>
               </View>
               <Icon name="chevron-right" size={20} color={colors.textMuted} />

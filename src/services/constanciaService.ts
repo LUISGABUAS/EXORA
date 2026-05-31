@@ -11,7 +11,7 @@ import { isValidMexicanRfc } from '../utils/tax';
 export async function readPdfText(filePath: string): Promise<string | null> {
   try {
     const base64 = await RNFS.readFile(filePath, 'base64');
-    const binary = atob(base64);
+    const binary = Buffer.from(base64, 'base64').toString('binary');
     const lines: string[] = [];
 
     // Extraer texto de operadores Tj y TJ

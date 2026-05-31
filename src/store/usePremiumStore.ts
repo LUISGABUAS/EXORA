@@ -29,6 +29,7 @@ interface PremiumState {
   constanciaUploadDate: string | null;
   onboardingComplete: boolean;
   avatarUri: string | null;
+  biometricEnabled: boolean;
   // Runtime
   loaded: boolean;
   // Actions
@@ -48,6 +49,8 @@ interface PremiumState {
   completeOnboarding: () => Promise<void>;
   setPlan: (p: PremiumPlan) => Promise<void>;
   setAvatarUri: (uri: string | null) => Promise<void>;
+  setBiometricEnabled: (enabled: boolean) => Promise<void>;
+  extendTrial: (days: number) => Promise<void>;
   syncWithRevenueCat: () => Promise<void>;
 }
 
@@ -95,6 +98,7 @@ const defaults = {
   constanciaUploadDate: null as string | null,
   onboardingComplete: false,
   avatarUri: null as string | null,
+  biometricEnabled: false,
 };
 
 type PersistData = typeof defaults;
@@ -118,6 +122,7 @@ function getData(state: PremiumState): PersistData {
     constanciaUploadDate: state.constanciaUploadDate,
     onboardingComplete: state.onboardingComplete,
     avatarUri: state.avatarUri,
+    biometricEnabled: state.biometricEnabled,
   };
 }
 
@@ -149,7 +154,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
       persist(getData(updated));
       return true;
     }
-    return state.weeklyScans < 3;
+    return state.weeklyScans < 5;
   },
 
   incrementScan: async () => {
@@ -208,7 +213,12 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   },
 
   completeOnboarding: async () => {
-    set({ onboardingComplete: true });
+    const state = get();
+    // Otorga trial de 7 días si no tiene uno activo ni es premium
+    const trialEndsAt = !state.isPremium && !state.trialEndsAt
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      : state.trialEndsAt;
+    set({ onboardingComplete: true, trialEndsAt });
     await persist(getData(get()));
   },
 
@@ -220,6 +230,22 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   setAvatarUri: async uri => {
     set({ avatarUri: uri });
+    await persist(getData(get()));
+  },
+
+  setBiometricEnabled: async enabled => {
+    set({ biometricEnabled: enabled });
+    await persist(getData(get()));
+  },
+
+  extendTrial: async (days: number) => {
+    const state = get();
+    const base = state.trialEndsAt && state.trialEndsAt > todayStr()
+      ? new Date(state.trialEndsAt)
+      : new Date();
+    base.setDate(base.getDate() + days);
+    const trialEndsAt = base.toISOString().slice(0, 10);
+    set({ trialEndsAt });
     await persist(getData(get()));
   },
 

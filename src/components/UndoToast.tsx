@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ColorPalette } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -49,8 +49,8 @@ export function UndoToast({ visible, message, onUndo, onDismiss, duration = 4000
 
   return (
     <Animated.View
-      entering={SlideInDown.springify().damping(18)}
-      exiting={SlideOutDown.duration(250)}
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
       style={s.container}
     >
       <View style={s.pill}>

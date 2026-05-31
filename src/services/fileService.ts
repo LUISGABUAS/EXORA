@@ -1,4 +1,41 @@
 import { Platform } from 'react-native';
+import { supabase } from '../lib/supabase';
+
+/**
+ * Sube una foto de perfil al bucket "avatars" de Supabase Storage.
+ * Recibe el base64 directo del image picker (sin necesidad de RNFS).
+ * Retorna la URL pública de la imagen.
+ */
+export async function uploadAvatarToSupabase(base64: string, userId: string): Promise<string> {
+  // Decodificar base64 → Uint8Array sin Buffer ni atob
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const lookup: Record<string, number> = {};
+  for (let i = 0; i < chars.length; i++) lookup[chars[i]] = i;
+  const clean = base64.replace(/=+$/, '');
+  const bytes = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  let bi = 0;
+  for (let i = 0; i < clean.length; i += 4) {
+    const a = lookup[clean[i]] ?? 0;
+    const b = lookup[clean[i + 1]] ?? 0;
+    const c2 = lookup[clean[i + 2]] ?? 0;
+    const d = lookup[clean[i + 3]] ?? 0;
+    bytes[bi++] = (a << 2) | (b >> 4);
+    if (clean[i + 2]) bytes[bi++] = ((b & 0xf) << 4) | (c2 >> 2);
+    if (clean[i + 3]) bytes[bi++] = ((c2 & 0x3) << 6) | d;
+  }
+  const arrayBuffer = bytes.slice(0, bi);
+
+  const storagePath = `${userId}/avatar.jpg`;
+
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(storagePath, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(storagePath);
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
 
 export interface FilePickerResult {
   uri: string;
@@ -8,6 +45,7 @@ export interface FilePickerResult {
 
 export interface ImagePickerResult {
   uri: string;
+  base64?: string;
   fileName: string;
   width?: number;
   height?: number;
@@ -89,9 +127,10 @@ export async function pickProfilePhoto(): Promise<ImagePickerResult | null> {
   const result = await ImagePicker.launchImageLibrary({
     mediaType: 'photo' as const,
     selectionLimit: 1,
-    quality: 0.8,
-    maxWidth: 400,
-    maxHeight: 400,
+    quality: 0.85,
+    maxWidth: 800,
+    maxHeight: 800,
+    includeBase64: true,
   });
 
   if (result.didCancel || result.errorCode) {
@@ -106,6 +145,7 @@ export async function pickProfilePhoto(): Promise<ImagePickerResult | null> {
 
   return {
     uri: asset.uri,
+    base64: asset.base64 ?? undefined,
     fileName: asset.fileName || 'avatar.jpg',
     width: asset.width,
     height: asset.height,
@@ -120,9 +160,10 @@ export async function takeProfilePhoto(): Promise<ImagePickerResult | null> {
 
   const result = await ImagePicker.launchCamera({
     mediaType: 'photo' as const,
-    quality: 0.8,
-    maxWidth: 400,
-    maxHeight: 400,
+    quality: 0.85,
+    maxWidth: 800,
+    maxHeight: 800,
+    includeBase64: true,
   });
 
   if (result.didCancel || result.errorCode) {
@@ -137,6 +178,7 @@ export async function takeProfilePhoto(): Promise<ImagePickerResult | null> {
 
   return {
     uri: asset.uri,
+    base64: asset.base64 ?? undefined,
     fileName: asset.fileName || 'avatar.jpg',
     width: asset.width,
     height: asset.height,

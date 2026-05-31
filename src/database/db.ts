@@ -29,8 +29,15 @@ export async function initDatabase() {
       rfc TEXT DEFAULT '',
       usoCFDI TEXT DEFAULT '',
       source TEXT NOT NULL,
-      createdAt TEXT NOT NULL
+      createdAt TEXT NOT NULL,
+      receiptImageUri TEXT DEFAULT ''
     );
   `);
+  // Migration: add receiptImageUri if it doesn't exist yet
+  try {
+    await db.executeSql(`ALTER TABLE expenses ADD COLUMN receiptImageUri TEXT DEFAULT '';`);
+  } catch {
+    // Column already exists — ignore
+  }
   await initSyncQueue();
 }

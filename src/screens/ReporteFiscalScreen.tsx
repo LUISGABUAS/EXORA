@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { AnnualChart } from '../components/AnnualChart';
 import { PaywallModal } from '../components/PaywallModal';
 import { PieChart } from '../components/PieChart';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { exportFiscalReportCsv, generateFiscalReport } from '../services/reportService';
+import { exportMonthlyReport } from '../services/pdfExportService';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
@@ -47,6 +49,7 @@ export function ReporteFiscalScreen() {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const monthPrefix = buildMonthPrefix(selectedYear, selectedMonth);
 
@@ -103,6 +106,35 @@ export function ReporteFiscalScreen() {
   }, [expenses, fiscalRegime, monthPrefix, selectedYear]);
 
   const regimeDisplay = FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime);
+  const isFiscalUser = fiscalRegime !== 'no_facturo';
+
+  const handleShareContador = async () => {
+    setSharing(true);
+    try {
+      const monthName = MONTHS[selectedMonth];
+      if (isPremium) {
+        // Premium: genera PDF y comparte
+        const monthExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
+        await exportMonthlyReport(monthExpenses, `${monthName} ${selectedYear}`);
+      } else {
+        // Free: comparte resumen en texto
+        const msg =
+          `📊 Reporte fiscal EXPENSIA — ${monthName} ${selectedYear}\n\n` +
+          `Régimen: ${regimeDisplay?.title ?? fiscalRegime}\n` +
+          `Total gastado: ${formatCurrency(report.totalAmount)}\n` +
+          `Gastos deducibles: ${formatCurrency(report.deductibleAmount)} (${report.deductibleCount} comprobantes)\n` +
+          `Ahorro fiscal estimado: ${formatCurrency(report.estimatedSaving)}\n\n` +
+          `Generado con EXPENSIA`;
+        await Share.share({ message: msg });
+      }
+    } catch (err: any) {
+      if (err?.message !== 'User did not share') {
+        Alert.alert('Error', 'No se pudo compartir el reporte.');
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const pieData = useMemo(() =>
     Object.entries(report.byCategory)
@@ -304,8 +336,13 @@ export function ReporteFiscalScreen() {
             </View>
           </Animated.View>
 
+          {/* Annual Chart */}
+          <Animated.View entering={FadeInDown.delay(155).duration(300)}>
+            <AnnualChart expenses={expenses} />
+          </Animated.View>
+
           {/* Export Button */}
-          <Animated.View entering={FadeInDown.delay(160).duration(300)}>
+          <Animated.View entering={FadeInDown.delay(160).duration(300)} style={s.actionsRow}>
             <Pressable
               style={[s.exportBtn, exporting && s.exportBtnDisabled]}
               onPress={handleExport}
@@ -320,6 +357,19 @@ export function ReporteFiscalScreen() {
                 {exporting ? 'Exportando…' : isPremium ? 'Exportar CSV' : 'Exportar CSV (Premium)'}
               </Text>
             </Pressable>
+
+            {isFiscalUser ? (
+              <Pressable
+                style={[s.shareBtn, sharing && s.exportBtnDisabled]}
+                onPress={handleShareContador}
+                disabled={sharing}
+              >
+                <Icon name="whatsapp" size={18} color={colors.primary} />
+                <Text style={s.shareBtnText}>
+                  {sharing ? 'Preparando…' : 'Enviar a mi contador'}
+                </Text>
+              </Pressable>
+            ) : null}
           </Animated.View>
         </>
       )}
@@ -563,6 +613,9 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     right: {
       textAlign: 'right',
     },
+    actionsRow: {
+      gap: 10,
+    },
     exportBtn: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -577,6 +630,22 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     exportBtnText: {
       color: colors.white,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    shareBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.primary + '15',
+      borderWidth: 1,
+      borderColor: colors.primary + '40',
+      paddingVertical: 14,
+      borderRadius: 18,
+    },
+    shareBtnText: {
+      color: colors.primary,
       fontSize: 15,
       fontWeight: '700',
     },

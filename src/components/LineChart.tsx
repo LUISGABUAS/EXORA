@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/format';
 interface LineDataPoint {
   label: string;
   value: number;
+  isToday?: boolean;
 }
 
 interface LineChartProps {
@@ -14,87 +15,105 @@ interface LineChartProps {
   title?: string;
 }
 
-const CHART_HEIGHT = 120;
+const CHART_HEIGHT = 110;
+const MIN_BAR_HEIGHT = 3; // Mínimo visible para días con gasto
 
 export function LineChart({ data, title }: LineChartProps) {
   const { colors } = useTheme();
   const s = useStyles(colors);
+
   const max = Math.max(...data.map(d => d.value), 1);
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const todayIdx = data.findIndex(d => d.isToday);
+  const activeIdx = todayIdx >= 0 ? todayIdx : data.length - 1;
+
+  // Y axis labels: max, half, 0
+  const yLabels = [max, max / 2, 0];
 
   return (
     <View style={s.container}>
-      {title ? <Text style={s.title}>{title}</Text> : null}
+      {/* Header */}
+      <View style={s.header}>
+        {title ? <Text style={s.title}>{title}</Text> : null}
+        <Text style={s.totalLabel}>{formatCurrency(total)}</Text>
+      </View>
+
       <View style={s.chart}>
-        {/* Y axis labels */}
+        {/* Y axis */}
         <View style={s.yAxis}>
-          <Text style={s.yLabel}>{formatCurrency(max)}</Text>
-          <Text style={s.yLabel}>{formatCurrency(max / 2)}</Text>
-          <Text style={s.yLabel}>$0</Text>
+          {yLabels.map((v, i) => (
+            <Text key={i} style={s.yLabel}>
+              {v === 0 ? '$0' : `$${Math.round(v)}`}
+            </Text>
+          ))}
         </View>
 
         {/* Plot area */}
         <View style={s.plotArea}>
           {/* Grid lines */}
-          <View style={[s.gridLine, s.gridTop]} />
-          <View style={[s.gridLine, s.gridMid]} />
-          <View style={[s.gridLine, s.gridBot]} />
+          <View style={[s.gridLine, { top: 0 }]} />
+          <View style={[s.gridLine, { top: '50%' }]} />
+          <View style={[s.gridLine, { bottom: 0 }]} />
 
-          {/* Dots and connecting lines */}
-          {data.map((point, idx) => {
-            const x = data.length > 1 ? idx / (data.length - 1) : 0.5;
-            const y = 1 - point.value / max;
+          {/* Bars */}
+          <View style={s.barsRow}>
+            {data.map((point, idx) => {
+              const pct = point.value / max;
+              const barH = point.value > 0
+                ? Math.max(pct * CHART_HEIGHT, MIN_BAR_HEIGHT)
+                : 0;
+              const isActive = idx === activeIdx;
+              const isEmpty = point.value === 0;
 
-            return (
-              <View
-                key={idx}
-                style={[
-                  s.dot,
-                  {
-                    left: `${x * 100}%`,
-                    top: `${y * 100}%`,
-                  },
-                ]}
-              />
-            );
-          })}
+              return (
+                <View key={idx} style={s.barCol}>
+                  {/* Valor encima de la barra */}
+                  {isActive && point.value > 0 ? (
+                    <Text style={s.barValue}>{formatCurrency(point.value)}</Text>
+                  ) : <View style={s.barValuePlaceholder} />}
 
-          {/* Connecting lines between dots */}
-          {data.map((point, idx) => {
-            if (idx === 0) return null;
-            const prev = data[idx - 1];
-            const x1 = (idx - 1) / (data.length - 1);
-            const y1 = 1 - prev.value / max;
-            const x2 = idx / (data.length - 1);
-            const y2 = 1 - point.value / max;
-
-            const dx = (x2 - x1) * 100;
-            const dy = (y2 - y1) * CHART_HEIGHT;
-            const length = Math.sqrt(dx * dx + dy * dy);
-            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-
-            return (
-              <View
-                key={`line-${idx}`}
-                style={[
-                  s.line,
-                  {
-                    left: `${x1 * 100}%`,
-                    top: y1 * CHART_HEIGHT,
-                    width: length,
-                    transform: [{ rotate: `${angle}deg` }],
-                  },
-                ]}
-              />
-            );
-          })}
+                  {/* Espacio de la gráfica */}
+                  <View style={s.barSpace}>
+                    {isEmpty ? (
+                      // Punto pequeño para días sin gasto
+                      <View style={[s.emptyDot, { backgroundColor: colors.border }]} />
+                    ) : (
+                      <View
+                        style={[
+                          s.bar,
+                          {
+                            height: barH,
+                            backgroundColor: isActive ? colors.primary : colors.primary + '55',
+                            borderTopLeftRadius: 5,
+                            borderTopRightRadius: 5,
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </View>
       </View>
 
       {/* X axis labels */}
       <View style={s.xAxis}>
-        {data.map((point, idx) => (
-          <Text key={idx} style={s.xLabel}>{point.label}</Text>
-        ))}
+        <View style={s.xSpacer} />
+        <View style={s.xLabels}>
+          {data.map((point, idx) => {
+            const isActive = idx === activeIdx;
+            return (
+              <View key={idx} style={s.xLabelCol}>
+                <Text style={[s.xLabel, isActive && s.xLabelActive]}>
+                  {point.label}
+                </Text>
+                {isActive && <View style={s.xDot} />}
+              </View>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -108,30 +127,42 @@ const useStyles = (colors: ColorPalette) =>
       padding: 18,
       borderWidth: 1,
       borderColor: colors.border,
-      gap: 8,
+      gap: 4,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
     },
     title: {
       color: colors.text,
       fontWeight: '700',
-      fontSize: 16,
+      fontSize: 15,
+    },
+    totalLabel: {
+      color: colors.primary,
+      fontWeight: '800',
+      fontSize: 15,
     },
     chart: {
       flexDirection: 'row',
-      height: CHART_HEIGHT,
-      gap: 8,
+      height: CHART_HEIGHT + 20, // extra for value label
+      gap: 6,
     },
     yAxis: {
       justifyContent: 'space-between',
-      width: 60,
+      paddingTop: 20, // align with bar top
+      width: 42,
     },
     yLabel: {
       color: colors.textMuted,
       fontSize: 9,
       fontWeight: '600',
+      textAlign: 'right',
     },
     plotArea: {
       flex: 1,
-      height: CHART_HEIGHT,
       position: 'relative',
     },
     gridLine: {
@@ -140,37 +171,73 @@ const useStyles = (colors: ColorPalette) =>
       right: 0,
       height: 1,
       backgroundColor: colors.border,
-    },
-    gridTop: { top: 0 },
-    gridMid: { top: '50%' },
-    gridBot: { bottom: 0 },
-    dot: {
-      position: 'absolute',
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.primary,
-      marginLeft: -4,
-      marginTop: -4,
-      zIndex: 2,
-    },
-    line: {
-      position: 'absolute',
-      height: 2,
-      backgroundColor: colors.primary,
       opacity: 0.5,
-      transformOrigin: 'left center',
-      zIndex: 1,
+    },
+    barsRow: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingTop: 20,
+    },
+    barCol: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+    },
+    barValue: {
+      color: colors.primary,
+      fontSize: 9,
+      fontWeight: '700',
+      marginBottom: 3,
+      textAlign: 'center',
+    },
+    barValuePlaceholder: {
+      height: 14,
+    },
+    barSpace: {
+      height: CHART_HEIGHT,
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      width: '70%',
+    },
+    bar: {
+      width: '100%',
+    },
+    emptyDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      marginBottom: 2,
     },
     xAxis: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingLeft: 68,
+      marginTop: 4,
+    },
+    xSpacer: {
+      width: 48, // yAxis width + gap
+    },
+    xLabels: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+    xLabelCol: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 2,
     },
     xLabel: {
       color: colors.textMuted,
       fontSize: 10,
       fontWeight: '600',
-      textAlign: 'center',
+    },
+    xLabelActive: {
+      color: colors.primary,
+      fontWeight: '800',
+    },
+    xDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.primary,
     },
   });

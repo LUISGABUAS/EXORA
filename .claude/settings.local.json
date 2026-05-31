@@ -18,7 +18,8 @@
       "Bash(pod install:*)",
       "Bash(pod update:*)",
       "Bash(npm run lint:*)",
-      "Bash(convert --version)"
+      "Bash(convert --version)",
+      "Bash(xargs cat)"
     ]
   }
 }

@@ -22,6 +22,7 @@ export interface Expense {
   usoCFDI: string;
   source: ExpenseSource;
   createdAt: string;
+  receiptImageUri?: string;
 }
 
 export interface ExpenseInput {
@@ -36,6 +37,7 @@ export interface ExpenseInput {
   rfc: string;
   usoCFDI: string;
   source: ExpenseSource;
+  receiptImageUri?: string;
 }
 
 export interface ParsedLineItem {

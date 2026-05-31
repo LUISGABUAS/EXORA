@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { PurchasesPackage } from 'react-native-purchases';
 import {
   getOfferings,
   purchasePackage,
@@ -20,11 +21,11 @@ interface Props {
 
 const BENEFITS = [
   { icon: 'camera-iris', text: 'Escaneos de tickets ilimitados' },
-  { icon: 'history', text: 'Historial completo sin límite' },
-  { icon: 'calculator-variant', text: 'Cálculo de ahorro fiscal real' },
-  { icon: 'file-chart-outline', text: 'Reportes fiscales mensuales' },
-  { icon: 'lightbulb-on-outline', text: 'Insights personalizados con IA' },
-  { icon: 'cloud-sync-outline', text: 'Sync en la nube ilimitado' },
+  { icon: 'bank-transfer-in', text: 'Importar estados de cuenta bancarios' },
+  { icon: 'file-chart-outline', text: 'Exportar reporte fiscal en PDF y CSV' },
+  { icon: 'calculator-variant', text: 'Cálculo de ahorro fiscal automático' },
+  { icon: 'lightbulb-on-outline', text: 'Todos los insights personalizados' },
+  { icon: 'shield-check-outline', text: 'Detecta deducciones al escanear tickets' },
 ];
 
 interface PackageInfo {
@@ -174,12 +175,12 @@ export function PaywallModal({ visible, onClose }: Props) {
               disabled={purchasing}
             >
               <View style={s.saveBadge}>
-                <Text style={s.saveBadgeText}>Ahorra 26%</Text>
+                <Text style={s.saveBadgeText}>Ahorra 37%</Text>
               </View>
               <Text style={s.pricingPeriod}>Anual</Text>
-              <Text style={s.pricingPrice}>{yearlyPkg?.price || '$699 MXN'}</Text>
+              <Text style={s.pricingPrice}>{yearlyPkg?.price || '$599 MXN'}</Text>
               <Text style={s.pricingUnit}>/año</Text>
-              <Text style={s.pricingEquiv}>$58 MXN/mes</Text>
+              <Text style={s.pricingEquiv}>$49.90 MXN/mes</Text>
             </Pressable>
           </View>
 

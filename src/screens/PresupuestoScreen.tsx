@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,6 +12,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { notifyBudgetAlert } from '../services/notificationService';
 import { useBudgetStore } from '../store/useBudgetStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
@@ -82,6 +83,22 @@ export function PresupuestoScreen() {
       [cat]: budgets[cat] ? String(budgets[cat]) : '',
     }));
   };
+
+  // Alertas automáticas cuando el gasto supera 80% del presupuesto
+  const alertedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    CATEGORIES.forEach(cat => {
+      const limit = budgets[cat] ?? 0;
+      const spent = spentByCategory[cat] ?? 0;
+      if (limit <= 0) return;
+      const key = `${monthPrefix}-${cat}`;
+      const pct = spent / limit;
+      if (pct >= 0.8 && !alertedRef.current.has(key)) {
+        alertedRef.current.add(key);
+        notifyBudgetAlert(cat, spent, limit);
+      }
+    });
+  }, [spentByCategory, budgets, monthPrefix]);
 
   const handleSave = async (cat: ExpenseCategory) => {
     const val = parseFloat((inputs[cat] ?? '').replace(/,/g, '.'));

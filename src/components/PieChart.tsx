@@ -14,62 +14,6 @@ interface PieChartProps {
   data: PieSlice[];
 }
 
-const SIZE = 160;
-const HALF = SIZE / 2;
-
-function PieSegment({
-  startAngle,
-  sweepAngle,
-  color,
-}: {
-  startAngle: number;
-  sweepAngle: number;
-  color: string;
-}) {
-  const segments: React.ReactNode[] = [];
-  let remaining = sweepAngle;
-  let currentStart = startAngle;
-  let i = 0;
-
-  while (remaining > 0) {
-    const chunk = Math.min(remaining, 180);
-    segments.push(
-      <View
-        key={i}
-        style={[
-          pieStyles.half,
-          {
-            width: SIZE,
-            height: HALF,
-            borderTopLeftRadius: HALF,
-            borderTopRightRadius: HALF,
-            backgroundColor: color,
-            transform: [
-              { translateY: HALF / 2 },
-              { rotate: `${currentStart + chunk}deg` },
-              { translateY: -HALF / 2 },
-            ],
-          },
-        ]}
-      />,
-    );
-    remaining -= chunk;
-    currentStart += chunk;
-    i++;
-  }
-
-  return <>{segments}</>;
-}
-
-const pieStyles = StyleSheet.create({
-  half: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    transformOrigin: 'center bottom',
-  },
-});
-
 export function PieChart({ data }: PieChartProps) {
   const { colors } = useTheme();
   const s = useStyles(colors);
@@ -77,47 +21,62 @@ export function PieChart({ data }: PieChartProps) {
 
   if (total === 0) return null;
 
-  let accumulated = 0;
   const slices = data
     .filter(d => d.amount > 0)
-    .map(d => {
-      const start = accumulated;
-      const sweep = (d.amount / total) * 360;
-      accumulated += sweep;
-      return { ...d, start, sweep };
-    });
+    .sort((a, b) => b.amount - a.amount)
+    .map(d => ({ ...d, pct: d.amount / total }));
 
   return (
     <View style={s.container}>
-      <Text style={s.title}>Desglose por categoría</Text>
-      <View style={s.chartRow}>
-        <View style={s.pieWrap}>
-          <View style={s.pieContainer}>
-            {slices.map((slice, idx) => (
-              <PieSegment
-                key={idx}
-                startAngle={slice.start}
-                sweepAngle={slice.sweep}
-                color={slice.color}
-              />
-            ))}
-            <View style={s.centerHole}>
-              <Text style={s.centerText}>{formatCurrency(total)}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={s.legend}>
-          {slices.map((slice, idx) => {
-            const pct = ((slice.amount / total) * 100).toFixed(0);
-            return (
-              <View key={idx} style={s.legendRow}>
-                <View style={[s.legendDot, { backgroundColor: slice.color }]} />
-                <Text style={s.legendLabel} numberOfLines={1}>{slice.category}</Text>
-                <Text style={s.legendValue}>{pct}%</Text>
+      <View style={s.header}>
+        <Text style={s.title}>Desglose por categoría</Text>
+        <Text style={s.totalLabel}>{formatCurrency(total)}</Text>
+      </View>
+
+      {/* Stacked proportional bar */}
+      <View style={s.stackedBar}>
+        {slices.map((slice, idx) => (
+          <View
+            key={idx}
+            style={[
+              s.stackSegment,
+              {
+                flex: slice.pct,
+                backgroundColor: slice.color,
+                borderTopLeftRadius: idx === 0 ? 6 : 0,
+                borderBottomLeftRadius: idx === 0 ? 6 : 0,
+                borderTopRightRadius: idx === slices.length - 1 ? 6 : 0,
+                borderBottomRightRadius: idx === slices.length - 1 ? 6 : 0,
+              },
+            ]}
+          />
+        ))}
+      </View>
+
+      {/* Category rows */}
+      <View style={s.rows}>
+        {slices.map((slice, idx) => {
+          const pct = Math.round(slice.pct * 100);
+          return (
+            <View key={idx} style={s.row}>
+              <View style={[s.dot, { backgroundColor: slice.color }]} />
+              <Text style={s.categoryName} numberOfLines={1}>
+                {slice.category}
+              </Text>
+              <View style={s.barTrack}>
+                <View
+                  style={[
+                    s.bar,
+                    { flex: slice.pct, backgroundColor: slice.color },
+                  ]}
+                />
+                <View style={{ flex: 1 - slice.pct }} />
               </View>
-            );
-          })}
-        </View>
+              <Text style={s.pct}>{pct}%</Text>
+              <Text style={s.amount}>{formatCurrency(slice.amount)}</Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -133,66 +92,79 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
       gap: 14,
     },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
     title: {
       color: colors.text,
       fontWeight: '700',
       fontSize: 16,
     },
-    chartRow: {
+    totalLabel: {
+      color: colors.primary,
+      fontWeight: '800',
+      fontSize: 15,
+    },
+    stackedBar: {
       flexDirection: 'row',
-      alignItems: 'center',
-      gap: 16,
-    },
-    pieWrap: {
-      width: SIZE,
-      height: SIZE,
-    },
-    pieContainer: {
-      width: SIZE,
-      height: SIZE,
-      borderRadius: HALF,
+      height: 10,
+      borderRadius: 6,
       overflow: 'hidden',
       backgroundColor: colors.border,
     },
-    centerHole: {
-      position: 'absolute',
-      top: SIZE * 0.2,
-      left: SIZE * 0.2,
-      width: SIZE * 0.6,
-      height: SIZE * 0.6,
-      borderRadius: SIZE * 0.3,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
+    stackSegment: {
+      height: '100%',
     },
-    centerText: {
-      color: colors.text,
-      fontWeight: '800',
-      fontSize: 13,
+    rows: {
+      gap: 10,
     },
-    legend: {
-      flex: 1,
-      gap: 6,
-    },
-    legendRow: {
+    row: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: 8,
     },
-    legendDot: {
+    dot: {
       width: 10,
       height: 10,
       borderRadius: 5,
+      flexShrink: 0,
     },
-    legendLabel: {
-      flex: 1,
+    categoryName: {
       color: colors.text,
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '600',
+      width: 90,
+      flexShrink: 0,
     },
-    legendValue: {
+    barTrack: {
+      flex: 1,
+      flexDirection: 'row',
+      height: 6,
+      borderRadius: 3,
+      overflow: 'hidden',
+      backgroundColor: colors.border,
+    },
+    bar: {
+      height: '100%',
+      borderRadius: 3,
+      opacity: 0.85,
+    },
+    pct: {
       color: colors.textMuted,
       fontSize: 12,
       fontWeight: '700',
+      width: 34,
+      textAlign: 'right',
+      flexShrink: 0,
+    },
+    amount: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '700',
+      width: 68,
+      textAlign: 'right',
+      flexShrink: 0,
     },
   });

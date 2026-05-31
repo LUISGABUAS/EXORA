@@ -1,17 +1,23 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, AppState, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase } from './src/database/db';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { configureNotifications } from './src/services/notificationService';
+import { BiometricLock } from './src/components/BiometricLock';
+import { configureNotifications, scheduleSatDeadlines } from './src/services/notificationService';
 import { startSyncService } from './src/services/syncService';
+import { getAvailableBiometric, BiometricType } from './src/services/biometricService';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useExpenseStore } from './src/store/useExpenseStore';
 import { usePremiumStore } from './src/store/usePremiumStore';
 import { useTemplateStore } from './src/store/useTemplateStore';
 import { initRevenueCat } from './src/services/revenuecatService';
 import { useBudgetStore } from './src/store/useBudgetStore';
+import { useCustomCategoryStore } from './src/store/useCustomCategoryStore';
+import { useCurrencyStore } from './src/store/useCurrencyStore';
+import { useRecurringStore } from './src/store/useRecurringStore';
+import { useSavingsStore } from './src/store/useSavingsStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
@@ -22,9 +28,40 @@ function AppContent() {
   const updateStreak = usePremiumStore(state => state.updateStreak);
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
   const premiumLoaded = usePremiumStore(state => state.loaded);
+  const biometricEnabled = usePremiumStore(state => state.biometricEnabled);
+
+  const [locked, setLocked] = useState(false);
+  const [biometricType, setBiometricType] = useState<BiometricType>('none');
   const hydrateTemplates = useTemplateStore(state => state.hydrate);
   const hydrateBudgets = useBudgetStore(state => state.hydrate);
+  const hydrateRecurring = useRecurringStore(state => state.hydrate);
+  const hydrateSavings = useSavingsStore(state => state.hydrate);
+  const hydrateCustomCategories = useCustomCategoryStore(state => state.hydrate);
+  const hydrateCurrency = useCurrencyStore(state => state.hydrate);
+  const getDueThisMonth = useRecurringStore(state => state.getDueThisMonth);
+  const markProcessed = useRecurringStore(state => state.markProcessed);
   const { colors, isDark } = useTheme();
+
+  // Lock when app goes to background
+  useEffect(() => {
+    if (!biometricEnabled) return;
+    const sub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        setLocked(true);
+      }
+    });
+    return () => sub.remove();
+  }, [biometricEnabled]);
+
+  // Detect biometric type and lock on first load if enabled
+  useEffect(() => {
+    if (!premiumLoaded) return;
+    if (!biometricEnabled) return;
+    getAvailableBiometric().then(type => {
+      setBiometricType(type);
+      if (type !== 'none') setLocked(true);
+    });
+  }, [premiumLoaded, biometricEnabled]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -36,9 +73,42 @@ function AppContent() {
         hydratePremium(),
         hydrateTemplates(),
         hydrateBudgets(),
+        hydrateRecurring(),
+        hydrateSavings(),
+        hydrateCustomCategories(),
+        hydrateCurrency(),
       ]);
       await updateStreak().catch(() => {});
+
+      // Procesar gastos recurrentes vencidos este mes
+      try {
+        const due = getDueThisMonth();
+        const addExpense = useExpenseStore.getState().addExpense;
+        const today = new Date();
+        const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        for (const r of due) {
+          await addExpense({
+            amount: r.amount,
+            date: `${month}-${String(r.dayOfMonth).padStart(2, '0')}`,
+            category: r.category,
+            description: r.description,
+            merchantName: r.merchantName,
+            conceptsText: '',
+            ocrRawText: '',
+            deductible: r.deductible,
+            rfc: '',
+            usoCFDI: '',
+            source: 'manual',
+          });
+          await markProcessed(r.id, month);
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Recurring error:', e);
+      }
+
       configureNotifications();
+      const { fiscalRegime } = usePremiumStore.getState();
+      scheduleSatDeadlines(fiscalRegime);
       startSyncService();
 
       // Init RevenueCat + sync premium status (best-effort)
@@ -65,6 +135,12 @@ function AppContent() {
     <>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <AppNavigator />
+      {locked && biometricType !== 'none' ? (
+        <BiometricLock
+          biometricType={biometricType}
+          onUnlocked={() => setLocked(false)}
+        />
+      ) : null}
     </>
   );
 }
