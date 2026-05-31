@@ -6,17 +6,35 @@ export type IncomeType =
   | 'rendimientos'
   | 'otros';
 
+export type PaymentMethod = 'transferencia' | 'efectivo' | 'cheque' | 'otro';
+
 export interface Income {
   id: number;
   amount: number;
-  date: string;          // YYYY-MM-DD
+  date: string;
   type: IncomeType;
   description: string;
-  invoiced: boolean;     // ¿Emitiste CFDI por este ingreso?
+  invoiced: boolean;
+  recurring: boolean;
+  paymentMethod: PaymentMethod;
   createdAt: string;
 }
 
 export type IncomeInput = Omit<Income, 'id' | 'createdAt'>;
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  transferencia: 'Transferencia',
+  efectivo:      'Efectivo',
+  cheque:        'Cheque',
+  otro:          'Otro',
+};
+
+export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
+  transferencia: 'bank-transfer',
+  efectivo:      'cash',
+  cheque:        'checkbook',
+  otro:          'dots-horizontal',
+};
 
 export const INCOME_TYPE_LABELS: Record<IncomeType, string> = {
   honorarios:    'Honorarios / Facturas',
@@ -28,7 +46,7 @@ export const INCOME_TYPE_LABELS: Record<IncomeType, string> = {
 };
 
 export const INCOME_TYPE_ICONS: Record<IncomeType, string> = {
-  honorarios:    'file-document-check-outline',
+  honorarios:    'file-sign',
   nomina:        'office-building-outline',
   plataformas:   'cellphone',
   arrendamiento: 'home-outline',

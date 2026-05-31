@@ -41,14 +41,18 @@ export async function initDatabase() {
   }
   await db.executeSql(`
     CREATE TABLE IF NOT EXISTS incomes (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      amount      REAL    NOT NULL,
-      date        TEXT    NOT NULL,
-      type        TEXT    NOT NULL,
-      description TEXT    DEFAULT '',
-      invoiced    INTEGER DEFAULT 0,
-      createdAt   TEXT    NOT NULL
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      amount        REAL    NOT NULL,
+      date          TEXT    NOT NULL,
+      type          TEXT    NOT NULL,
+      description   TEXT    DEFAULT '',
+      invoiced      INTEGER DEFAULT 0,
+      recurring     INTEGER DEFAULT 0,
+      paymentMethod TEXT    DEFAULT 'transferencia',
+      createdAt     TEXT    NOT NULL
     );
   `);
+  try { await db.executeSql(`ALTER TABLE incomes ADD COLUMN recurring INTEGER DEFAULT 0;`); } catch {}
+  try { await db.executeSql(`ALTER TABLE incomes ADD COLUMN paymentMethod TEXT DEFAULT 'transferencia';`); } catch {}
   await initSyncQueue();
 }

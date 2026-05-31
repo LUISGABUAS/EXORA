@@ -9,6 +9,8 @@ function normalizeIncome(row: any): Income {
     type: row.type,
     description: row.description ?? '',
     invoiced: Boolean(row.invoiced),
+    recurring: Boolean(row.recurring),
+    paymentMethod: row.paymentMethod ?? 'transferencia',
     createdAt: row.createdAt,
   };
 }
@@ -16,7 +18,7 @@ function normalizeIncome(row: any): Income {
 export async function getAllIncomes(): Promise<Income[]> {
   const db = await getDatabase();
   const [results] = await db.executeSql(
-    'SELECT id, amount, date, type, description, invoiced, createdAt FROM incomes ORDER BY date DESC, id DESC;',
+    'SELECT id, amount, date, type, description, invoiced, recurring, paymentMethod, createdAt FROM incomes ORDER BY date DESC, id DESC;',
   );
   const incomes: Income[] = [];
   for (let i = 0; i < results.rows.length; i++) {
@@ -29,9 +31,13 @@ export async function createIncome(income: IncomeInput): Promise<number> {
   const db = await getDatabase();
   const createdAt = new Date().toISOString();
   const [result] = await db.executeSql(
-    `INSERT INTO incomes (amount, date, type, description, invoiced, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?);`,
-    [income.amount, income.date, income.type, income.description, income.invoiced ? 1 : 0, createdAt],
+    `INSERT INTO incomes (amount, date, type, description, invoiced, recurring, paymentMethod, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+    [
+      income.amount, income.date, income.type, income.description,
+      income.invoiced ? 1 : 0, income.recurring ? 1 : 0,
+      income.paymentMethod, createdAt,
+    ],
   );
   return result.insertId;
 }
@@ -39,8 +45,12 @@ export async function createIncome(income: IncomeInput): Promise<number> {
 export async function updateIncome(id: number, income: IncomeInput): Promise<void> {
   const db = await getDatabase();
   await db.executeSql(
-    `UPDATE incomes SET amount=?, date=?, type=?, description=?, invoiced=? WHERE id=?;`,
-    [income.amount, income.date, income.type, income.description, income.invoiced ? 1 : 0, id],
+    `UPDATE incomes SET amount=?, date=?, type=?, description=?, invoiced=?, recurring=?, paymentMethod=? WHERE id=?;`,
+    [
+      income.amount, income.date, income.type, income.description,
+      income.invoiced ? 1 : 0, income.recurring ? 1 : 0,
+      income.paymentMethod, id,
+    ],
   );
 }
 
