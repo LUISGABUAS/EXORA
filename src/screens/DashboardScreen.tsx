@@ -24,6 +24,7 @@ import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
 import { generateAIInsights, generateLocalInsights, Insight } from '../services/insightService';
 import { font } from '../theme/typography';
+import { useIncomeStore } from '../store/useIncomeStore';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
 import { estimateTaxSavings } from '../utils/taxCalculator';
@@ -80,6 +81,7 @@ export function DashboardScreen() {
   const loading = useExpenseStore(state => state.loading);
   const session = useAuthStore(state => state.session);
 
+  const incomes = useIncomeStore(state => state.incomes);
   const streak = usePremiumStore(state => state.streak);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
@@ -108,6 +110,9 @@ export function DashboardScreen() {
   );
 
   const monthlyExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
+  const monthlyIncome = incomes
+    .filter(i => i.date.startsWith(monthPrefix))
+    .reduce((sum, i) => sum + i.amount, 0);
 
   const monthly = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -300,15 +305,28 @@ export function DashboardScreen() {
                       )}
                     </Pressable>
 
-                    {/* Racha */}
-                    <Pressable style={s.gridCard} onPress={() => navigation.navigate('Presupuesto')}>
-                      <Icon name="fire" size={18} color="#F59E0B" style={s.gridIcon} />
-                      <Text style={s.gridValue}>{streak}</Text>
-                      <Text style={s.gridLabel}>Días racha</Text>
-                      <View style={[s.gridBadge, { backgroundColor: '#F59E0B18' }]}>
-                        <Text style={[s.gridBadgeText, { color: '#F59E0B' }]}>consecutivos</Text>
-                      </View>
-                    </Pressable>
+                    {/* Flujo neto o racha */}
+                    {monthlyIncome > 0 ? (
+                      <Pressable style={s.gridCard} onPress={() => navigation.navigate('Ingresos')}>
+                        <Icon name="swap-vertical" size={18} color="#06B6D4" style={s.gridIcon} />
+                        <Text style={[s.gridValue, { color: monthlyIncome >= monthly ? colors.success : colors.danger }]}>
+                          {monthlyIncome >= monthly ? '+' : ''}{formatCurrency(monthlyIncome - monthly)}
+                        </Text>
+                        <Text style={s.gridLabel}>Flujo neto</Text>
+                        <View style={[s.gridBadge, { backgroundColor: '#06B6D418' }]}>
+                          <Text style={[s.gridBadgeText, { color: '#06B6D4' }]}>este mes</Text>
+                        </View>
+                      </Pressable>
+                    ) : (
+                      <Pressable style={s.gridCard} onPress={() => navigation.navigate('Ingresos')}>
+                        <Icon name="cash-plus" size={18} color="#F59E0B" style={s.gridIcon} />
+                        <Text style={s.gridValue}>+</Text>
+                        <Text style={s.gridLabel}>Ingresos</Text>
+                        <View style={[s.gridBadge, { backgroundColor: '#F59E0B18' }]}>
+                          <Text style={[s.gridBadgeText, { color: '#F59E0B' }]}>registrar</Text>
+                        </View>
+                      </Pressable>
+                    )}
 
                     {/* Gastos */}
                     <Pressable style={s.gridCard} onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })}>

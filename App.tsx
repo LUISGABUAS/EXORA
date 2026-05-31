@@ -18,6 +18,7 @@ import { useCustomCategoryStore } from './src/store/useCustomCategoryStore';
 import { useCurrencyStore } from './src/store/useCurrencyStore';
 import { useRecurringStore } from './src/store/useRecurringStore';
 import { useSavingsStore } from './src/store/useSavingsStore';
+import { useIncomeStore } from './src/store/useIncomeStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
@@ -36,6 +37,7 @@ function AppContent() {
   const hydrateBudgets = useBudgetStore(state => state.hydrate);
   const hydrateRecurring = useRecurringStore(state => state.hydrate);
   const hydrateSavings = useSavingsStore(state => state.hydrate);
+  const loadIncomes = useIncomeStore(state => state.loadIncomes);
   const hydrateCustomCategories = useCustomCategoryStore(state => state.hydrate);
   const hydrateCurrency = useCurrencyStore(state => state.hydrate);
   const getDueThisMonth = useRecurringStore(state => state.getDueThisMonth);
@@ -76,6 +78,7 @@ function AppContent() {
         hydrateRecurring(),
         hydrateSavings(),
         hydrateCustomCategories(),
+        loadIncomes(),
         hydrateCurrency(),
       ]);
       await updateStreak().catch(() => {});

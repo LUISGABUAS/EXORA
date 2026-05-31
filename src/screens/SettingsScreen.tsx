@@ -216,6 +216,11 @@ export function SettingsScreen() {
             <Text style={s.currentRegimeHint}>(cambiar en editar perfil)</Text>
           </View>
         ) : null}
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Ingresos')}>
+          <Icon name="cash-plus" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Mis ingresos</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
         <Pressable style={s.reportButton} onPress={() => navigation.navigate('ReporteFiscal')}>
           <Icon name="chart-bar" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Ver Reporte Fiscal</Text>

@@ -22,6 +22,7 @@ import { ResicoCalculatorScreen } from '../screens/ResicoCalculatorScreen';
 import { ScanScreen } from '../screens/ScanScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SplitScreen } from '../screens/SplitScreen';
+import { IncomesScreen } from '../screens/IncomesScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -44,6 +45,7 @@ export type RootStackParamList = {
   Backup: undefined;
   CurrencySettings: undefined;
   BankImport: undefined;
+  Ingresos: undefined;
 };
 
 export type TabParamList = {
@@ -202,6 +204,11 @@ export function AppNavigator() {
               name="BankImport"
               component={BankImportScreen}
               options={{ title: 'Importar estado de cuenta', headerBackTitle: 'Perfil' }}
+            />
+            <Stack.Screen
+              name="Ingresos"
+              component={IncomesScreen}
+              options={{ title: 'Mis ingresos', headerBackTitle: 'Inicio' }}
             />
           </>
         )}

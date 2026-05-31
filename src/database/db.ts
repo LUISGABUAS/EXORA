@@ -39,5 +39,16 @@ export async function initDatabase() {
   } catch {
     // Column already exists — ignore
   }
+  await db.executeSql(`
+    CREATE TABLE IF NOT EXISTS incomes (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      amount      REAL    NOT NULL,
+      date        TEXT    NOT NULL,
+      type        TEXT    NOT NULL,
+      description TEXT    DEFAULT '',
+      invoiced    INTEGER DEFAULT 0,
+      createdAt   TEXT    NOT NULL
+    );
+  `);
   await initSyncQueue();
 }
