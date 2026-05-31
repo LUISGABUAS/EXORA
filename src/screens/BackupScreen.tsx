@@ -6,6 +6,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { exportBackup, importBackup } from '../services/backupService';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatDate } from '../utils/format';
 
@@ -172,7 +173,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       gap: 14,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+    cardTitle: { color: colors.text, fontSize: 18, fontFamily: font.bold },
     cardText: { color: colors.textMuted, lineHeight: 22 },
     infoRow: {
       flexDirection: 'row',
@@ -187,7 +188,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       gap: 8,
     },
     detailRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    detailText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+    detailText: { color: colors.text, fontSize: 13, fontFamily: font.semibold },
     warningBox: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -222,6 +223,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       borderRadius: 16,
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
-    buttonOutlineText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
+    buttonText: { color: colors.white, fontFamily: font.bold, fontSize: 15 },
+    buttonOutlineText: { color: colors.primary, fontFamily: font.bold, fontSize: 15 },
   });

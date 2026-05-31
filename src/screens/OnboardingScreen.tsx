@@ -24,6 +24,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { parseSmartInput } from '../utils/smartInputParser';
 import { estimateTaxSavings, savingsRateLabel } from '../utils/taxCalculator';
@@ -502,13 +503,13 @@ const useStyles = (colors: ColorPalette) =>
     appName: {
       color: colors.primary,
       fontSize: 32,
-      fontWeight: '900',
+      fontFamily: font.black,
       letterSpacing: 4,
     },
     tagline: {
       color: colors.text,
       fontSize: 22,
-      fontWeight: '700',
+      fontFamily: font.bold,
       textAlign: 'center',
       lineHeight: 30,
     },
@@ -527,14 +528,14 @@ const useStyles = (colors: ColorPalette) =>
     bulletText: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: '500',
+      fontFamily: font.medium,
       flex: 1,
     },
     // Features
     slideTitle: {
       color: colors.text,
       fontSize: 26,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       textAlign: 'center',
     },
     slideSubtitle: {
@@ -571,7 +572,7 @@ const useStyles = (colors: ColorPalette) =>
     featureTitle: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     featureDesc: {
       color: colors.textMuted,
@@ -608,7 +609,7 @@ const useStyles = (colors: ColorPalette) =>
     regimeTitle: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     regimeDesc: {
       color: colors.textMuted,
@@ -631,7 +632,7 @@ const useStyles = (colors: ColorPalette) =>
     },
     exampleText: {
       color: colors.primary,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     textInput: {
       width: '100%',
@@ -668,13 +669,13 @@ const useStyles = (colors: ColorPalette) =>
     savingsTitle: {
       color: colors.textMuted,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       textAlign: 'center',
     },
     savingsAmount: {
       color: colors.primary,
       fontSize: 42,
-      fontWeight: '900',
+      fontFamily: font.black,
       letterSpacing: -1,
     },
     savingsSubtitle: {
@@ -694,7 +695,7 @@ const useStyles = (colors: ColorPalette) =>
     savingsBoxTitle: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     savingsBoxDesc: {
       color: colors.textMuted,
@@ -708,7 +709,7 @@ const useStyles = (colors: ColorPalette) =>
     examplesTitle: {
       color: colors.text,
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     examplesList: {
       gap: 6,
@@ -732,7 +733,7 @@ const useStyles = (colors: ColorPalette) =>
     readyTitle: {
       color: colors.text,
       fontSize: 32,
-      fontWeight: '900',
+      fontFamily: font.black,
       textAlign: 'center',
     },
     readySubtitle: {
@@ -758,7 +759,7 @@ const useStyles = (colors: ColorPalette) =>
     },
     readyStatBold: {
       color: colors.primary,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     // Shared
     primaryButton: {
@@ -774,7 +775,7 @@ const useStyles = (colors: ColorPalette) =>
     primaryButtonText: {
       color: '#fff',
       fontSize: 16,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     skipButton: {
       paddingVertical: 10,
@@ -782,6 +783,6 @@ const useStyles = (colors: ColorPalette) =>
     skipText: {
       color: colors.textMuted,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
   });

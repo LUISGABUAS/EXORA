@@ -7,11 +7,7 @@ const CHANNEL_ID = 'expensia-reminders';
 export function configureNotifications() {
   try {
     PushNotification.configure({
-      onNotification: notification => {
-        if (__DEV__) {
-          console.log('[Notification]', notification);
-        }
-      },
+      onNotification: () => {},
       permissions: { alert: true, badge: true, sound: true },
       popInitialNotification: true,
       requestPermissions: Platform.OS === 'ios',

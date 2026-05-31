@@ -20,6 +20,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { categoryIcons } from '../theme/icons';
 import { ExpenseCategory, ExpenseInput } from '../types/expense';
@@ -396,9 +397,9 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
   StyleSheet.create({
     flex: { flex: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-    title: { flex: 1, color: colors.text, fontSize: 28, fontWeight: '800' },
+    title: { flex: 1, color: colors.text, fontSize: 28, fontFamily: font.extrabold },
     addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },
-    addButtonText: { color: colors.white, fontWeight: '700' },
+    addButtonText: { color: colors.white, fontFamily: font.bold },
     statsToggle: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -411,7 +412,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     statsToggleText: {
       flex: 1,
       color: colors.primary,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 14,
     },
     statsSection: { gap: 12 },
@@ -421,7 +422,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.surfaceAlt },
     chipActive: { backgroundColor: colors.primary },
-    chipText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+    chipText: { color: colors.text, fontSize: 12, fontFamily: font.semibold },
     chipTextActive: { color: colors.white },
     advancedToggle: {
       flexDirection: 'row',
@@ -429,7 +430,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       gap: 6,
       paddingVertical: 4,
     },
-    advancedToggleText: { flex: 1, color: colors.text, fontWeight: '600', fontSize: 14 },
+    advancedToggleText: { flex: 1, color: colors.text, fontFamily: font.semibold, fontSize: 14 },
     badge: {
       backgroundColor: colors.primary,
       borderRadius: 10,
@@ -438,7 +439,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    badgeText: { color: colors.white, fontSize: 11, fontWeight: '800' },
+    badgeText: { color: colors.white, fontSize: 11, fontFamily: font.extrabold },
     advancedCard: {
       backgroundColor: colors.surface,
       borderRadius: 20,
@@ -447,7 +448,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       borderColor: colors.border,
       gap: 14,
     },
-    sortLabel: { color: colors.text, fontWeight: '700', fontSize: 14 },
+    sortLabel: { color: colors.text, fontFamily: font.bold, fontSize: 14 },
     sortRow: { flexDirection: 'row', gap: 8 },
     sortChip: {
       paddingHorizontal: 12,
@@ -456,10 +457,10 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       backgroundColor: colors.surfaceAlt,
     },
     sortChipActive: { backgroundColor: colors.primary },
-    sortChipText: { color: colors.text, fontSize: 11, fontWeight: '600' },
+    sortChipText: { color: colors.text, fontSize: 11, fontFamily: font.semibold },
     sortChipTextActive: { color: colors.white },
     clearButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8 },
-    clearText: { color: colors.danger, fontWeight: '600', fontSize: 13 },
+    clearText: { color: colors.danger, fontFamily: font.semibold, fontSize: 13 },
     upgradeBanner: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -473,6 +474,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       flex: 1,
       color: colors.text,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
   });

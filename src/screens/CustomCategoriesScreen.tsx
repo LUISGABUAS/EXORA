@@ -19,6 +19,7 @@ import {
   useCustomCategoryStore,
 } from '../store/useCustomCategoryStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 
 export function CustomCategoriesScreen() {
@@ -225,7 +226,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       gap: 14,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+    cardTitle: { color: colors.text, fontSize: 18, fontFamily: font.bold },
     empty: { color: colors.textMuted, lineHeight: 22, fontSize: 14 },
     catRow: {
       flexDirection: 'row',
@@ -244,11 +245,11 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       flex: 1,
       color: colors.text,
       fontSize: 15,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     deleteBtn: { padding: 4 },
     inputGroup: { gap: 4 },
-    label: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+    label: { color: colors.textMuted, fontSize: 12, fontFamily: font.semibold },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -298,7 +299,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 14,
       padding: 12,
     },
-    previewName: { fontSize: 15, fontWeight: '700' },
+    previewName: { fontSize: 15, fontFamily: font.bold },
     button: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -309,5 +310,5 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 16,
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.white, fontWeight: '700', fontSize: 15 },
+    buttonText: { color: colors.white, fontFamily: font.bold, fontSize: 15 },
   });

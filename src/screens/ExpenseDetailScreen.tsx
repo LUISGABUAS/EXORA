@@ -9,6 +9,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { ExpenseCategory, ExpenseInput } from '../types/expense';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -48,8 +49,8 @@ const infoStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 13, fontWeight: '600' },
-  value: { fontSize: 14, fontWeight: '600', textAlign: 'right', maxWidth: '50%' },
+  label: { fontSize: 13, fontFamily: font.semibold },
+  value: { fontSize: 14, fontFamily: font.semibold, textAlign: 'right', maxWidth: '50%' },
 });
 
 export function ExpenseDetailScreen({ route, navigation }: Props) {
@@ -244,7 +245,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     heroAmount: {
       color: colors.text,
       fontSize: 36,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     heroMeta: {
       color: colors.textMuted,
@@ -260,7 +261,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     heroBadgeText: {
       color: colors.primary,
       fontSize: 12,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     section: {
       backgroundColor: colors.surface,
@@ -276,7 +277,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     sectionTitle: {
       color: colors.text,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 16,
     },
     divider: {
@@ -315,7 +316,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     receiptImageHint: {
       color: '#fff',
       fontSize: 11,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     fullscreenOverlay: {
       flex: 1,
@@ -358,7 +359,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     actionText: {
       color: colors.white,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 15,
     },
     cancelButton: {
@@ -367,6 +368,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     cancelText: {
       color: colors.textMuted,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
   });

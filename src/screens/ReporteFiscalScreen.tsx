@@ -10,8 +10,10 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { exportFiscalReportCsv, generateFiscalReport } from '../services/reportService';
 import { exportMonthlyReport } from '../services/pdfExportService';
 import { useExpenseStore } from '../store/useExpenseStore';
+import { useIncomeStore } from '../store/useIncomeStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { ExpenseCategory } from '../types/expense';
 import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
@@ -40,6 +42,7 @@ export function ReporteFiscalScreen() {
   const s = useStyles(colors, isDark);
   const navigation = useNavigation();
   const expenses = useExpenseStore(state => state.expenses);
+  const incomes = useIncomeStore(state => state.incomes);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
   const isPremium = hasFullAccess();
@@ -93,6 +96,10 @@ export function ReporteFiscalScreen() {
       .filter(e => e.deductible && e.date.startsWith(yearPrefix))
       .reduce((sum, e) => sum + e.amount, 0);
 
+    const monthIncome = incomes
+      .filter(i => i.date.startsWith(monthPrefix))
+      .reduce((sum, i) => sum + i.amount, 0);
+
     return {
       totalExpenses: monthExpenses.length,
       totalAmount,
@@ -102,8 +109,10 @@ export function ReporteFiscalScreen() {
       yearToDate: yearlyDeductible * rate,
       deductibleRate: rate,
       byCategory,
+      monthIncome,
+      netFlow: monthIncome - totalAmount,
     };
-  }, [expenses, fiscalRegime, monthPrefix, selectedYear]);
+  }, [expenses, incomes, fiscalRegime, monthPrefix, selectedYear]);
 
   const regimeDisplay = FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime);
   const isFiscalUser = fiscalRegime !== 'no_facturo';
@@ -254,6 +263,26 @@ export function ReporteFiscalScreen() {
               <Text style={s.statLabel}>Deducible</Text>
             </View>
           </Animated.View>
+
+          {/* Ingresos y flujo neto */}
+          {report.monthIncome > 0 ? (
+            <Animated.View entering={FadeInDown.delay(65).duration(300)} style={s.cardsRow}>
+              <View style={[s.statCard, { flex: 1 }]}>
+                <Icon name="cash-plus" size={18} color={colors.success} />
+                <Text style={[s.statValue, { color: colors.success }]}>
+                  {formatCurrency(report.monthIncome)}
+                </Text>
+                <Text style={s.statLabel}>Ingresos</Text>
+              </View>
+              <View style={[s.statCard, { flex: 1 }]}>
+                <Icon name="swap-vertical" size={18} color={report.netFlow >= 0 ? colors.success : colors.danger} />
+                <Text style={[s.statValue, { color: report.netFlow >= 0 ? colors.success : colors.danger }]}>
+                  {report.netFlow >= 0 ? '+' : ''}{formatCurrency(report.netFlow)}
+                </Text>
+                <Text style={s.statLabel}>Flujo neto</Text>
+              </View>
+            </Animated.View>
+          ) : null}
 
           {/* Tax Saving — locked for free users */}
           <Animated.View entering={FadeInDown.delay(80).duration(300)}>
@@ -411,7 +440,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     monthText: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     yearText: {
       color: colors.textMuted,
@@ -430,12 +459,12 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     regimeBadgeText: {
       color: colors.primary,
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     regimeRate: {
       color: colors.primary,
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       opacity: 0.8,
     },
     emptyWrap: {
@@ -447,7 +476,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     emptyTitle: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     emptyText: {
       color: colors.textMuted,
@@ -470,7 +499,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     statValue: {
       color: colors.text,
       fontSize: 20,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     statLabel: {
       color: colors.textMuted,
@@ -492,12 +521,12 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     savingTitle: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     savingAmount: {
       color: colors.primary,
       fontSize: 36,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     savingMeta: {
       gap: 2,
@@ -518,7 +547,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     lockedAmount: {
       color: colors.textMuted,
       fontSize: 36,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       opacity: 0.4,
     },
     unlockBtn: {
@@ -529,7 +558,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     unlockText: {
       color: colors.white,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 14,
     },
     deductiblePieWrap: {
@@ -543,7 +572,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     deductiblePieTitle: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     table: {
       backgroundColor: colors.surface,
@@ -557,7 +586,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     tableTitle: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
       marginBottom: 12,
     },
     tableHeader: {
@@ -570,7 +599,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     tableHeaderCell: {
       color: colors.textMuted,
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       flex: 1,
     },
     tableRow: {
@@ -586,7 +615,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     tableCell: {
       color: colors.text,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       flex: 1,
     },
     catCell: {
@@ -603,7 +632,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     catName: {
       color: colors.text,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       flex: 1,
     },
     catCount: {
@@ -631,7 +660,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     exportBtnText: {
       color: colors.white,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     shareBtn: {
       flexDirection: 'row',
@@ -647,6 +676,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     shareBtnText: {
       color: colors.primary,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
   });

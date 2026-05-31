@@ -1,3 +1,4 @@
+import { font } from '../theme/typography';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -342,7 +343,7 @@ export function SettingsScreen() {
           <Text style={s.cardTitle}>Invita y gana Pro</Text>
         </View>
         <Text style={s.cardText}>
-          Comparte tu código. Cuando alguien lo use, ambos obtienen <Text style={{ color: colors.primary, fontWeight: '700' }}>7 días gratis de Pro</Text>.
+          Comparte tu código. Cuando alguien lo use, ambos obtienen <Text style={{ color: colors.primary, fontFamily: font.bold }}>7 días gratis de Pro</Text>.
         </Text>
 
         {myCode ? (
@@ -441,7 +442,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     userName: {
       color: colors.text,
       fontSize: 22,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     userEmail: {
       color: colors.textMuted,
@@ -450,7 +451,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     editHint: {
       color: colors.primary,
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       marginTop: 2,
     },
     card: {
@@ -462,7 +463,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       gap: 12,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+    cardTitle: { color: colors.text, fontSize: 18, fontFamily: font.bold },
     cardText: { color: colors.textMuted, lineHeight: 22 },
     themeRow: { flexDirection: 'row', gap: 8 },
     themeChip: {
@@ -488,7 +489,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       backgroundColor: colors.surfaceAlt,
     },
     themeChipActive: { backgroundColor: colors.primary },
-    themeChipText: { color: colors.text, fontWeight: '600', fontSize: 13 },
+    themeChipText: { color: colors.text, fontFamily: font.semibold, fontSize: 13 },
     themeChipTextActive: { color: colors.white },
     switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     switchInfo: { flex: 1, gap: 2 },
@@ -503,7 +504,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       padding: 14,
     },
     trialText: { flex: 1, gap: 2 },
-    trialTitle: { color: colors.text, fontSize: 13, fontWeight: '700' },
+    trialTitle: { color: colors.text, fontSize: 13, fontFamily: font.bold },
     trialSub: { color: colors.textMuted, fontSize: 11 },
     trialBtn: {
       backgroundColor: colors.warning,
@@ -511,7 +512,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       paddingVertical: 6,
       borderRadius: 10,
     },
-    trialBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+    trialBtnText: { color: '#fff', fontSize: 12, fontFamily: font.extrabold },
     codeBox: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -526,7 +527,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     codeText: {
       color: colors.primary,
       fontSize: 20,
-      fontWeight: '900',
+      fontFamily: font.black,
       letterSpacing: 2,
     },
     shareChip: {
@@ -538,7 +539,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       paddingVertical: 6,
       borderRadius: 10,
     },
-    shareChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    shareChipText: { color: '#fff', fontSize: 12, fontFamily: font.bold },
     codeInputRow: { flexDirection: 'row', gap: 8 },
     codeInput: {
       flex: 1,
@@ -550,7 +551,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       paddingVertical: 10,
       color: colors.text,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       letterSpacing: 1,
     },
     applyBtn: {
@@ -561,8 +562,8 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
     },
     applyBtnDisabled: { opacity: 0.4 },
-    applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-    switchLabel: { color: colors.text, fontWeight: '600' },
+    applyBtnText: { color: '#fff', fontFamily: font.bold, fontSize: 14 },
+    switchLabel: { color: colors.text, fontFamily: font.semibold },
     switchDesc: { color: colors.textMuted, fontSize: 12 },
     button: {
       flexDirection: 'row',
@@ -573,7 +574,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    buttonText: { color: colors.white, fontWeight: '700' },
+    buttonText: { color: colors.white, fontFamily: font.bold },
     buttonOutline: {
       flexDirection: 'row',
       gap: 8,
@@ -584,7 +585,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    buttonOutlineText: { color: colors.primary, fontWeight: '700' },
+    buttonOutlineText: { color: colors.primary, fontFamily: font.bold },
     signOutButton: {
       flexDirection: 'row',
       gap: 8,
@@ -594,7 +595,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    signOutText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
+    signOutText: { color: colors.danger, fontFamily: font.bold, fontSize: 15 },
     constanciaBadge: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -604,7 +605,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     constanciaBadgeText: {
       color: colors.primary,
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     currentRegimeRow: {
       paddingTop: 4,
@@ -612,7 +613,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     currentRegimeLabel: {
       color: colors.text,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     currentRegimeHint: {
       color: colors.textMuted,
@@ -629,7 +630,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     reportButtonText: {
       color: colors.primary,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 14,
       flex: 1,
     },

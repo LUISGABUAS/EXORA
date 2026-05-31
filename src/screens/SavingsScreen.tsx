@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SavingsGoal, useSavingsStore } from '../store/useSavingsStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatCurrency } from '../utils/format';
 
@@ -279,7 +280,7 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
     },
     summaryItem: { flex: 1, alignItems: 'center', gap: 4 },
-    summaryValue: { color: colors.text, fontSize: 20, fontWeight: '800' },
+    summaryValue: { color: colors.text, fontSize: 20, fontFamily: font.extrabold },
     summaryLabel: { color: colors.textMuted, fontSize: 11 },
     summaryDivider: { width: 1, backgroundColor: colors.border, marginVertical: 4 },
     addBtn: {
@@ -293,7 +294,7 @@ const useStyles = (colors: ColorPalette) =>
       alignSelf: 'flex-start',
       marginBottom: 14,
     },
-    addBtnText: { color: colors.white, fontWeight: '700', fontSize: 14 },
+    addBtnText: { color: colors.white, fontFamily: font.bold, fontSize: 14 },
     form: {
       backgroundColor: colors.surface,
       borderRadius: 18,
@@ -303,8 +304,8 @@ const useStyles = (colors: ColorPalette) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
-    formTitle: { color: colors.text, fontSize: 16, fontWeight: '800' },
-    label: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+    formTitle: { color: colors.text, fontSize: 16, fontFamily: font.extrabold },
+    label: { color: colors.textMuted, fontSize: 12, fontFamily: font.semibold },
     emojiRow: { marginHorizontal: -4 },
     emojiBtn: {
       width: 42,
@@ -337,7 +338,7 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
       alignItems: 'center',
     },
-    cancelText: { color: colors.textMuted, fontWeight: '700' },
+    cancelText: { color: colors.textMuted, fontFamily: font.bold },
     saveBtn: {
       flex: 2,
       padding: 14,
@@ -346,7 +347,7 @@ const useStyles = (colors: ColorPalette) =>
       alignItems: 'center',
     },
     withdrawSaveBtn: { backgroundColor: colors.danger },
-    saveText: { color: colors.white, fontWeight: '800', fontSize: 15 },
+    saveText: { color: colors.white, fontFamily: font.extrabold, fontSize: 15 },
     // Action modal
     actionModal: {
       backgroundColor: colors.surface,
@@ -357,7 +358,7 @@ const useStyles = (colors: ColorPalette) =>
       borderWidth: 1,
       borderColor: colors.primary + '40',
     },
-    actionTitle: { color: colors.text, fontSize: 15, fontWeight: '700' },
+    actionTitle: { color: colors.text, fontSize: 15, fontFamily: font.bold },
     // Card
     list: { gap: 12, paddingBottom: 40 },
     card: {
@@ -371,7 +372,7 @@ const useStyles = (colors: ColorPalette) =>
     cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     cardEmoji: { fontSize: 32 },
-    cardTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
+    cardTitle: { color: colors.text, fontSize: 16, fontFamily: font.bold },
     cardDeadline: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
     completedBadge: {
       flexDirection: 'row',
@@ -382,7 +383,7 @@ const useStyles = (colors: ColorPalette) =>
       paddingHorizontal: 10,
       paddingVertical: 4,
     },
-    completedText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
+    completedText: { color: colors.primary, fontSize: 12, fontFamily: font.bold },
     progressBg: {
       height: 8,
       backgroundColor: colors.border,
@@ -391,7 +392,7 @@ const useStyles = (colors: ColorPalette) =>
     },
     progressFill: { height: '100%', borderRadius: 4 },
     cardAmounts: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    savedAmount: { color: colors.text, fontSize: 17, fontWeight: '800' },
+    savedAmount: { color: colors.text, fontSize: 17, fontFamily: font.extrabold },
     pctText: { color: colors.textMuted, fontSize: 12 },
     targetAmount: { color: colors.textMuted, fontSize: 13, flex: 1, textAlign: 'right' },
     remainingText: { color: colors.textMuted, fontSize: 12 },
@@ -407,10 +408,10 @@ const useStyles = (colors: ColorPalette) =>
     },
     depositBtn: { backgroundColor: colors.primary },
     withdrawBtn: { backgroundColor: colors.border },
-    actionBtnText: { color: colors.white, fontWeight: '700', fontSize: 13 },
+    actionBtnText: { color: colors.white, fontFamily: font.bold, fontSize: 13 },
     // Empty
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32 },
     emptyEmoji: { fontSize: 56 },
-    emptyTitle: { color: colors.text, fontSize: 20, fontWeight: '800', textAlign: 'center' },
+    emptyTitle: { color: colors.text, fontSize: 20, fontFamily: font.extrabold, textAlign: 'center' },
     emptySub: { color: colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   });

@@ -12,6 +12,7 @@ import { pickPdfFile, pickProfilePhoto, takeProfilePhoto, uploadAvatarToSupabase
 import { useAuthStore } from '../store/useAuthStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
 
@@ -429,7 +430,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     label: {
       color: colors.textMuted,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       marginLeft: 4,
     },
     input: {
@@ -476,7 +477,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     regimeTitle: {
       color: colors.text,
       fontSize: 16,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     regimeTitleActive: {
       color: colors.white,
@@ -499,7 +500,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     moreRegimesText: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     secondaryRow: {
       flexDirection: 'row',
@@ -521,7 +522,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     secondaryChipText: {
       color: colors.text,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     secondaryChipTextActive: {
       color: colors.white,
@@ -547,7 +548,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     uploadTitle: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     uploadHint: {
       color: colors.textMuted,
@@ -570,7 +571,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     constanciaTitle: {
       color: colors.primary,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     constanciaDate: {
       color: colors.textMuted,
@@ -588,6 +589,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     saveButtonText: {
       color: colors.white,
       fontSize: 16,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
   });

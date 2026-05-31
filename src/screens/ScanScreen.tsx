@@ -13,6 +13,7 @@ import { parseCFDIXml, readXmlFile } from '../services/xmlService';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { ExpenseInput, ParsedLineItem } from '../types/expense';
 import { parseReceiptText } from '../utils/receiptParser';
@@ -435,7 +436,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     title: {
       color: colors.text,
       fontSize: 26,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     subtitle: {
       color: colors.textMuted,
@@ -464,7 +465,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     optionInfo: { flex: 1, gap: 2 },
     optionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    optionTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+    optionTitle: { fontSize: 15, fontFamily: font.bold, color: colors.text },
     freeBadge: {
       backgroundColor: colors.success + '20',
       paddingHorizontal: 8,
@@ -474,7 +475,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     freeBadgeText: {
       color: colors.success,
       fontSize: 10,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     optionDesc: { fontSize: 12, color: colors.textMuted },
     tipsCard: {
@@ -489,7 +490,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       gap: 6,
       marginBottom: 4,
     },
-    tipsTitle: { fontSize: 13, fontWeight: '700', color: colors.text },
+    tipsTitle: { fontSize: 13, fontFamily: font.bold, color: colors.text },
     tipText: { fontSize: 12, color: colors.textMuted, marginLeft: 22 },
     preview: {
       width: '100%',
@@ -508,7 +509,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     confidenceText: {
       fontSize: 12,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     errorCard: {
       backgroundColor: colors.danger + '10',
@@ -533,7 +534,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       borderRadius: 12,
       marginTop: 4,
     },
-    retryText: { color: colors.white, fontSize: 13, fontWeight: '700' },
+    retryText: { color: colors.white, fontSize: 13, fontFamily: font.bold },
     lineItemsCard: {
       backgroundColor: colors.surface,
       borderRadius: 18,
@@ -549,12 +550,12 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     lineItemsTitle: {
       flex: 1,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
       color: colors.text,
     },
     lineItemsCount: {
       fontSize: 12,
-      fontWeight: '700',
+      fontFamily: font.bold,
       color: colors.primary,
       backgroundColor: colors.primary + '15',
       paddingHorizontal: 8,
@@ -570,13 +571,13 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       paddingVertical: 6,
     },
     lineItemName: { flex: 1, fontSize: 14, color: colors.text, marginRight: 12 },
-    lineItemPrice: { fontSize: 14, fontWeight: '600', color: colors.primary },
+    lineItemPrice: { fontSize: 14, fontFamily: font.semibold, color: colors.primary },
     lineItemsDivider: {
       height: 1,
       backgroundColor: colors.border,
       marginVertical: 8,
     },
-    lineItemsTotal: { fontSize: 15, fontWeight: '800', color: colors.text },
+    lineItemsTotal: { fontSize: 15, fontFamily: font.extrabold, color: colors.text },
     loadingContainer: {
       alignItems: 'center',
       gap: 8,
@@ -585,7 +586,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     loadingText: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     loadingHint: {
       color: colors.textMuted,
@@ -616,7 +617,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     cameraHint: {
       color: 'rgba(255,255,255,0.8)',
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       marginTop: 12,
     },
     cameraControls: {
@@ -638,7 +639,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
     },
     cameraCancelButton: { paddingHorizontal: 24, paddingVertical: 10 },
-    cameraCancelText: { color: colors.white, fontWeight: '700', fontSize: 16 },
+    cameraCancelText: { color: colors.white, fontFamily: font.bold, fontSize: 16 },
     backButton: {
       flexDirection: 'row',
       borderRadius: 16,
@@ -648,7 +649,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
       gap: 8,
     },
-    backButtonText: { color: colors.white, fontSize: 15, fontWeight: '700' },
+    backButtonText: { color: colors.white, fontSize: 15, fontFamily: font.bold },
     scanCounter: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -661,6 +662,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     scanCounterText: {
       color: colors.primary,
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
   });

@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SplitParticipant, useSplitStore } from '../store/useSplitStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatCurrency, localDateString } from '../utils/format';
 
@@ -398,7 +399,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     screenTitle: {
       color: colors.text,
       fontSize: 22,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     screenSub: {
       color: colors.textMuted,
@@ -416,7 +417,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     newBtnText: {
       color: colors.white,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 14,
     },
     emptyWrap: {
@@ -428,7 +429,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     emptyTitle: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     emptyText: {
       color: colors.textMuted,
@@ -449,7 +450,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     emptyBtnText: {
       color: colors.white,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 14,
     },
     splitCard: {
@@ -481,7 +482,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     cardTitle: {
       color: colors.text,
       fontSize: 16,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     cardDate: {
       color: colors.textMuted,
@@ -494,7 +495,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     cardTotal: {
       color: colors.primary,
       fontSize: 16,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     progressRow: {
       flexDirection: 'row',
@@ -515,7 +516,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     progressLabel: {
       color: colors.textMuted,
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     participantsBlock: {
       gap: 2,
@@ -544,7 +545,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       flex: 1,
       color: colors.text,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     participantPaid: {
       opacity: 0.5,
@@ -553,7 +554,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     participantAmountText: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     statusBadge: {
       paddingHorizontal: 8,
@@ -562,7 +563,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     statusBadgeText: {
       fontSize: 11,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     allPaidBanner: {
       flexDirection: 'row',
@@ -576,7 +577,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     allPaidText: {
       color: '#22C55E',
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
   });
 
@@ -606,7 +607,7 @@ const useModalStyles = (colors: ColorPalette, _isDark: boolean) =>
     sheetTitle: {
       color: colors.text,
       fontSize: 20,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     field: {
       gap: 8,
@@ -614,7 +615,7 @@ const useModalStyles = (colors: ColorPalette, _isDark: boolean) =>
     fieldLabel: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     fieldInput: {
       backgroundColor: colors.surfaceAlt,
@@ -634,17 +635,17 @@ const useModalStyles = (colors: ColorPalette, _isDark: boolean) =>
     currencySign: {
       color: colors.primary,
       fontSize: 20,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     amountInput: {
       flex: 1,
       fontSize: 20,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     mxnLabel: {
       color: colors.textMuted,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     participantInputRow: {
       flexDirection: 'row',
@@ -674,12 +675,12 @@ const useModalStyles = (colors: ColorPalette, _isDark: boolean) =>
       flex: 1,
       color: colors.text,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     participantShare: {
       color: colors.primary,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     previewRow: {
       flexDirection: 'row',
@@ -692,7 +693,7 @@ const useModalStyles = (colors: ColorPalette, _isDark: boolean) =>
     previewText: {
       color: colors.primary,
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     saveBtn: {
       flexDirection: 'row',
@@ -706,6 +707,6 @@ const useModalStyles = (colors: ColorPalette, _isDark: boolean) =>
     saveBtnText: {
       color: colors.white,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
   });

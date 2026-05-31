@@ -9,6 +9,7 @@ import {
 } from '../services/exchangeRateService';
 import { useCurrencyStore } from '../store/useCurrencyStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 
 export function CurrencySettingsScreen() {
@@ -91,7 +92,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       gap: 14,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+    cardTitle: { color: colors.text, fontSize: 18, fontFamily: font.bold },
     cardText: { color: colors.textMuted, lineHeight: 22 },
     list: {
       borderRadius: 16,
@@ -122,7 +123,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     symbolBoxActive: { backgroundColor: colors.primary + '20' },
     symbol: {
       fontSize: 16,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       color: colors.textMuted,
     },
     symbolActive: { color: colors.primary },
@@ -130,7 +131,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     curCode: {
       color: colors.text,
       fontSize: 16,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     curName: {
       color: colors.textMuted,

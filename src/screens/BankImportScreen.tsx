@@ -15,6 +15,7 @@ import { BankTransaction, importBankStatement } from '../services/bankStatementS
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatCurrency } from '../utils/format';
 import { classifyExpense } from '../utils/classifier';
@@ -295,7 +296,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     lockedTitle: {
       color: colors.text,
       fontSize: 22,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       textAlign: 'center',
     },
     lockedDesc: {
@@ -314,7 +315,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 16,
       marginTop: 8,
     },
-    lockedBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+    lockedBtnText: { color: '#fff', fontFamily: font.extrabold, fontSize: 15 },
     flex: { flex: 1 },
 
     // Landing
@@ -328,7 +329,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       justifyContent: 'center',
       marginBottom: 4,
     },
-    heroTitle: { color: colors.text, fontSize: 22, fontWeight: '800', textAlign: 'center' },
+    heroTitle: { color: colors.text, fontSize: 22, fontFamily: font.extrabold, textAlign: 'center' },
     heroText: { color: colors.textMuted, textAlign: 'center', lineHeight: 22, fontSize: 14 },
 
     bankList: {
@@ -346,7 +347,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       paddingVertical: 5,
       borderRadius: 999,
     },
-    bankChipText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
+    bankChipText: { color: colors.primary, fontSize: 12, fontFamily: font.semibold },
 
     stepsCard: {
       backgroundColor: isDark ? '#111111' : colors.surface,
@@ -366,7 +367,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       justifyContent: 'center',
       flexShrink: 0,
     },
-    stepNumText: { color: colors.white, fontSize: 13, fontWeight: '800' },
+    stepNumText: { color: colors.white, fontSize: 13, fontFamily: font.extrabold },
     stepText: { flex: 1, color: colors.textMuted, fontSize: 14, lineHeight: 20 },
 
     pickBtn: {
@@ -378,7 +379,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       paddingVertical: 16,
       borderRadius: 18,
     },
-    pickBtnText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+    pickBtnText: { color: colors.white, fontSize: 16, fontFamily: font.bold },
     loadingHint: {
       color: colors.textMuted,
       fontSize: 12,
@@ -392,7 +393,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    reviewTitle: { color: colors.text, fontSize: 18, fontWeight: '800' },
+    reviewTitle: { color: colors.text, fontSize: 18, fontFamily: font.extrabold },
     reviewSub: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
     changePdfBtn: {
       width: 38,
@@ -410,7 +411,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 999,
       backgroundColor: colors.surfaceAlt,
     },
-    selBtnText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+    selBtnText: { color: colors.text, fontSize: 12, fontFamily: font.semibold },
     selHint: { flex: 1, color: colors.textMuted, fontSize: 11 },
 
     txRow: {
@@ -442,9 +443,9 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderColor: colors.primary,
     },
     txInfo: { flex: 1 },
-    txDesc: { color: colors.text, fontSize: 13, fontWeight: '600' },
+    txDesc: { color: colors.text, fontSize: 13, fontFamily: font.semibold },
     txDate: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-    txAmt: { fontSize: 14, fontWeight: '700' },
+    txAmt: { fontSize: 14, fontFamily: font.bold },
     separator: { height: 8 },
 
     importBtn: {
@@ -457,7 +458,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 18,
       marginTop: 8,
     },
-    importBtnText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+    importBtnText: { color: colors.white, fontSize: 16, fontFamily: font.bold },
 
     // Done
     doneWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
@@ -469,7 +470,7 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    doneTitle: { color: colors.text, fontSize: 24, fontWeight: '800' },
+    doneTitle: { color: colors.text, fontSize: 24, fontFamily: font.extrabold },
     doneText: { color: colors.textMuted, textAlign: 'center', fontSize: 15, lineHeight: 22 },
     doneBtn: {
       backgroundColor: colors.surfaceAlt,
@@ -477,5 +478,5 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       paddingVertical: 12,
       borderRadius: 14,
     },
-    doneBtnText: { color: colors.text, fontWeight: '700' },
+    doneBtnText: { color: colors.text, fontFamily: font.bold },
   });

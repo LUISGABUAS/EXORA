@@ -15,6 +15,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { RecurringExpense, useRecurringStore } from '../store/useRecurringStore';
 import { ExpenseCategory } from '../types/expense';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatCurrency } from '../utils/format';
 
@@ -229,7 +230,7 @@ const useStyles = (colors: ColorPalette) =>
       alignItems: 'center',
       marginBottom: 16,
     },
-    headerTitle: { color: colors.text, fontSize: 22, fontWeight: '800' },
+    headerTitle: { color: colors.text, fontSize: 22, fontFamily: font.extrabold },
     headerSub: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
     addBtn: {
       backgroundColor: colors.primary,
@@ -239,7 +240,7 @@ const useStyles = (colors: ColorPalette) =>
       alignItems: 'center',
       gap: 6,
     },
-    addBtnText: { color: colors.white, fontWeight: '700', fontSize: 14 },
+    addBtnText: { color: colors.white, fontFamily: font.bold, fontSize: 14 },
     // Form
     form: {
       backgroundColor: colors.surface,
@@ -250,7 +251,7 @@ const useStyles = (colors: ColorPalette) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
-    formTitle: { color: colors.text, fontSize: 16, fontWeight: '800' },
+    formTitle: { color: colors.text, fontSize: 16, fontFamily: font.extrabold },
     input: {
       backgroundColor: colors.background,
       borderRadius: 12,
@@ -260,7 +261,7 @@ const useStyles = (colors: ColorPalette) =>
       fontSize: 15,
       color: colors.text,
     },
-    label: { color: colors.textMuted, fontSize: 12, fontWeight: '600', marginBottom: -4 },
+    label: { color: colors.textMuted, fontSize: 12, fontFamily: font.semibold, marginBottom: -4 },
     catRow: { marginHorizontal: -4 },
     catChip: {
       flexDirection: 'row',
@@ -275,7 +276,7 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
     },
     catChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    catChipText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
+    catChipText: { color: colors.primary, fontSize: 12, fontFamily: font.semibold },
     catChipTextActive: { color: colors.white },
     dayRow: { marginHorizontal: -3 },
     dayChip: {
@@ -290,7 +291,7 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
     },
     dayChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    dayChipText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+    dayChipText: { color: colors.text, fontSize: 13, fontFamily: font.semibold },
     dayChipTextActive: { color: colors.white },
     deductibleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     formButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
@@ -302,7 +303,7 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
       alignItems: 'center',
     },
-    cancelBtnText: { color: colors.textMuted, fontWeight: '700' },
+    cancelBtnText: { color: colors.textMuted, fontFamily: font.bold },
     saveBtn: {
       flex: 2,
       padding: 14,
@@ -310,7 +311,7 @@ const useStyles = (colors: ColorPalette) =>
       backgroundColor: colors.primary,
       alignItems: 'center',
     },
-    saveBtnText: { color: colors.white, fontWeight: '800', fontSize: 15 },
+    saveBtnText: { color: colors.white, fontFamily: font.extrabold, fontSize: 15 },
     // List
     list: { gap: 10, paddingBottom: 40 },
     card: {
@@ -332,14 +333,14 @@ const useStyles = (colors: ColorPalette) =>
       justifyContent: 'center',
     },
     cardInfo: { flex: 1 },
-    cardTitle: { color: colors.text, fontSize: 15, fontWeight: '700' },
+    cardTitle: { color: colors.text, fontSize: 15, fontFamily: font.bold },
     cardSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
     cardRight: { alignItems: 'flex-end', gap: 4 },
-    cardAmount: { color: colors.text, fontSize: 15, fontWeight: '800' },
+    cardAmount: { color: colors.text, fontSize: 15, fontFamily: font.extrabold },
     cardActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     textMuted: { color: colors.textMuted },
     // Empty
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 32 },
-    emptyTitle: { color: colors.text, fontSize: 20, fontWeight: '800', textAlign: 'center' },
+    emptyTitle: { color: colors.text, fontSize: 20, fontFamily: font.extrabold, textAlign: 'center' },
     emptySub: { color: colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   });

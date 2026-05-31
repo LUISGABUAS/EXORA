@@ -11,7 +11,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useExpenseStore } from '../store/useExpenseStore';
+import { useIncomeStore } from '../store/useIncomeStore';
 import { ColorPalette } from '../theme/colors';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatCurrency, localDateString } from '../utils/format';
 import { calculateResico } from '../utils/taxCalculator';
@@ -20,22 +22,25 @@ export function ResicoCalculatorScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
   const expenses = useExpenseStore(state => state.expenses);
-
-  const [incomeInput, setIncomeInput] = useState('');
+  const incomes = useIncomeStore(state => state.incomes);
 
   const now = new Date();
   const monthPrefix = localDateString(now).slice(0, 7);
 
-  const { monthlyDeductible, monthlyTotal } = useMemo(() => {
+  const { monthlyDeductible, monthlyTotal, autoIncome } = useMemo(() => {
     const monthExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
     const deductible = monthExpenses
       .filter(e => e.deductible)
       .reduce((sum, e) => sum + e.amount, 0);
     const total = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-    return { monthlyDeductible: deductible, monthlyTotal: total };
-  }, [expenses, monthPrefix]);
+    const income = incomes
+      .filter(i => i.date.startsWith(monthPrefix))
+      .reduce((sum, i) => sum + i.amount, 0);
+    return { monthlyDeductible: deductible, monthlyTotal: total, autoIncome: income };
+  }, [expenses, incomes, monthPrefix]);
 
-  const grossIncome = parseFloat(incomeInput.replace(/,/g, '.')) || 0;
+  const [incomeInput, setIncomeInput] = useState('');
+  const grossIncome = parseFloat(incomeInput.replace(/,/g, '.')) || autoIncome;
   const result = calculateResico(grossIncome, monthlyDeductible);
 
   const MONTHS = [
@@ -65,7 +70,11 @@ export function ResicoCalculatorScreen() {
         <Animated.View entering={FadeInDown.delay(40).duration(300)}>
           <View style={s.inputCard}>
             <Text style={s.inputLabel}>Ingreso mensual bruto</Text>
-            <Text style={s.inputHint}>Ingresa tus ingresos antes de impuestos</Text>
+            <Text style={s.inputHint}>
+              {autoIncome > 0
+                ? `Calculado de tus ingresos registrados este mes`
+                : 'Ingresa tus ingresos antes de impuestos'}
+            </Text>
             <View style={s.inputRow}>
               <Text style={s.currencySymbol}>$</Text>
               <TextInput
@@ -73,8 +82,8 @@ export function ResicoCalculatorScreen() {
                 value={incomeInput}
                 onChangeText={setIncomeInput}
                 keyboardType="decimal-pad"
-                placeholder="0.00"
-                placeholderTextColor={colors.textMuted}
+                placeholder={autoIncome > 0 ? String(autoIncome) : '0.00'}
+                placeholderTextColor={autoIncome > 0 ? colors.primary : colors.textMuted}
                 returnKeyType="done"
               />
               <Text style={s.inputSuffix}>MXN</Text>
@@ -144,7 +153,7 @@ export function ResicoCalculatorScreen() {
             <View style={[s.resultRow, s.resultHighlight]}>
               <View style={s.resultLeft}>
                 <Icon name="calculator-variant" size={18} color={colors.primary} />
-                <Text style={[s.resultLabel, { color: colors.primary, fontWeight: '700' }]}>
+                <Text style={[s.resultLabel, { color: colors.primary, fontFamily: font.bold }]}>
                   Impuesto estimado RESICO
                 </Text>
               </View>
@@ -160,7 +169,7 @@ export function ResicoCalculatorScreen() {
                 <Icon name="piggy-bank-outline" size={18} color="#22C55E" />
                 <Text style={[s.resultLabel, { color: '#22C55E' }]}>Ahorro potencial</Text>
               </View>
-              <Text style={[s.resultValue, { color: '#22C55E', fontWeight: '800' }]}>
+              <Text style={[s.resultValue, { color: '#22C55E', fontFamily: font.extrabold }]}>
                 {formatCurrency(result.potentialSaving)}
               </Text>
             </View>
@@ -220,7 +229,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     headerTitle: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     headerSub: {
       color: colors.textMuted,
@@ -237,7 +246,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     inputLabel: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     inputHint: {
       color: colors.textMuted,
@@ -256,20 +265,20 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     currencySymbol: {
       color: colors.primary,
       fontSize: 20,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       marginRight: 4,
     },
     input: {
       flex: 1,
       color: colors.text,
       fontSize: 24,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
       paddingVertical: 14,
     },
     inputSuffix: {
       color: colors.textMuted,
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       marginLeft: 6,
     },
     summaryCard: {
@@ -283,7 +292,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     summaryTitle: {
       color: colors.textMuted,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     summaryRow: {
       flexDirection: 'row',
@@ -303,7 +312,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     summaryValue: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     summaryLabel: {
       color: colors.textMuted,
@@ -320,7 +329,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     resultsTitle: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
       marginBottom: 14,
     },
     resultRow: {
@@ -344,13 +353,13 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     resultLabel: {
       color: colors.textMuted,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
       flex: 1,
     },
     resultValue: {
       color: colors.text,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     resultValueBig: {
       fontSize: 17,

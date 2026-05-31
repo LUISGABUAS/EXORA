@@ -17,6 +17,7 @@ import { useBudgetStore } from '../store/useBudgetStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
+import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
@@ -298,7 +299,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     summaryMonth: {
       color: colors.textMuted,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
     summaryRow: {
       flexDirection: 'row',
@@ -317,7 +318,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     summaryValue: {
       color: colors.text,
       fontSize: 22,
-      fontWeight: '800',
+      fontFamily: font.extrabold,
     },
     summaryLabel: {
       color: colors.textMuted,
@@ -378,7 +379,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     catName: {
       color: colors.text,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     catStatus: {
       color: colors.textMuted,
@@ -409,7 +410,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       paddingVertical: 10,
       color: colors.text,
       fontSize: 16,
-      fontWeight: '700',
+      fontFamily: font.bold,
     },
     saveBtn: {
       flexDirection: 'row',
@@ -422,7 +423,7 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     saveBtnText: {
       color: colors.white,
-      fontWeight: '700',
+      fontFamily: font.bold,
       fontSize: 14,
     },
     cancelBtn: {
@@ -438,6 +439,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     editBtnText: {
       color: colors.primary,
       fontSize: 13,
-      fontWeight: '600',
+      fontFamily: font.semibold,
     },
   });
