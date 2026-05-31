@@ -23,6 +23,7 @@ import { ScanScreen } from '../screens/ScanScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SplitScreen } from '../screens/SplitScreen';
 import { IncomesScreen } from '../screens/IncomesScreen';
+import { RecurringIncomeScreen } from '../screens/RecurringIncomeScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { useTheme } from '../theme/ThemeContext';
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   CurrencySettings: undefined;
   BankImport: undefined;
   Ingresos: undefined;
+  IngresosRecurrentes: undefined;
 };
 
 export type TabParamList = {
@@ -209,6 +211,11 @@ export function AppNavigator() {
               name="Ingresos"
               component={IncomesScreen}
               options={{ title: 'Mis ingresos', headerBackTitle: 'Inicio' }}
+            />
+            <Stack.Screen
+              name="IngresosRecurrentes"
+              component={RecurringIncomeScreen}
+              options={{ title: 'Ingresos fijos', headerBackTitle: 'Ingresos' }}
             />
           </>
         )}

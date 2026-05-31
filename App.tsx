@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase } from './src/database/db';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { BiometricLock } from './src/components/BiometricLock';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { configureNotifications, scheduleSatDeadlines } from './src/services/notificationService';
 import { startSyncService } from './src/services/syncService';
 import { getAvailableBiometric, BiometricType } from './src/services/biometricService';
@@ -19,6 +20,7 @@ import { useCurrencyStore } from './src/store/useCurrencyStore';
 import { useRecurringStore } from './src/store/useRecurringStore';
 import { useSavingsStore } from './src/store/useSavingsStore';
 import { useIncomeStore } from './src/store/useIncomeStore';
+import { useRecurringIncomeStore } from './src/store/useRecurringIncomeStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
@@ -42,6 +44,9 @@ function AppContent() {
   const hydrateCurrency = useCurrencyStore(state => state.hydrate);
   const getDueThisMonth = useRecurringStore(state => state.getDueThisMonth);
   const markProcessed = useRecurringStore(state => state.markProcessed);
+  const hydrateRecurringIncome = useRecurringIncomeStore(state => state.hydrate);
+  const getDueIncomeThisMonth = useRecurringIncomeStore(state => state.getDueThisMonth);
+  const markIncomeProcessed = useRecurringIncomeStore(state => state.markProcessed);
   const { colors, isDark } = useTheme();
 
   // Lock when app goes to background
@@ -80,6 +85,7 @@ function AppContent() {
         hydrateCustomCategories(),
         loadIncomes(),
         hydrateCurrency(),
+        hydrateRecurringIncome(),
       ]);
       await updateStreak().catch(() => {});
 
@@ -107,6 +113,28 @@ function AppContent() {
         }
       } catch (e) {
         if (__DEV__) console.warn('Recurring error:', e);
+      }
+
+      // Procesar ingresos recurrentes vencidos este mes
+      try {
+        const dueIncomes = getDueIncomeThisMonth();
+        const addIncome = useIncomeStore.getState().addIncome;
+        const today = new Date();
+        const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        for (const r of dueIncomes) {
+          await addIncome({
+            amount: r.amount,
+            date: `${month}-${String(r.dayOfMonth).padStart(2, '0')}`,
+            type: r.type,
+            description: r.description,
+            invoiced: r.invoiced,
+            recurring: true,
+            paymentMethod: r.paymentMethod,
+          });
+          await markIncomeProcessed(r.id, month);
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Recurring income error:', e);
       }
 
       configureNotifications();
@@ -150,13 +178,15 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <GestureHandlerRootView style={styles.flex}>
-        <SafeAreaProvider>
-          <AppContent />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <GestureHandlerRootView style={styles.flex}>
+          <SafeAreaProvider>
+            <AppContent />
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

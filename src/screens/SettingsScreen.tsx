@@ -222,6 +222,11 @@ export function SettingsScreen() {
           <Text style={s.reportButtonText}>Mis ingresos</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
+        <Pressable style={s.reportButton} onPress={() => navigation.navigate('IngresosRecurrentes')}>
+          <Icon name="repeat" size={18} color={colors.primary} />
+          <Text style={s.reportButtonText}>Ingresos fijos (salario, renta...)</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
         <Pressable style={s.reportButton} onPress={() => navigation.navigate('ReporteFiscal')}>
           <Icon name="chart-bar" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Ver Reporte Fiscal</Text>
