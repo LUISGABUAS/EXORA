@@ -9,6 +9,9 @@ import { useAuthStore } from '../store/useAuthStore';
 
 let unsubscribe: (() => void) | null = null;
 let flushing = false;
+let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+let retryCount = 0;
+const MAX_RETRIES = 5;
 
 async function processItem(item: SyncQueueItem, userId: string) {
   const payload = JSON.parse(item.payload);
@@ -79,18 +82,28 @@ export async function flushSyncQueue() {
     if (items.length === 0) return;
 
     const synced: number[] = [];
+    let failed = false;
     for (const item of items) {
       try {
         await processItem(item, session.user.id);
         synced.push(item.id);
+        retryCount = 0;
       } catch {
-        // stop processing on first error to preserve order
+        // Stop on first error to preserve order, schedule retry with backoff
+        failed = true;
         break;
       }
     }
 
     if (synced.length > 0) {
       await markSynced(synced);
+    }
+
+    if (failed && retryCount < MAX_RETRIES) {
+      const delay = Math.min(1000 * 2 ** retryCount, 30000); // 1s, 2s, 4s, 8s, 16s, max 30s
+      retryCount++;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      retryTimeout = setTimeout(() => flushSyncQueue(), delay);
     }
   } finally {
     flushing = false;

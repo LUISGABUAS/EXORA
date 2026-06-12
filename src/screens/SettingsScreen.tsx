@@ -1,6 +1,15 @@
 import { font } from '../theme/typography';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  Share,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,7 +19,10 @@ import { PaywallModal } from '../components/PaywallModal';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { exportExpensesToCsv } from '../services/exportService';
-import { getAvailableBiometric, getBiometricLabel } from '../services/biometricService';
+import {
+  getAvailableBiometric,
+  getBiometricLabel,
+} from '../services/biometricService';
 import {
   applyReferralCode,
   getOrCreateReferralCode,
@@ -37,27 +49,37 @@ const themeModes: Array<{ mode: ThemeMode; label: string; icon: string }> = [
   { mode: 'system', label: 'Sistema', icon: 'cellphone' },
 ];
 
-const fiscalModes: Array<{ value: FiscalRegime; label: string; icon: string }> = [
-  { value: 'resico', label: 'RESICO', icon: 'account-check' },
-  { value: 'actividad_empresarial', label: 'Act. Empresarial', icon: 'briefcase-outline' },
-  { value: 'no_facturo', label: 'No facturo', icon: 'wallet-outline' },
-];
+const fiscalModes: Array<{ value: FiscalRegime; label: string; icon: string }> =
+  [
+    { value: 'resico', label: 'RESICO', icon: 'account-check' },
+    {
+      value: 'actividad_empresarial',
+      label: 'Act. Empresarial',
+      icon: 'briefcase-outline',
+    },
+    { value: 'no_facturo', label: 'No facturo', icon: 'wallet-outline' },
+  ];
 
 export function SettingsScreen() {
   const { colors, isDark, mode, setMode } = useTheme();
   const s = useStyles(colors, isDark);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const expenses = useExpenseStore((state) => state.expenses);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const expenses = useExpenseStore(state => state.expenses);
   const session = useAuthStore(state => state.session);
   const signOut = useAuthStore(state => state.signOut);
   const isPremium = usePremiumStore(state => state.isPremium);
   const plan = usePremiumStore(state => state.plan);
+  const isFounder = usePremiumStore(state => state.isFounder);
+  const redeemFounderCode = usePremiumStore(state => state.redeemFounderCode);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
   const constanciaUri = usePremiumStore(state => state.constanciaUri);
   const biometricEnabled = usePremiumStore(state => state.biometricEnabled);
-  const setBiometricEnabled = usePremiumStore(state => state.setBiometricEnabled);
+  const setBiometricEnabled = usePremiumStore(
+    state => state.setBiometricEnabled,
+  );
   const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
   const extendTrial = usePremiumStore(state => state.extendTrial);
   const [remindersOn, setRemindersOn] = useState(false);
@@ -67,15 +89,21 @@ export function SettingsScreen() {
   const [myCode, setMyCode] = useState('');
   const [referralInput, setReferralInput] = useState('');
   const [referralLoading, setReferralLoading] = useState(false);
+  const [founderInput, setFounderInput] = useState('');
+  const [founderLoading, setFounderLoading] = useState(false);
 
   const trialDaysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
+    ? Math.max(
+        0,
+        Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000),
+      )
     : 0;
   const trialActive = trialDaysLeft > 0 && !isPremium;
 
-  const userName = session?.user?.user_metadata?.full_name
-    || session?.user?.email?.split('@')[0]
-    || 'Usuario';
+  const userName =
+    session?.user?.user_metadata?.full_name ||
+    session?.user?.email?.split('@')[0] ||
+    'Usuario';
   const userEmail = session?.user?.email || '';
 
   useEffect(() => {
@@ -84,7 +112,9 @@ export function SettingsScreen() {
     });
     getAvailableBiometric().then(t => setBiometricTypeLocal(t));
     if (session?.user?.id) {
-      getOrCreateReferralCode(session.user.id).then(setMyCode).catch(() => {});
+      getOrCreateReferralCode(session.user.id)
+        .then(setMyCode)
+        .catch(() => {});
     }
   }, [session?.user?.id]);
 
@@ -105,10 +135,16 @@ export function SettingsScreen() {
       const result = await applyReferralCode(referralInput.trim());
       if (result.ok) {
         await extendTrial(7);
-        Alert.alert('¡Código aplicado!', '7 días de Pro agregados a tu cuenta.');
+        Alert.alert(
+          '¡Código aplicado!',
+          '7 días de Pro agregados a tu cuenta.',
+        );
         setReferralInput('');
       } else {
-        Alert.alert('Código inválido', REFERRAL_ERROR_MESSAGES[result.error] ?? 'Error desconocido.');
+        Alert.alert(
+          'Código inválido',
+          REFERRAL_ERROR_MESSAGES[result.error] ?? 'Error desconocido.',
+        );
       }
     } catch {
       Alert.alert('Error', 'No se pudo aplicar el código. Intenta de nuevo.');
@@ -133,16 +169,54 @@ export function SettingsScreen() {
       let data = expenses;
       if (!hasFullAccess()) {
         const n = new Date();
-        const cutoff = localDateString(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 30));
+        const cutoff = localDateString(
+          new Date(n.getFullYear(), n.getMonth(), n.getDate() - 30),
+        );
         data = expenses.filter(e => e.date >= cutoff);
       }
       await exportExpensesToCsv(data);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo exportar.');
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'No se pudo exportar.',
+      );
     }
   };
 
-  const planLabel = plan === 'monthly' ? 'Mensual' : plan === 'yearly' ? 'Anual' : 'Gratuito';
+  const planLabel =
+    plan === 'founder'
+      ? 'Fundador ✦'
+      : plan === 'monthly'
+      ? 'Mensual'
+      : plan === 'yearly'
+      ? 'Anual'
+      : 'Gratuito';
+
+  const handleRedeemFounderCode = async () => {
+    if (!founderInput.trim()) return;
+    setFounderLoading(true);
+    const result = await redeemFounderCode(founderInput);
+    setFounderLoading(false);
+    if (result === 'success') {
+      setFounderInput('');
+      Alert.alert(
+        '✦ Bienvenido, Fundador',
+        'Tu acceso premium permanente ha sido activado. Gracias por ser parte de Expensia desde el inicio.',
+      );
+    } else if (result === 'already_used') {
+      Alert.alert(
+        'Código ya canjeado',
+        'Este código ya fue utilizado por otro usuario.',
+      );
+    } else if (result === 'invalid') {
+      Alert.alert('Código inválido', 'El código que ingresaste no existe.');
+    } else {
+      Alert.alert(
+        'Error',
+        'No se pudo canjear el código. Verifica tu conexión e intenta de nuevo.',
+      );
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que deseas cerrar tu sesión?', [
@@ -154,7 +228,10 @@ export function SettingsScreen() {
   return (
     <ScreenContainer>
       {/* Profile Header */}
-      <Pressable style={s.profileHeader} onPress={() => navigation.navigate('ProfileEdit')}>
+      <Pressable
+        style={s.profileHeader}
+        onPress={() => navigation.navigate('ProfileEdit')}
+      >
         <Avatar size={72} name={userName} />
         <Text style={s.userName}>{userName}</Text>
         {userEmail ? <Text style={s.userEmail}>{userEmail}</Text> : null}
@@ -180,8 +257,17 @@ export function SettingsScreen() {
               style={[s.themeChip, mode === item.mode && s.themeChipActive]}
               onPress={() => setMode(item.mode)}
             >
-              <Icon name={item.icon} size={16} color={mode === item.mode ? colors.white : colors.text} />
-              <Text style={[s.themeChipText, mode === item.mode && s.themeChipTextActive]}>
+              <Icon
+                name={item.icon}
+                size={16}
+                color={mode === item.mode ? colors.white : colors.text}
+              />
+              <Text
+                style={[
+                  s.themeChipText,
+                  mode === item.mode && s.themeChipTextActive,
+                ]}
+              >
                 {item.label}
               </Text>
             </Pressable>
@@ -194,16 +280,30 @@ export function SettingsScreen() {
           <Icon name="file-document-outline" size={22} color={colors.text} />
           <Text style={s.cardTitle}>Régimen fiscal</Text>
         </View>
-        <Text style={s.cardText}>Selecciona cómo facturas para calcular tu ahorro fiscal.</Text>
+        <Text style={s.cardText}>
+          Selecciona cómo facturas para calcular tu ahorro fiscal.
+        </Text>
         <View style={s.fiscalRow}>
           {fiscalModes.map(item => (
             <Pressable
               key={item.value}
-              style={[s.fiscalChip, fiscalRegime === item.value && s.themeChipActive]}
+              style={[
+                s.fiscalChip,
+                fiscalRegime === item.value && s.themeChipActive,
+              ]}
               onPress={() => setFiscalRegime(item.value)}
             >
-              <Icon name={item.icon} size={16} color={fiscalRegime === item.value ? colors.white : colors.text} />
-              <Text style={[s.themeChipText, fiscalRegime === item.value && s.themeChipTextActive]}>
+              <Icon
+                name={item.icon}
+                size={16}
+                color={fiscalRegime === item.value ? colors.white : colors.text}
+              />
+              <Text
+                style={[
+                  s.themeChipText,
+                  fiscalRegime === item.value && s.themeChipTextActive,
+                ]}
+              >
                 {item.label}
               </Text>
             </Pressable>
@@ -212,42 +312,67 @@ export function SettingsScreen() {
         {!fiscalModes.some(fm => fm.value === fiscalRegime) ? (
           <View style={s.currentRegimeRow}>
             <Text style={s.currentRegimeLabel}>
-              Régimen actual: {FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime)?.title || fiscalRegime}
+              Régimen actual:{' '}
+              {FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime)
+                ?.title || fiscalRegime}
             </Text>
             <Text style={s.currentRegimeHint}>(cambiar en editar perfil)</Text>
           </View>
         ) : null}
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Ingresos')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('Ingresos')}
+        >
           <Icon name="cash-plus" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Mis ingresos</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('IngresosRecurrentes')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('IngresosRecurrentes')}
+        >
           <Icon name="repeat" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Ingresos fijos (salario, renta...)</Text>
+          <Text style={s.reportButtonText}>
+            Ingresos fijos (salario, renta...)
+          </Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('ReporteFiscal')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('ReporteFiscal')}
+        >
           <Icon name="chart-bar" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Ver Reporte Fiscal</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Presupuesto')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('Presupuesto')}
+        >
           <Icon name="gauge" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Presupuestos mensuales</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Recurrentes')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('Recurrentes')}
+        >
           <Icon name="repeat" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Gastos recurrentes</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Ahorros')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('Ahorros')}
+        >
           <Icon name="piggy-bank-outline" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Metas de ahorro</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('ResicoCalculator')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('ResicoCalculator')}
+        >
           <Icon name="calculator-variant" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Calculadora RESICO</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
@@ -259,27 +384,42 @@ export function SettingsScreen() {
           <Icon name="account-group-outline" size={22} color={colors.text} />
           <Text style={s.cardTitle}>Herramientas</Text>
         </View>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Split')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('Split')}
+        >
           <Icon name="call-split" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Dividir gastos</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('CustomCategories')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('CustomCategories')}
+        >
           <Icon name="tag-plus" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Categorías personalizadas</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('Backup')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('Backup')}
+        >
           <Icon name="database-export" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Backup y restauración</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('CurrencySettings')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('CurrencySettings')}
+        >
           <Icon name="currency-usd" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Moneda y tipo de cambio</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={s.reportButton} onPress={() => navigation.navigate('BankImport')}>
+        <Pressable
+          style={s.reportButton}
+          onPress={() => navigation.navigate('BankImport')}
+        >
           <Icon name="bank-transfer-in" size={18} color={colors.primary} />
           <Text style={s.reportButtonText}>Importar estado de cuenta</Text>
           <Icon name="chevron-right" size={18} color={colors.primary} />
@@ -316,7 +456,9 @@ export function SettingsScreen() {
           <Icon name="bell-ring-outline" size={22} color={colors.text} />
           <Text style={s.cardTitle}>Recordatorios</Text>
         </View>
-        <Text style={s.cardText}>Diario a las 20:00 y resumen semanal los domingos a las 10:00.</Text>
+        <Text style={s.cardText}>
+          Diario a las 20:00 y resumen semanal los domingos a las 10:00.
+        </Text>
         <View style={s.switchRow}>
           <Text style={s.switchLabel}>Activar recordatorios</Text>
           <Switch
@@ -327,13 +469,19 @@ export function SettingsScreen() {
         </View>
       </View>
 
-      {/* Trial banner */}
-      {trialActive ? (
+      {/* Trial banner — solo para usuarios en trial sin premium */}
+      {trialActive && !isPremium ? (
         <View style={s.trialBanner}>
           <Icon name="clock-fast" size={20} color={colors.warning} />
           <View style={s.trialText}>
-            <Text style={s.trialTitle}>Prueba gratis activa — {trialDaysLeft} día{trialDaysLeft !== 1 ? 's' : ''} restante{trialDaysLeft !== 1 ? 's' : ''}</Text>
-            <Text style={s.trialSub}>Suscríbete antes de que termine para no perder el acceso.</Text>
+            <Text style={s.trialTitle}>
+              Prueba gratis activa — {trialDaysLeft} día
+              {trialDaysLeft !== 1 ? 's' : ''} restante
+              {trialDaysLeft !== 1 ? 's' : ''}
+            </Text>
+            <Text style={s.trialSub}>
+              Suscríbete antes de que termine para no perder el acceso.
+            </Text>
           </View>
           <Pressable style={s.trialBtn} onPress={() => setPaywallVisible(true)}>
             <Text style={s.trialBtnText}>Ver planes</Text>
@@ -341,62 +489,136 @@ export function SettingsScreen() {
         </View>
       ) : null}
 
-      {/* Referidos */}
+      {/* Referidos y código fundador — solo para usuarios SIN premium ni fundador */}
+      {!isPremium && !isFounder && (
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Icon name="gift-outline" size={22} color={colors.secondary} />
+            <Text style={s.cardTitle}>Invita y gana Pro</Text>
+          </View>
+          <Text style={s.cardText}>
+            Comparte tu código. Cuando alguien lo use, ambos obtienen{' '}
+            <Text style={{ color: colors.primary, fontFamily: font.bold }}>
+              7 días gratis de Pro
+            </Text>
+            .
+          </Text>
+
+          {myCode ? (
+            <Pressable style={s.codeBox} onPress={handleShareReferral}>
+              <Text style={s.codeText}>{myCode}</Text>
+              <View style={s.shareChip}>
+                <Icon name="share-variant" size={14} color={colors.white} />
+                <Text style={s.shareChipText}>Compartir</Text>
+              </View>
+            </Pressable>
+          ) : null}
+
+          <View style={s.codeInputRow}>
+            <TextInput
+              style={s.codeInput}
+              placeholder="Ingresa un código (EXP-XXXXXX)"
+              placeholderTextColor={colors.textMuted}
+              value={referralInput}
+              onChangeText={t => setReferralInput(t.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={12}
+            />
+            <Pressable
+              style={[
+                s.applyBtn,
+                (!referralInput.trim() || referralLoading) && s.applyBtnDisabled,
+              ]}
+              onPress={handleApplyCode}
+              disabled={!referralInput.trim() || referralLoading}
+            >
+              <Text style={s.applyBtnText}>
+                {referralLoading ? '…' : 'Aplicar'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {!isPremium && !isFounder && (
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Icon name="star-four-points" size={20} color={colors.warning} />
+            <Text style={s.cardTitle}>Código fundador</Text>
+          </View>
+          <Text style={s.cardText}>
+            ¿Tienes un código exclusivo de fundador? Canjéalo para obtener
+            acceso premium permanente.
+          </Text>
+          <View style={s.codeInputRow}>
+            <TextInput
+              style={s.codeInput}
+              placeholder="EXPENSIA-FOUNDER-XXXX"
+              placeholderTextColor={colors.textMuted}
+              value={founderInput}
+              onChangeText={t => setFounderInput(t.toUpperCase())}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={24}
+            />
+            <Pressable
+              style={[
+                s.applyBtn,
+                (!founderInput.trim() || founderLoading) && s.applyBtnDisabled,
+              ]}
+              onPress={handleRedeemFounderCode}
+              disabled={!founderInput.trim() || founderLoading}
+            >
+              <Text style={s.applyBtnText}>
+                {founderLoading ? '…' : 'Canjear'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Membresía */}
       <View style={s.card}>
         <View style={s.cardHeader}>
-          <Icon name="gift-outline" size={22} color={colors.secondary} />
-          <Text style={s.cardTitle}>Invita y gana Pro</Text>
+          <Icon name="shield-crown-outline" size={22} color={isFounder ? colors.warning : colors.primary} />
+          <Text style={s.cardTitle}>Membresía</Text>
         </View>
-        <Text style={s.cardText}>
-          Comparte tu código. Cuando alguien lo use, ambos obtienen <Text style={{ color: colors.primary, fontFamily: font.bold }}>7 días gratis de Pro</Text>.
-        </Text>
-
-        {myCode ? (
-          <Pressable style={s.codeBox} onPress={handleShareReferral}>
-            <Text style={s.codeText}>{myCode}</Text>
-            <View style={s.shareChip}>
-              <Icon name="share-variant" size={14} color={colors.white} />
-              <Text style={s.shareChipText}>Compartir</Text>
-            </View>
-          </Pressable>
-        ) : null}
-
-        <View style={s.codeInputRow}>
-          <TextInput
-            style={s.codeInput}
-            placeholder="Ingresa un código (EXP-XXXXXX)"
-            placeholderTextColor={colors.textMuted}
-            value={referralInput}
-            onChangeText={t => setReferralInput(t.toUpperCase())}
-            autoCapitalize="characters"
-            maxLength={12}
-          />
-          <Pressable
-            style={[s.applyBtn, (!referralInput.trim() || referralLoading) && s.applyBtnDisabled]}
-            onPress={handleApplyCode}
-            disabled={!referralInput.trim() || referralLoading}
-          >
-            <Text style={s.applyBtnText}>{referralLoading ? '…' : 'Aplicar'}</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Subscription Card */}
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="shield-crown-outline" size={22} color={colors.primary} />
-          <Text style={s.cardTitle}>Suscripción</Text>
-        </View>
-        {isPremium ? (
+        {isPremium || isFounder ? (
           <>
-            <Text style={s.cardText}>Plan activo: {planLabel}</Text>
-            <Pressable style={s.buttonOutline} onPress={() => Alert.alert('Próximamente', 'Gestión de suscripción disponible pronto.')}>
-              <Text style={s.buttonOutlineText}>Gestionar suscripción</Text>
+            {isFounder ? (
+              <View style={s.founderBanner}>
+                <View style={s.founderBannerTop}>
+                  <Icon name="star-four-points" size={20} color={colors.warning} />
+                  <Text style={s.founderBannerTitle}>Miembro Fundador</Text>
+                  <Icon name="star-four-points" size={20} color={colors.warning} />
+                </View>
+                <Text style={s.founderBannerSub}>Acceso permanente a todas las funciones</Text>
+              </View>
+            ) : (
+              <Text style={s.cardText}>Plan activo: {planLabel}</Text>
+            )}
+            <Pressable
+              style={s.buttonOutline}
+              onPress={() =>
+                isFounder
+                  ? Alert.alert(
+                      'Membresía Fundador',
+                      'Tienes acceso permanente como Miembro Fundador de Expensia. No necesitas gestionar ninguna suscripción.',
+                    )
+                  : Alert.alert(
+                      'Gestionar membresía',
+                      'Ve a Configuración → App Store → Suscripciones para gestionar tu plan.',
+                    )
+              }
+            >
+              <Text style={s.buttonOutlineText}>Gestionar membresía</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={s.cardText}>Plan gratuito — funcionalidades limitadas</Text>
+            <Text style={s.cardText}>
+              Plan gratuito — funcionalidades limitadas
+            </Text>
             <Pressable style={s.button} onPress={() => setPaywallVisible(true)}>
               <Icon name="arrow-up-bold" size={18} color={colors.white} />
               <Text style={s.buttonText}>Actualizar a Premium</Text>
@@ -426,7 +648,7 @@ export function SettingsScreen() {
         <Text style={s.signOutText}>Cerrar sesión</Text>
       </Pressable>
 
-      <Text style={s.version}>EXPENSIA v0.0.1</Text>
+      <Text style={s.version}>EXPENSIA v1.0.0</Text>
 
       <PaywallModal
         visible={paywallVisible}
@@ -494,9 +716,17 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       backgroundColor: colors.surfaceAlt,
     },
     themeChipActive: { backgroundColor: colors.primary },
-    themeChipText: { color: colors.text, fontFamily: font.semibold, fontSize: 13 },
+    themeChipText: {
+      color: colors.text,
+      fontFamily: font.semibold,
+      fontSize: 13,
+    },
     themeChipTextActive: { color: colors.white },
-    switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    switchRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
     switchInfo: { flex: 1, gap: 2 },
     trialBanner: {
       flexDirection: 'row',
@@ -580,6 +810,32 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
     },
     buttonText: { color: colors.white, fontFamily: font.bold },
+    founderBanner: {
+      backgroundColor: colors.warning + '14',
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.warning + '40',
+      padding: 16,
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 12,
+    },
+    founderBannerTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    founderBannerTitle: {
+      color: colors.warning,
+      fontSize: 17,
+      fontFamily: font.extrabold,
+      letterSpacing: 0.5,
+    },
+    founderBannerSub: {
+      color: colors.textMuted,
+      fontSize: 13,
+      textAlign: 'center',
+    },
     buttonOutline: {
       flexDirection: 'row',
       gap: 8,

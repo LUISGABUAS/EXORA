@@ -14,7 +14,7 @@ export function StreakBadge({ streak }: Props) {
   return (
     <View style={[styles.pill, { backgroundColor: colors.warning + '15' }]}>
       <Text style={[styles.text, { color: colors.warning }]}>
-        {'\uD83D\uDD25'} {streak} {streak === 1 ? 'dia' : 'dias'}
+        {'\uD83D\uDD25'} {streak} {streak === 1 ? 'd\u00EDa' : 'd\u00EDas'}
       </Text>
     </View>
   );

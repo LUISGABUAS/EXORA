@@ -1,9 +1,16 @@
-import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { DarkTheme, DefaultTheme, NavigationContainer, NavigatorScreenParams } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+import {
+  createNavigationContainerRef,
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  NavigatorScreenParams,
+} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { AsesorScreen } from '../screens/AsesorScreen';
 import { BackupScreen } from '../screens/BackupScreen';
 import { BankImportScreen } from '../screens/BankImportScreen';
 import { CurrencySettingsScreen } from '../screens/CurrencySettingsScreen';
@@ -25,6 +32,7 @@ import { SplitScreen } from '../screens/SplitScreen';
 import { IncomesScreen } from '../screens/IncomesScreen';
 import { RecurringIncomeScreen } from '../screens/RecurringIncomeScreen';
 import { useAuthStore } from '../store/useAuthStore';
+import { useDeepLinkStore } from '../store/useDeepLinkStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { useTheme } from '../theme/ThemeContext';
 import { tabIcons } from '../theme/icons';
@@ -48,6 +56,7 @@ export type RootStackParamList = {
   BankImport: undefined;
   Ingresos: undefined;
   IngresosRecurrentes: undefined;
+  Asesor: undefined;
 };
 
 export type TabParamList = {
@@ -58,10 +67,21 @@ export type TabParamList = {
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-function TabIcon({ routeName, color }: { routeName: keyof typeof tabIcons; color: string }) {
+function TabIcon({
+  routeName,
+  color,
+}: {
+  routeName: keyof typeof tabIcons;
+  color: string;
+}) {
   return (
-    <Icon name={tabIcons[routeName] ?? 'circle-outline'} size={22} color={color} />
+    <Icon
+      name={tabIcons[routeName] ?? 'circle-outline'}
+      size={22}
+      color={color}
+    />
   );
 }
 
@@ -105,6 +125,27 @@ export function AppNavigator() {
   const session = useAuthStore(state => state.session);
   const onboardingComplete = usePremiumStore(state => state.onboardingComplete);
   const { colors, isDark } = useTheme();
+  const setPendingAction = useDeepLinkStore(state => state.setPendingAction);
+
+  useEffect(() => {
+    const handleUrl = (url: string) => {
+      if (url === 'expensia://add-expense') {
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('Tabs', { screen: 'Inicio' });
+        }
+        setTimeout(() => setPendingAction('add-expense'), 150);
+      } else if (url === 'expensia://add-income') {
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('Ingresos');
+        }
+        setTimeout(() => setPendingAction('add-income'), 150);
+      }
+    };
+
+    Linking.getInitialURL().then(url => { if (url) handleUrl(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, [setPendingAction]);
 
   const navTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
@@ -119,7 +160,7 @@ export function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: colors.surface },
@@ -141,11 +182,18 @@ export function AppNavigator() {
           />
         ) : (
           <>
-            <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="Tabs"
+              component={Tabs}
+              options={{ headerShown: false }}
+            />
             <Stack.Screen
               name="ExpenseDetail"
               component={ExpenseDetailScreen}
-              options={{ title: 'Detalle del gasto', headerBackTitle: 'Inicio' }}
+              options={{
+                title: 'Detalle del gasto',
+                headerBackTitle: 'Inicio',
+              }}
             />
             <Stack.Screen
               name="Scan"
@@ -155,7 +203,7 @@ export function AppNavigator() {
             <Stack.Screen
               name="ProfileEdit"
               component={ProfileEditScreen}
-              options={{ title: 'Editar perfil', headerBackTitle: 'Atras' }}
+              options={{ title: 'Editar perfil', headerBackTitle: 'Atrás' }}
             />
             <Stack.Screen
               name="ReporteFiscal"
@@ -170,7 +218,10 @@ export function AppNavigator() {
             <Stack.Screen
               name="Recurrentes"
               component={RecurringScreen}
-              options={{ title: 'Gastos recurrentes', headerBackTitle: 'Perfil' }}
+              options={{
+                title: 'Gastos recurrentes',
+                headerBackTitle: 'Perfil',
+              }}
             />
             <Stack.Screen
               name="Ahorros"
@@ -180,32 +231,47 @@ export function AppNavigator() {
             <Stack.Screen
               name="ResicoCalculator"
               component={ResicoCalculatorScreen}
-              options={{ title: 'Calculadora Fiscal', headerBackTitle: 'Atras' }}
+              options={{
+                title: 'Calculadora Fiscal',
+                headerBackTitle: 'Atrás',
+              }}
             />
             <Stack.Screen
               name="Split"
               component={SplitScreen}
-              options={{ title: 'Dividir Gastos', headerBackTitle: 'Atras' }}
+              options={{ title: 'Dividir Gastos', headerBackTitle: 'Atrás' }}
             />
             <Stack.Screen
               name="CustomCategories"
               component={CustomCategoriesScreen}
-              options={{ title: 'Categorías personalizadas', headerBackTitle: 'Perfil' }}
+              options={{
+                title: 'Categorías personalizadas',
+                headerBackTitle: 'Perfil',
+              }}
             />
             <Stack.Screen
               name="Backup"
               component={BackupScreen}
-              options={{ title: 'Backup y Restauración', headerBackTitle: 'Perfil' }}
+              options={{
+                title: 'Backup y Restauración',
+                headerBackTitle: 'Perfil',
+              }}
             />
             <Stack.Screen
               name="CurrencySettings"
               component={CurrencySettingsScreen}
-              options={{ title: 'Moneda y tipo de cambio', headerBackTitle: 'Perfil' }}
+              options={{
+                title: 'Moneda y tipo de cambio',
+                headerBackTitle: 'Perfil',
+              }}
             />
             <Stack.Screen
               name="BankImport"
               component={BankImportScreen}
-              options={{ title: 'Importar estado de cuenta', headerBackTitle: 'Perfil' }}
+              options={{
+                title: 'Importar estado de cuenta',
+                headerBackTitle: 'Perfil',
+              }}
             />
             <Stack.Screen
               name="Ingresos"
@@ -216,6 +282,11 @@ export function AppNavigator() {
               name="IngresosRecurrentes"
               component={RecurringIncomeScreen}
               options={{ title: 'Ingresos fijos', headerBackTitle: 'Ingresos' }}
+            />
+            <Stack.Screen
+              name="Asesor"
+              component={AsesorScreen}
+              options={{ title: 'Asesor Financiero', headerBackTitle: 'Inicio' }}
             />
           </>
         )}

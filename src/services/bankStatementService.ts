@@ -1,9 +1,7 @@
 import RNFS from 'react-native-fs';
+import { supabase } from '../lib/supabase';
 
 const DocumentPicker = require('react-native-document-picker').default;
-
-const OCR_API_KEY = 'K86586803988957';
-const OCR_ENDPOINT = 'https://api.ocr.space/parse/image';
 
 export interface BankTransaction {
   date: string;       // YYYY-MM-DD
@@ -114,31 +112,14 @@ async function extractTextFromPdf(fileUri: string): Promise<string> {
   const path = fileUri.startsWith('file://') ? fileUri.slice(7) : fileUri;
   const base64 = await RNFS.readFile(path, 'base64');
 
-  const formData = new FormData();
-  formData.append('base64Image', `data:application/pdf;base64,${base64}`);
-  formData.append('isTable', 'false');
-  formData.append('OCREngine', '2');
-  formData.append('scale', 'true');
-  formData.append('isCreateSearchablePdf', 'false');
-
-  const response = await fetch(OCR_ENDPOINT, {
-    method: 'POST',
-    headers: { apikey: OCR_API_KEY },
-    body: formData,
+  const { data, error } = await supabase.functions.invoke('ocr-parse', {
+    body: { base64, mimeType: 'application/pdf' },
   });
 
-  if (!response.ok) {
-    throw new Error(`OCR falló: ${response.status}`);
-  }
+  if (error) throw new Error(error.message ?? 'Error al procesar PDF');
+  if (!data?.text) throw new Error('No se pudo extraer texto del PDF');
 
-  const json = await response.json();
-  if (json.IsErroredOnProcessing) {
-    throw new Error(json.ErrorMessage?.[0] ?? 'Error al procesar PDF');
-  }
-
-  return (json.ParsedResults ?? [])
-    .map((r: any) => r.ParsedText ?? '')
-    .join('\n');
+  return data.text;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

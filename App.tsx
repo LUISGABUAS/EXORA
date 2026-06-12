@@ -1,13 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, StatusBar, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, LogBox, StatusBar, StyleSheet, View } from 'react-native';
+
+// Suppress dev-only toasts and SDK noise in production
+if (!__DEV__) {
+  LogBox.ignoreAllLogs();
+}
+LogBox.ignoreLogs([
+  /\[RevenueCat\]/,
+  /Open debugger/,
+  'Non-serializable values were found in the navigation state',
+]);
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Sentry from '@sentry/react-native';
 import { initDatabase } from './src/database/db';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { BiometricLock } from './src/components/BiometricLock';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { configureNotifications, scheduleSatDeadlines } from './src/services/notificationService';
 import { startSyncService } from './src/services/syncService';
+import { setUserContext } from './src/services/crashReporting';
+import { syncWidgetData } from './src/utils/widgetBridge';
+import { track, flushNow } from './src/services/analyticsService';
 import { getAvailableBiometric, BiometricType } from './src/services/biometricService';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useExpenseStore } from './src/store/useExpenseStore';
@@ -22,6 +36,21 @@ import { useSavingsStore } from './src/store/useSavingsStore';
 import { useIncomeStore } from './src/store/useIncomeStore';
 import { useRecurringIncomeStore } from './src/store/useRecurringIncomeStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+
+// Sentry — initialized by the wizard, wraps the app below
+Sentry.init({
+  dsn: 'https://936126e6a2a51caec1d808428e97bdcb@o4511520191086592.ingest.us.sentry.io/4511520196395008',
+  sendDefaultPii: true,
+  enableLogs: true,
+  environment: __DEV__ ? 'development' : 'production',
+  tracesSampleRate: __DEV__ ? 0 : 0.2,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+    Sentry.feedbackIntegration(),
+  ],
+});
 
 function AppContent() {
   const loadExpenses = useExpenseStore(state => state.loadExpenses);
@@ -49,12 +78,12 @@ function AppContent() {
   const markIncomeProcessed = useRecurringIncomeStore(state => state.markProcessed);
   const { colors, isDark } = useTheme();
 
-  // Lock when app goes to background
+  // Flush analytics + lock on background
   useEffect(() => {
-    if (!biometricEnabled) return;
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'background' || nextState === 'inactive') {
-        setLocked(true);
+        flushNow();
+        if (biometricEnabled) setLocked(true);
       }
     });
     return () => sub.remove();
@@ -72,10 +101,10 @@ function AppContent() {
 
   useEffect(() => {
     const bootstrap = async () => {
-      // Auth (network) and DB (local) are independent — run in parallel
-      // Each promise handles its own errors so one failure can't block the others
+      // Auth primero — necesario para que el chequeo de fundador en Supabase funcione
+      await initializeAuth().catch(() => {});
+
       await Promise.allSettled([
-        initializeAuth(),
         initDatabase().then(() => loadExpenses()).catch(e => console.error('DB error:', e)),
         hydratePremium(),
         hydrateTemplates(),
@@ -138,11 +167,18 @@ function AppContent() {
       }
 
       configureNotifications();
-      const { fiscalRegime } = usePremiumStore.getState();
+      const { fiscalRegime, plan } = usePremiumStore.getState();
       scheduleSatDeadlines(fiscalRegime);
       startSyncService();
 
-      // Init RevenueCat + sync premium status (best-effort)
+      // Sync widget data al abrir la app
+      try {
+        const { expenses } = useExpenseStore.getState();
+        const { incomes } = useIncomeStore.getState();
+        syncWidgetData(expenses, incomes);
+      } catch {}
+
+
       try {
         const currentSession = useAuthStore.getState().session;
         await initRevenueCat(currentSession?.user?.id);
@@ -150,6 +186,13 @@ function AppContent() {
       } catch (error) {
         if (__DEV__) console.warn('RevenueCat bootstrap error:', error);
       }
+
+      // Sentry user context + analytics
+      const session = useAuthStore.getState().session;
+      if (session?.user) {
+        setUserContext(session.user.id, session.user.email ?? undefined);
+      }
+      track('app_open', { plan, fiscalRegime });
     };
     void bootstrap();
   }, [loadExpenses, initializeAuth, hydratePremium, updateStreak, hydrateTemplates, syncWithRevenueCat]);
@@ -167,16 +210,13 @@ function AppContent() {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <AppNavigator />
       {locked && biometricType !== 'none' ? (
-        <BiometricLock
-          biometricType={biometricType}
-          onUnlocked={() => setLocked(false)}
-        />
+        <BiometricLock biometricType={biometricType} onUnlocked={() => setLocked(false)} />
       ) : null}
     </>
   );
 }
 
-export default function App() {
+export default Sentry.wrap(function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
@@ -188,7 +228,7 @@ export default function App() {
       </ThemeProvider>
     </ErrorBoundary>
   );
-}
+});
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

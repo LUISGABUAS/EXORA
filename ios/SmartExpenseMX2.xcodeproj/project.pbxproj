@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,6 +13,11 @@
 		28C6BAA7F0D547488B87AC81 /* Inter_800ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7B5FB95CA7CA41128787F86F /* Inter_800ExtraBold.ttf */; };
 		2E20E4B556864772AE83FF66 /* Inter_400Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AD84AD9A4ABA4F8B9DEB0953 /* Inter_400Regular.ttf */; };
 		371D8175B2A2435F840D3A37 /* Inter_700Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F496987922144C0298DB097A /* Inter_700Bold.ttf */; };
+		562FD6302FCD135B00A60758 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 562FD62F2FCD135B00A60758 /* WidgetKit.framework */; };
+		562FD6322FCD135B00A60758 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 562FD6312FCD135B00A60758 /* SwiftUI.framework */; };
+		562FD6412FCD135E00A60758 /* ExpensiaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 562FD62E2FCD135B00A60758 /* ExpensiaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		562FD6DA2FD73BA000A60758 /* AppMinimizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 562FD6D82FD73BA000A60758 /* AppMinimizer.m */; };
+		562FD6DB2FD73BA000A60758 /* AppMinimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562FD6D92FD73BA000A60758 /* AppMinimizer.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7FAA384139F14EBA820B9D32 /* Inter_600SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 33E2E14190A846B38949A5BA /* Inter_600SemiBold.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
@@ -20,24 +25,90 @@
 		B9A7D9B67E5B4C63A45B7EF8 /* Inter_900Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5216EEA713E741718A4EA468 /* Inter_900Black.ttf */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		562FD63F2FCD135E00A60758 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 562FD62D2FCD135B00A60758;
+			remoteInfo = ExpensiaWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		562FD6422FCD135F00A60758 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				562FD6412FCD135E00A60758 /* ExpensiaWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		1323C48947C7430F8FFF8F29 /* Inter_500Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_500Medium.ttf; path = ../assets/fonts/Inter_500Medium.ttf; sourceTree = "<group>"; };
+		1323C48947C7430F8FFF8F29 /* Inter_500Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_500Medium.ttf; path = ../assets/fonts/Inter_500Medium.ttf; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SmartExpenseMX2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartExpenseMX2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SmartExpenseMX2/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SmartExpenseMX2/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SmartExpenseMX2/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		33E2E14190A846B38949A5BA /* Inter_600SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_600SemiBold.ttf; path = ../assets/fonts/Inter_600SemiBold.ttf; sourceTree = "<group>"; };
+		33E2E14190A846B38949A5BA /* Inter_600SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_600SemiBold.ttf; path = ../assets/fonts/Inter_600SemiBold.ttf; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-SmartExpenseMX2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SmartExpenseMX2.debug.xcconfig"; path = "Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2.debug.xcconfig"; sourceTree = "<group>"; };
-		5216EEA713E741718A4EA468 /* Inter_900Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_900Black.ttf; path = ../assets/fonts/Inter_900Black.ttf; sourceTree = "<group>"; };
+		5216EEA713E741718A4EA468 /* Inter_900Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_900Black.ttf; path = ../assets/fonts/Inter_900Black.ttf; sourceTree = "<group>"; };
+		562FD62E2FCD135B00A60758 /* ExpensiaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ExpensiaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		562FD62F2FCD135B00A60758 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		562FD6312FCD135B00A60758 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		562FD6D82FD73BA000A60758 /* AppMinimizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppMinimizer.m; sourceTree = "<group>"; };
+		562FD6D92FD73BA000A60758 /* AppMinimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMinimizer.swift; sourceTree = "<group>"; };
+		562FD6DC2FD73BA200A60758 /* SmartExpenseMX2-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SmartExpenseMX2-Bridging-Header.h"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-SmartExpenseMX2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SmartExpenseMX2.release.xcconfig"; path = "Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-SmartExpenseMX2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SmartExpenseMX2.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SmartExpenseMX2/AppDelegate.swift; sourceTree = "<group>"; };
-		7B5FB95CA7CA41128787F86F /* Inter_800ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_800ExtraBold.ttf; path = ../assets/fonts/Inter_800ExtraBold.ttf; sourceTree = "<group>"; };
+		7B5FB95CA7CA41128787F86F /* Inter_800ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_800ExtraBold.ttf; path = ../assets/fonts/Inter_800ExtraBold.ttf; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SmartExpenseMX2/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		AD84AD9A4ABA4F8B9DEB0953 /* Inter_400Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_400Regular.ttf; path = ../assets/fonts/Inter_400Regular.ttf; sourceTree = "<group>"; };
+		AD84AD9A4ABA4F8B9DEB0953 /* Inter_400Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_400Regular.ttf; path = ../assets/fonts/Inter_400Regular.ttf; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F496987922144C0298DB097A /* Inter_700Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_700Bold.ttf; path = ../assets/fonts/Inter_700Bold.ttf; sourceTree = "<group>"; };
+		F496987922144C0298DB097A /* Inter_700Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter_700Bold.ttf; path = ../assets/fonts/Inter_700Bold.ttf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		562FD6452FCD135F00A60758 /* Exceptions for "ExpensiaWidget" folder in "ExpensiaWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 562FD62D2FCD135B00A60758 /* ExpensiaWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		562FD6332FCD135B00A60758 /* ExpensiaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				562FD6452FCD135F00A60758 /* Exceptions for "ExpensiaWidget" folder in "ExpensiaWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ExpensiaWidget;
+			sourceTree = "<group>";
+		};
+		562FD6502FCD13D900A60758 /* ExpensiaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ExpensiaWidget;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
@@ -45,6 +116,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C80B921A6F3F58F76C31292 /* libPods-SmartExpenseMX2.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		562FD62B2FCD135B00A60758 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				562FD6322FCD135B00A60758 /* SwiftUI.framework in Frameworks */,
+				562FD6302FCD135B00A60758 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -68,6 +148,8 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-SmartExpenseMX2.a */,
+				562FD62F2FCD135B00A60758 /* WidgetKit.framework */,
+				562FD6312FCD135B00A60758 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -83,7 +165,6 @@
 				5216EEA713E741718A4EA468 /* Inter_900Black.ttf */,
 			);
 			name = Resources;
-			path = "";
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -96,12 +177,17 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				562FD6D82FD73BA000A60758 /* AppMinimizer.m */,
+				562FD6D92FD73BA000A60758 /* AppMinimizer.swift */,
 				13B07FAE1A68108700A75B9A /* SmartExpenseMX2 */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
+				562FD6332FCD135B00A60758 /* ExpensiaWidget */,
+				562FD6502FCD13D900A60758 /* ExpensiaWidget */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
 				73156A0070E542A4BB984C3C /* Resources */,
+				562FD6DC2FD73BA200A60758 /* SmartExpenseMX2-Bridging-Header.h */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -112,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* SmartExpenseMX2.app */,
+				562FD62E2FCD135B00A60758 /* ExpensiaWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -139,15 +226,38 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				562FD6422FCD135F00A60758 /* Embed Foundation Extensions */,
+				7F880FE3C1814B189676D392 /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				562FD6402FCD135E00A60758 /* PBXTargetDependency */,
 			);
 			name = SmartExpenseMX2;
 			productName = SmartExpenseMX2;
 			productReference = 13B07F961A680F5B00A75B9A /* SmartExpenseMX2.app */;
 			productType = "com.apple.product-type.application";
+		};
+		562FD62D2FCD135B00A60758 /* ExpensiaWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 562FD6462FCD135F00A60758 /* Build configuration list for PBXNativeTarget "ExpensiaWidgetExtension" */;
+			buildPhases = (
+				562FD62A2FCD135B00A60758 /* Sources */,
+				562FD62B2FCD135B00A60758 /* Frameworks */,
+				562FD62C2FCD135B00A60758 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				562FD6332FCD135B00A60758 /* ExpensiaWidget */,
+			);
+			name = ExpensiaWidgetExtension;
+			productName = ExpensiaWidgetExtension;
+			productReference = 562FD62E2FCD135B00A60758 /* ExpensiaWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -156,10 +266,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						LastSwiftMigration = 1120;
+						LastSwiftMigration = 2640;
+					};
+					562FD62D2FCD135B00A60758 = {
+						CreatedOnToolsVersion = 26.4;
+						LastSwiftMigration = 2640;
 					};
 				};
 			};
@@ -177,6 +292,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* SmartExpenseMX2 */,
+				562FD62D2FCD135B00A60758 /* ExpensiaWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -198,6 +314,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		562FD62C2FCD135B00A60758 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -215,7 +338,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"\\\"$WITH_ENVIRONMENT\\\" \\\"$REACT_NATIVE_XCODE\\\"\"\n";
+			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nSENTRY_XCODE=\"$REACT_NATIVE_PATH/../@sentry/react-native/scripts/sentry-xcode.sh\"\n\n/bin/sh -c \"\\\"$WITH_ENVIRONMENT\\\" \\\"$SENTRY_XCODE\\\"\"\n";
 		};
 		00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -233,6 +356,20 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		7F880FE3C1814B189676D392 /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 8;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Upload Debug Symbols to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh\n";
 		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -280,11 +417,28 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				562FD6DA2FD73BA000A60758 /* AppMinimizer.m in Sources */,
+				562FD6DB2FD73BA000A60758 /* AppMinimizer.swift in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		562FD62A2FCD135B00A60758 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		562FD6402FCD135E00A60758 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 562FD62D2FCD135B00A60758 /* ExpensiaWidgetExtension */;
+			targetProxy = 562FD63F2FCD135E00A60758 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -301,16 +455,16 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.expensia.finance.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app;
 				PRODUCT_NAME = SmartExpenseMX2;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OBJC_BRIDGING_HEADER = "SmartExpenseMX2-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -331,19 +485,115 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.expensia.finance.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app;
 				PRODUCT_NAME = SmartExpenseMX2;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OBJC_BRIDGING_HEADER = "SmartExpenseMX2-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		562FD6432FCD135F00A60758 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = KZN3M5BBMU;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExpensiaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ExpensiaWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app.ExpensiaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		562FD6442FCD135F00A60758 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = KZN3M5BBMU;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ExpensiaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ExpensiaWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app.ExpensiaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -518,6 +768,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		562FD6462FCD135F00A60758 /* Build configuration list for PBXNativeTarget "ExpensiaWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				562FD6432FCD135F00A60758 /* Debug */,
+				562FD6442FCD135F00A60758 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

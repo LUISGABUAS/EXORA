@@ -5,6 +5,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -133,12 +134,16 @@ export function LoginScreen() {
 
           {/* Footer */}
           <Animated.View entering={FadeIn.delay(500).duration(400)} style={s.footer}>
-            <Text style={s.terms}>
-              Al continuar aceptas nuestros{' '}
-              <Text style={s.termsLink}>Términos de uso</Text>
-              {' '}y{' '}
-              <Text style={s.termsLink}>Política de privacidad</Text>
-            </Text>
+            <Text style={s.terms}>Al continuar aceptas nuestros</Text>
+            <View style={s.termsRow}>
+              <Pressable onPress={() => Linking.openURL('https://expensia-waitlist.vercel.app/terminos')}>
+                <Text style={s.termsLink}>Términos de uso</Text>
+              </Pressable>
+              <Text style={s.terms}> y </Text>
+              <Pressable onPress={() => Linking.openURL('https://expensia-waitlist.vercel.app/privacidad')}>
+                <Text style={s.termsLink}>Política de privacidad</Text>
+              </Pressable>
+            </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -288,12 +293,19 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
 
     // Footer
-    footer: { paddingTop: 16 },
+    footer: { paddingTop: 16, alignItems: 'center' },
+    termsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      marginTop: 2,
+    },
     terms: {
       color: colors.textMuted,
       fontSize: 12,
       textAlign: 'center',
       lineHeight: 18,
     },
-    termsLink: { color: colors.primary, fontWeight: '600' },
+    termsLink: { color: colors.primary, fontWeight: '600', fontSize: 12 },
   });

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
 import { Expense } from '../types/expense';
 import { FiscalRegime } from '../store/usePremiumStore';
 import { formatCurrency, localDateString } from '../utils/format';
@@ -141,9 +142,6 @@ export function generateLocalInsights(
   return insights.slice(0, limit);
 }
 
-const SUPABASE_URL = 'https://oxefxfwwwrdypjnbnzdy.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94ZWZ4Znd3d3JkeXBqbmJuemR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MjI2MzYsImV4cCI6MjA5MDQ5ODYzNn0.g3raLrkTnk9ZraNX5IVhrJ25HotfNuSuME7nAWtvT2c';
 
 /**
  * Genera insights con IA (Claude Haiku) via Supabase Edge Function — solo premium.
@@ -199,31 +197,24 @@ export async function generateAIInsights(
     .join(', ');
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/ai-insights`,
+    const { data: response, error: fnError } = await supabase.functions.invoke(
+      'ai-insights',
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
+        body: {
           catSummary,
           topMerchants,
           deductibleTotal: deductibleTotal.toFixed(0),
           nonDeductibleTotal: nonDeductibleTotal.toFixed(0),
           totalExpenses: recent.length,
           regime,
-        }),
+        },
       },
     );
 
-    if (!response.ok) return [];
+    if (fnError || !response) return [];
 
-    const data = await response.json();
     const parsed: Array<{ type: string; title: string; message: string }> =
-      data.insights || [];
+      (response as any).insights || [];
 
     const ICONS: Record<string, string> = {
       warning: 'alert-circle-outline',
