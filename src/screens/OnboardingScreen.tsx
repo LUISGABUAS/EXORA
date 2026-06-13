@@ -4,6 +4,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,13 +14,7 @@ import {
   ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
@@ -32,7 +27,7 @@ import { formatCurrency } from '../utils/format';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type SlideKey = 'welcome' | 'regime' | 'savings_projection' | 'first_expense' | 'ready';
+type SlideKey = 'welcome' | 'name' | 'age' | 'regime' | 'recommendations' | 'widget' | 'first_expense' | 'ready';
 
 const REGIMES: Array<{ value: FiscalRegime; icon: string; title: string; desc: string }> = [
   { value: 'resico', icon: 'account-check', title: 'RESICO', desc: 'Régimen Simplificado de Confianza' },
@@ -46,48 +41,93 @@ const REGIMES: Array<{ value: FiscalRegime; icon: string; title: string; desc: s
   { value: 'no_facturo', icon: 'wallet-outline', title: 'No facturo', desc: 'Solo quiero controlar mis gastos' },
 ];
 
-const FEATURES = [
-  {
-    icon: 'camera-outline',
-    color: '#22C55E',
-    title: 'Escanea tickets',
-    desc: 'Captura gastos con la cámara. La app lee el ticket y extrae monto, fecha y comercio automáticamente.',
-  },
-  {
-    icon: 'calculator-variant-outline',
-    color: '#3B82F6',
-    title: 'Ahorro fiscal real',
-    desc: 'Calcula cuánto puedes deducir según tu régimen del SAT mes a mes.',
-  },
-  {
-    icon: 'chart-pie',
-    color: '#F59E0B',
-    title: 'Reportes inteligentes',
-    desc: 'Gráficas, presupuestos por categoría y reporte fiscal mensual en CSV.',
-  },
+const AGE_RANGES = [
+  { label: '18 – 24', icon: '🎓', desc: 'Estudiante o inicio de carrera' },
+  { label: '25 – 34', icon: '🚀', desc: 'Crecimiento profesional' },
+  { label: '35 – 44', icon: '💼', desc: 'Consolidación profesional' },
+  { label: '45 – 54', icon: '🏆', desc: 'Experiencia y estabilidad' },
+  { label: '55+', icon: '🌟', desc: 'Trayectoria establecida' },
 ];
+
+const REGIME_DEDUCTIBLES: Partial<Record<FiscalRegime, string[]>> = {
+  resico: ['Gasolina y transporte', 'Comidas de negocio', 'Renta de oficina', 'Equipo y software'],
+  actividad_empresarial: ['Gastos de operación', 'Honorarios pagados', 'Arrendamiento', 'Publicidad'],
+  honorarios: ['Material de trabajo', 'Transporte profesional', 'Capacitación', 'Software profesional'],
+  plataformas_digitales: ['Gasolina', 'Mantenimiento de vehículo', 'Celular y datos', 'Seguro'],
+  arrendamiento: ['Mantenimiento del inmueble', 'Predial', 'Seguros', 'Servicios'],
+  sueldos_salarios: ['Honorarios médicos', 'Colegiaturas', 'Intereses hipotecarios', 'Donativos'],
+};
+
+const REGIME_LABELS: Partial<Record<FiscalRegime, string>> = {
+  resico: 'RESICO',
+  actividad_empresarial: 'Actividad Empresarial',
+  honorarios: 'Honorarios',
+  plataformas_digitales: 'Plataformas Digitales',
+  arrendamiento: 'Arrendamiento',
+  incorporacion_fiscal: 'Incorporación Fiscal',
+  regimen_general: 'Régimen General',
+  sueldos_salarios: 'Sueldos y Salarios',
+  no_facturo: 'Sin facturar',
+};
+
+function getRecommendations(regime: FiscalRegime | null, ageRange: string): string[] {
+  const base: string[] = [];
+  if (!regime) return base;
+
+  if (regime === 'resico') base.push('Con RESICO puedes deducir hasta el 25% de tus ingresos. Escanea cada ticket.');
+  if (regime === 'honorarios') base.push('Como honorarios, guarda facturas de tu equipo y herramientas de trabajo.');
+  if (regime === 'plataformas_digitales') base.push('Tu vehículo es deducible. Registra gasolina y mantenimiento siempre.');
+  if (regime === 'sueldos_salarios') base.push('Aprovecha deducciones personales: médico, dental, óptica y colegiaturas.');
+  if (regime === 'no_facturo') base.push('Llevar control de gastos te ayuda a identificar en qué gastas más y ahorrar.');
+
+  if (ageRange === '18 – 24') base.push('Empieza desde joven. Cada peso ahorrado ahora vale más en el futuro.');
+  if (ageRange === '25 – 34') base.push('Es el mejor momento para configurar metas de ahorro. Úsalas en EXPENSIA.');
+  if (ageRange === '35 – 44') base.push('Con ingresos más altos, las deducciones se vuelven más valiosas. No las ignores.');
+  if (ageRange === '45 – 54' || ageRange === '55+') base.push('Considera registrar también seguros y planes de retiro como deducciones.');
+
+  base.push('Activa el presupuesto mensual para que te avise cuando te acercas al límite.');
+
+  return base.slice(0, 3);
+}
 
 export function OnboardingScreen() {
   const { colors } = useTheme();
   const s = useStyles(colors);
   const completeOnboarding = usePremiumStore(state => state.completeOnboarding);
   const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
+  const setFiscalProfile = usePremiumStore(state => state.setFiscalProfile);
   const addExpense = useExpenseStore(state => state.addExpense);
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [name, setName] = useState('');
+  const [ageRange, setAgeRange] = useState('');
   const [selectedRegime, setSelectedRegime] = useState<FiscalRegime | null>(null);
   const [inputText, setInputText] = useState('');
   const flatRef = useRef<FlatList>(null);
 
-  const SLIDES: SlideKey[] = ['welcome', 'regime', 'savings_projection', 'first_expense', 'ready'];
-  const totalSteps = SLIDES.length;
+  const SLIDES: SlideKey[] = ['welcome', 'name', 'age', 'regime', 'recommendations', 'widget', 'first_expense', 'ready'];
 
   const goNext = () => {
-    if (currentStep < totalSteps - 1) {
-      const next = currentStep + 1;
-      flatRef.current?.scrollToIndex({ index: next, animated: true });
-      setCurrentStep(next);
+    const next = currentStep + 1;
+    if (next >= SLIDES.length) return;
+    flatRef.current?.scrollToIndex({ index: next, animated: true });
+    setCurrentStep(next);
+  };
+
+  const handleNameNext = () => {
+    if (!name.trim()) {
+      Alert.alert('Escribe tu nombre', 'Necesitamos tu nombre para personalizar la app.');
+      return;
     }
+    goNext();
+  };
+
+  const handleAgeNext = () => {
+    if (!ageRange) {
+      Alert.alert('Selecciona tu rango de edad', 'Lo usamos para darte recomendaciones personalizadas.');
+      return;
+    }
+    goNext();
   };
 
   const handleRegimeNext = () => {
@@ -100,6 +140,7 @@ export function OnboardingScreen() {
 
   const handleFinish = async () => {
     if (selectedRegime) await setFiscalRegime(selectedRegime);
+    await setFiscalProfile({ razonSocial: name.trim() || null });
     if (inputText.trim()) {
       const parsed = parseSmartInput(inputText);
       await addExpense({
@@ -119,8 +160,9 @@ export function OnboardingScreen() {
     await completeOnboarding();
   };
 
-  const handleSkipFirstExpense = async () => {
+  const handleSkip = async () => {
     if (selectedRegime) await setFiscalRegime(selectedRegime);
+    await setFiscalProfile({ razonSocial: name.trim() || null });
     await completeOnboarding();
   };
 
@@ -136,38 +178,20 @@ export function OnboardingScreen() {
     switch (item) {
       case 'welcome':
         return <WelcomeSlide colors={colors} s={s} onNext={goNext} />;
+      case 'name':
+        return <NameSlide colors={colors} s={s} value={name} onChange={setName} onNext={handleNameNext} />;
+      case 'age':
+        return <AgeSlide colors={colors} s={s} selected={ageRange} onSelect={setAgeRange} onNext={handleAgeNext} />;
       case 'regime':
-        return (
-          <RegimeSlide
-            colors={colors}
-            s={s}
-            selected={selectedRegime}
-            onSelect={setSelectedRegime}
-            onNext={handleRegimeNext}
-          />
-        );
-      case 'savings_projection':
-        return (
-          <SavingsProjectionSlide
-            colors={colors}
-            s={s}
-            regime={selectedRegime}
-            onNext={goNext}
-          />
-        );
+        return <RegimeSlide colors={colors} s={s} selected={selectedRegime} onSelect={setSelectedRegime} onNext={handleRegimeNext} />;
+      case 'recommendations':
+        return <RecommendationsSlide colors={colors} s={s} regime={selectedRegime} ageRange={ageRange} name={name} onNext={goNext} />;
+      case 'widget':
+        return <WidgetSlide colors={colors} s={s} onNext={goNext} />;
       case 'first_expense':
-        return (
-          <FirstExpenseSlide
-            colors={colors}
-            s={s}
-            value={inputText}
-            onChange={setInputText}
-            onNext={goNext}
-            onSkip={handleSkipFirstExpense}
-          />
-        );
+        return <FirstExpenseSlide colors={colors} s={s} value={inputText} onChange={setInputText} onNext={goNext} onSkip={handleSkip} />;
       case 'ready':
-        return <ReadySlide colors={colors} s={s} onFinish={handleFinish} />;
+        return <ReadySlide colors={colors} s={s} name={name} regime={selectedRegime} onFinish={handleFinish} />;
       default:
         return null;
     }
@@ -175,16 +199,11 @@ export function OnboardingScreen() {
 
   return (
     <SafeAreaView style={s.container}>
-      {/* Dots */}
       <View style={s.dotsRow}>
         {SLIDES.map((_, i) => (
-          <View
-            key={i}
-            style={[s.dot, i === currentStep && s.dotActive]}
-          />
+          <View key={i} style={[s.dot, i === currentStep && s.dotActive]} />
         ))}
       </View>
-
       <FlatList
         ref={flatRef}
         data={SLIDES}
@@ -201,21 +220,16 @@ export function OnboardingScreen() {
   );
 }
 
-/* ─── Slides ────────────────────────────────────── */
+/* ─── Slides ─────────────────────────────────────── */
 
-function WelcomeSlide({ colors, s, onNext }: { colors: ColorPalette; s: ReturnType<typeof useStyles>; onNext: () => void }) {
+function WelcomeSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onNext: () => void }) {
   return (
     <Animated.View entering={FadeIn.duration(500)} style={s.slide}>
       <View style={s.welcomeHero}>
-        <Image
-          source={require('../assets/logo_new.png')}
-          style={s.logoImage}
-          resizeMode="contain"
-        />
+        <Image source={require('../assets/logo_new.png')} style={s.logoImage} resizeMode="contain" />
         <Text style={s.appName}>EXPENSIA</Text>
         <Text style={s.tagline}>Tu contador inteligente{'\n'}en el bolsillo</Text>
       </View>
-
       <View style={s.welcomeBullets}>
         {[
           { icon: 'check-circle', text: 'Controla gastos personales y de negocio' },
@@ -228,119 +242,75 @@ function WelcomeSlide({ colors, s, onNext }: { colors: ColorPalette; s: ReturnTy
           </View>
         ))}
       </View>
-
       <Pressable style={s.primaryButton} onPress={onNext}>
         <Text style={s.primaryButtonText}>Comenzar</Text>
-        <Icon name="arrow-right" size={20} color={colors.white} />
+        <Icon name="arrow-right" size={20} color="#fff" />
       </Pressable>
     </Animated.View>
   );
 }
 
-const REGIME_SAVINGS_EXAMPLE = 5000; // MXN/mes en deducibles como ejemplo
-
-const REGIME_LABELS: Partial<Record<FiscalRegime, string | null>> = {
-  resico: 'RESICO',
-  actividad_empresarial: 'Actividad Empresarial',
-  honorarios: 'Honorarios',
-  plataformas_digitales: 'Plataformas Digitales',
-  arrendamiento: 'Arrendamiento',
-  incorporacion_fiscal: 'Incorporación Fiscal',
-  regimen_general: 'Régimen General',
-  sueldos_salarios: 'Sueldos y Salarios',
-  no_facturo: null,
-};
-
-const DEDUCTIBLE_EXAMPLES: Partial<Record<FiscalRegime, string[]>> = {
-  resico: ['Gasolina y transporte', 'Comidas de negocio', 'Renta de oficina', 'Equipo y software'],
-  actividad_empresarial: ['Gastos de operación', 'Honorarios pagados', 'Arrendamiento', 'Publicidad'],
-  honorarios: ['Material de trabajo', 'Transporte profesional', 'Capacitación', 'Software profesional'],
-  plataformas_digitales: ['Gasolina', 'Mantenimiento de vehículo', 'Celular y datos', 'Seguro'],
-  arrendamiento: ['Mantenimiento del inmueble', 'Predial', 'Seguros', 'Servicios'],
-  sueldos_salarios: ['Honorarios médicos', 'Colegiaturas', 'Intereses hipotecarios', 'Donativos'],
-};
-
-function SavingsProjectionSlide({
-  colors, s, regime, onNext,
-}: {
-  colors: ColorPalette;
-  s: ReturnType<typeof useStyles>;
-  regime: FiscalRegime | null;
-  onNext: () => void;
-}) {
-  const isTaxPayer = regime && regime !== 'no_facturo';
-  const annualSaving = regime ? estimateTaxSavings(REGIME_SAVINGS_EXAMPLE * 12, regime) : 0;
-  const rateLabel = regime ? savingsRateLabel(regime) : '';
-  const regimeLabel = regime ? REGIME_LABELS[regime] : '';
-  const examples = regime ? (DEDUCTIBLE_EXAMPLES[regime] ?? DEDUCTIBLE_EXAMPLES.actividad_empresarial ?? []) : [];
-
+function NameSlide({ colors, s, value, onChange, onNext }: { colors: ColorPalette; s: any; value: string; onChange: (v: string) => void; onNext: () => void }) {
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
-      {isTaxPayer ? (
-        <>
-          <Animated.View entering={FadeInDown.delay(50).duration(400)} style={s.savingsHero}>
-            <Icon name="cash-multiple" size={40} color={colors.primary} />
-            <Text style={s.savingsTitle}>
-              Podrías ahorrar hasta
-            </Text>
-            <Text style={s.savingsAmount}>{formatCurrency(annualSaving)}</Text>
-            <Text style={s.savingsSubtitle}>al año en impuestos como {regimeLabel}</Text>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(150).duration(400)} style={s.savingsBox}>
-            <Text style={s.savingsBoxTitle}>¿Cómo funciona?</Text>
-            <Text style={s.savingsBoxDesc}>
-              EXPENSIA detecta automáticamente qué gastos son deducibles según tu régimen.
-              Con {rateLabel}, cada ticket escaneado puede reducir lo que pagas al SAT.
-            </Text>
-          </Animated.View>
-
-          {examples.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(250).duration(400)} style={s.examplesWrap}>
-              <Text style={s.examplesTitle}>Gastos deducibles para ti</Text>
-              <View style={s.examplesList}>
-                {examples.map(ex => (
-                  <View key={ex} style={s.exampleRow}>
-                    <Icon name="check-circle-outline" size={15} color={colors.success} />
-                    <Text style={s.exampleItem}>{ex}</Text>
-                  </View>
-                ))}
-              </View>
-            </Animated.View>
-          )}
-        </>
-      ) : (
-        <Animated.View entering={FadeIn.duration(400)} style={s.savingsHero}>
-          <Icon name="wallet-outline" size={48} color={colors.primary} />
-          <Text style={s.savingsTitle}>Control total de tus gastos</Text>
-          <Text style={s.slideSubtitle}>
-            Registra, categoriza y analiza en qué va tu dinero cada mes.
-          </Text>
-        </Animated.View>
-      )}
-
-      <Pressable style={[s.primaryButton, { marginTop: 8 }]} onPress={onNext}>
-        <Text style={s.primaryButtonText}>Empezar a ahorrar</Text>
-        <Icon name="arrow-right" size={20} color={colors.white} />
+      <View style={s.heroIcon}>
+        <Icon name="account-outline" size={44} color={colors.primary} />
+      </View>
+      <Text style={s.slideTitle}>¿Cómo te llamas?</Text>
+      <Text style={s.slideSubtitle}>Lo usamos para personalizar tu experiencia</Text>
+      <TextInput
+        style={s.textInput}
+        placeholder="Tu nombre o apodo"
+        placeholderTextColor={colors.textMuted}
+        value={value}
+        onChangeText={onChange}
+        autoFocus
+        returnKeyType="next"
+        onSubmitEditing={onNext}
+        autoCapitalize="words"
+      />
+      <Pressable style={s.primaryButton} onPress={onNext}>
+        <Text style={s.primaryButtonText}>Continuar</Text>
+        <Icon name="arrow-right" size={20} color="#fff" />
       </Pressable>
     </Animated.View>
   );
 }
 
-function RegimeSlide({
-  colors, s, selected, onSelect, onNext,
-}: {
-  colors: ColorPalette;
-  s: ReturnType<typeof useStyles>;
-  selected: FiscalRegime | null;
-  onSelect: (r: FiscalRegime) => void;
-  onNext: () => void;
-}) {
+function AgeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPalette; s: any; selected: string; onSelect: (v: string) => void; onNext: () => void }) {
+  return (
+    <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
+      <Text style={s.slideTitle}>¿Cuántos años tienes?</Text>
+      <Text style={s.slideSubtitle}>Personalizamos tus recomendaciones financieras según tu etapa de vida</Text>
+      <View style={s.ageList}>
+        {AGE_RANGES.map(range => (
+          <Pressable
+            key={range.label}
+            style={[s.ageCard, selected === range.label && s.ageCardActive]}
+            onPress={() => onSelect(range.label)}
+          >
+            <Text style={s.ageEmoji}>{range.icon}</Text>
+            <View style={s.ageInfo}>
+              <Text style={[s.ageLabel, selected === range.label && s.textWhite]}>{range.label}</Text>
+              <Text style={[s.ageDesc, selected === range.label && s.textWhiteOpacity]}>{range.desc}</Text>
+            </View>
+            {selected === range.label && <Icon name="check-circle" size={18} color="#fff" />}
+          </Pressable>
+        ))}
+      </View>
+      <Pressable style={[s.primaryButton, { marginTop: 8 }]} onPress={onNext}>
+        <Text style={s.primaryButtonText}>Continuar</Text>
+        <Icon name="arrow-right" size={20} color="#fff" />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function RegimeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPalette; s: any; selected: FiscalRegime | null; onSelect: (r: FiscalRegime) => void; onNext: () => void }) {
   return (
     <View style={s.slide}>
       <Text style={s.slideTitle}>¿Cómo facturas?</Text>
       <Text style={s.slideSubtitle}>Personalizamos el cálculo de deducciones según tu régimen</Text>
-
       <ScrollView style={s.regimeScroll} showsVerticalScrollIndicator={false}>
         <View style={s.regimeList}>
           {REGIMES.map(r => (
@@ -349,45 +319,148 @@ function RegimeSlide({
               style={[s.regimeCard, selected === r.value && s.regimeCardActive]}
               onPress={() => onSelect(r.value)}
             >
-              <Icon
-                name={r.icon}
-                size={22}
-                color={selected === r.value ? colors.white : colors.primary}
-              />
+              <Icon name={r.icon} size={22} color={selected === r.value ? '#fff' : colors.primary} />
               <View style={s.regimeInfo}>
-                <Text style={[s.regimeTitle, selected === r.value && s.textWhite]}>
-                  {r.title}
-                </Text>
-                <Text style={[s.regimeDesc, selected === r.value && s.textWhiteOpacity]}>
-                  {r.desc}
-                </Text>
+                <Text style={[s.regimeTitle, selected === r.value && s.textWhite]}>{r.title}</Text>
+                <Text style={[s.regimeDesc, selected === r.value && s.textWhiteOpacity]}>{r.desc}</Text>
               </View>
-              {selected === r.value && (
-                <Icon name="check-circle" size={18} color={colors.white} />
-              )}
+              {selected === r.value && <Icon name="check-circle" size={18} color="#fff" />}
             </Pressable>
           ))}
         </View>
       </ScrollView>
-
       <Pressable style={[s.primaryButton, { marginTop: 12 }]} onPress={onNext}>
         <Text style={s.primaryButtonText}>Continuar</Text>
-        <Icon name="arrow-right" size={20} color={colors.white} />
+        <Icon name="arrow-right" size={20} color="#fff" />
       </Pressable>
     </View>
   );
 }
 
-function FirstExpenseSlide({
-  colors, s, value, onChange, onNext, onSkip,
-}: {
-  colors: ColorPalette;
-  s: ReturnType<typeof useStyles>;
-  value: string;
-  onChange: (t: string) => void;
-  onNext: () => void;
-  onSkip: () => void;
-}) {
+function RecommendationsSlide({ colors, s, regime, ageRange, name, onNext }: { colors: ColorPalette; s: any; regime: FiscalRegime | null; ageRange: string; name: string; onNext: () => void }) {
+  const firstName = name.split(' ')[0] || 'tú';
+  const recommendations = getRecommendations(regime, ageRange);
+  const annualSaving = regime ? estimateTaxSavings(5000 * 12, regime) : 0;
+  const deductibles = regime ? (REGIME_DEDUCTIBLES[regime] ?? []) : [];
+  const regimeLabel = regime ? REGIME_LABELS[regime] : '';
+  const isTaxPayer = regime && regime !== 'no_facturo';
+
+  return (
+    <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
+      <Text style={s.slideTitle}>Perfecto, {firstName} 👋</Text>
+      <Text style={s.slideSubtitle}>Basado en tu perfil, esto es lo que EXPENSIA puede hacer por ti</Text>
+
+      {isTaxPayer && (
+        <Animated.View entering={FadeInDown.delay(100).duration(400)} style={s.savingsHero}>
+          <Icon name="cash-multiple" size={32} color={colors.primary} />
+          <Text style={s.savingsTitle}>Podrías ahorrar hasta</Text>
+          <Text style={s.savingsAmount}>{formatCurrency(annualSaving)}</Text>
+          <Text style={s.savingsSubtitle}>al año como {regimeLabel}</Text>
+        </Animated.View>
+      )}
+
+      <View style={s.recoList}>
+        {recommendations.map((reco, i) => (
+          <Animated.View key={i} entering={FadeInDown.delay(150 + i * 80).duration(350)} style={s.recoRow}>
+            <View style={s.recoIconWrap}>
+              <Icon name="lightbulb-on-outline" size={16} color={colors.primary} />
+            </View>
+            <Text style={s.recoText}>{reco}</Text>
+          </Animated.View>
+        ))}
+      </View>
+
+      {deductibles.length > 0 && (
+        <Animated.View entering={FadeInDown.delay(400).duration(350)} style={s.deductibleBox}>
+          <Text style={s.deductibleTitle}>Gastos deducibles para ti</Text>
+          <View style={s.deductibleList}>
+            {deductibles.map(d => (
+              <View key={d} style={s.deductibleRow}>
+                <Icon name="check-circle-outline" size={13} color={colors.success} />
+                <Text style={s.deductibleItem}>{d}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+      )}
+
+      <Pressable style={[s.primaryButton, { marginTop: 8 }]} onPress={onNext}>
+        <Text style={s.primaryButtonText}>¡Empecemos!</Text>
+        <Icon name="arrow-right" size={20} color="#fff" />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function WidgetSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onNext: () => void }) {
+  const isIOS = Platform.OS === 'ios';
+
+  const iosSteps = [
+    'Mantén presionada la pantalla de inicio hasta que los íconos tiemblen',
+    'Toca el botón "+" en la esquina superior izquierda',
+    'Busca "EXPENSIA" en la lista',
+    'Elige el tamaño de widget que prefieras y toca "Agregar widget"',
+  ];
+
+  const androidSteps = [
+    'Mantén presionada la pantalla de inicio',
+    'Toca "Widgets" en el menú que aparece',
+    'Busca "EXPENSIA" en la lista de widgets',
+    'Mantén presionado el widget y arrástralo a la pantalla de inicio',
+  ];
+
+  const steps = isIOS ? iosSteps : androidSteps;
+
+  return (
+    <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
+      <View style={s.heroIcon}>
+        <Icon name="view-grid-plus-outline" size={44} color={colors.primary} />
+      </View>
+      <Text style={s.slideTitle}>Activa el Widget</Text>
+      <Text style={s.slideSubtitle}>
+        Ve tus gastos del mes directamente en tu pantalla de inicio sin abrir la app
+      </Text>
+
+      {/* Widget preview mockup */}
+      <View style={s.widgetPreview}>
+        <View style={s.widgetHeader}>
+          <Text style={s.widgetLogo}>◆ EXPENSIA</Text>
+          <Text style={s.widgetMonth}>Junio</Text>
+        </View>
+        <Text style={s.widgetAmount}>$0.00</Text>
+        <Text style={s.widgetLabel}>Gastos del mes</Text>
+        <View style={s.widgetBar}>
+          <View style={[s.widgetBarFill, { width: '30%' }]} />
+        </View>
+        <Text style={s.widgetSub}>30% del presupuesto</Text>
+      </View>
+
+      <View style={s.widgetSteps}>
+        <Text style={[s.deductibleTitle, { marginBottom: 8 }]}>
+          Cómo agregarlo en {isIOS ? 'iOS' : 'Android'}:
+        </Text>
+        {steps.map((step, i) => (
+          <View key={i} style={s.widgetStep}>
+            <View style={s.widgetStepNum}>
+              <Text style={s.widgetStepNumText}>{i + 1}</Text>
+            </View>
+            <Text style={s.widgetStepText}>{step}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Pressable style={s.primaryButton} onPress={onNext}>
+        <Text style={s.primaryButtonText}>Continuar</Text>
+        <Icon name="arrow-right" size={20} color="#fff" />
+      </Pressable>
+      <Pressable style={s.skipButton} onPress={onNext}>
+        <Text style={s.skipText}>Lo hago después</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function FirstExpenseSlide({ colors, s, value, onChange, onNext, onSkip }: { colors: ColorPalette; s: any; value: string; onChange: (t: string) => void; onNext: () => void; onSkip: () => void }) {
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
       <View style={s.heroIcon}>
@@ -398,7 +471,6 @@ function FirstExpenseSlide({
         Escribe algo como <Text style={s.exampleText}>"150 uber ayer"</Text>{' '}
         o <Text style={s.exampleText}>"Netflix 250"</Text>
       </Text>
-
       <TextInput
         style={s.textInput}
         placeholder="Ej: 350 comida McDonald's"
@@ -409,13 +481,11 @@ function FirstExpenseSlide({
         returnKeyType="done"
         onSubmitEditing={onNext}
       />
-
       <View style={s.hints}>
         {['💡 Detecta montos automáticamente', '📅 Entiende "ayer", "hoy"', '🏷️ Clasifica la categoría'].map(h => (
           <Text key={h} style={s.hintText}>{h}</Text>
         ))}
       </View>
-
       <Pressable style={s.primaryButton} onPress={onNext}>
         <Text style={s.primaryButtonText}>Registrar y continuar</Text>
       </Pressable>
@@ -426,363 +496,117 @@ function FirstExpenseSlide({
   );
 }
 
-function ReadySlide({ colors, s, onFinish }: { colors: ColorPalette; s: ReturnType<typeof useStyles>; onFinish: () => void }) {
+function ReadySlide({ colors, s, name, regime, onFinish }: { colors: ColorPalette; s: any; name: string; regime: FiscalRegime | null; onFinish: () => void }) {
+  const firstName = name.split(' ')[0] || '';
   return (
     <Animated.View entering={FadeIn.duration(500)} style={[s.slide, s.readySlide]}>
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={s.readyCheck}>
         <Icon name="check-circle" size={72} color={colors.primary} />
       </Animated.View>
       <Animated.Text entering={FadeInDown.delay(200).duration(400)} style={s.readyTitle}>
-        ¡Todo listo!
+        {firstName ? `¡Listo, ${firstName}!` : '¡Todo listo!'}
       </Animated.Text>
       <Animated.Text entering={FadeInDown.delay(300).duration(400)} style={s.readySubtitle}>
-        Tu perfil fiscal está configurado.{'\n'}Empieza a registrar tus gastos y descubre cuánto puedes ahorrar.
+        Tu perfil está configurado.{'\n'}Empieza a registrar y descubre cuánto puedes ahorrar.
       </Animated.Text>
-
       <Animated.View entering={FadeInDown.delay(400).duration(400)} style={s.readyStat}>
         <Icon name="lightning-bolt" size={20} color={colors.primary} />
-        <Text style={s.readyStatText}>Usuarios ahorran en promedio <Text style={s.readyStatBold}>$4,200/año</Text> en deducciones</Text>
+        <Text style={s.readyStatText}>
+          Usuarios ahorran en promedio <Text style={s.readyStatBold}>$4,200/año</Text> en deducciones
+        </Text>
       </Animated.View>
-
       <Animated.View entering={FadeInDown.delay(500).duration(400)} style={{ width: '100%' }}>
         <Pressable style={s.primaryButton} onPress={onFinish}>
-          <Text style={s.primaryButtonText}>Ir a Expensia</Text>
-          <Icon name="rocket-launch-outline" size={20} color={colors.white} />
+          <Text style={s.primaryButtonText}>Ir a EXPENSIA</Text>
+          <Icon name="rocket-launch-outline" size={20} color="#fff" />
         </Pressable>
       </Animated.View>
     </Animated.View>
   );
 }
 
-/* ─── Styles ────────────────────────────────────── */
+/* ─── Styles ─────────────────────────────────────── */
 
 const useStyles = (colors: ColorPalette) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    dotsRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 14,
-    },
-    dot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: colors.border,
-    },
-    dotActive: {
-      backgroundColor: colors.primary,
-      width: 20,
-      borderRadius: 3,
-    },
-    slide: {
-      width: SCREEN_WIDTH,
-      flex: 1,
-      paddingHorizontal: 24,
-      paddingBottom: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 16,
-    },
-    // Welcome
-    welcomeHero: {
-      alignItems: 'center',
-      gap: 12,
-      marginBottom: 8,
-    },
-    logoImage: {
-      width: 130,
-      height: 130,
-      marginBottom: 4,
-    },
-    appName: {
-      color: colors.primary,
-      fontSize: 32,
-      fontFamily: font.black,
-      letterSpacing: 4,
-    },
-    tagline: {
-      color: colors.text,
-      fontSize: 22,
-      fontFamily: font.bold,
-      textAlign: 'center',
-      lineHeight: 30,
-    },
-    welcomeBullets: {
-      width: '100%',
-      backgroundColor: colors.surface,
-      borderRadius: 18,
-      padding: 18,
-      gap: 12,
-    },
-    bulletRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    bulletText: {
-      color: colors.text,
-      fontSize: 14,
-      fontFamily: font.medium,
-      flex: 1,
-    },
-    // Features
-    slideTitle: {
-      color: colors.text,
-      fontSize: 26,
-      fontFamily: font.extrabold,
-      textAlign: 'center',
-    },
-    slideSubtitle: {
-      color: colors.textMuted,
-      fontSize: 14,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-    featureList: {
-      width: '100%',
-      gap: 12,
-    },
-    featureCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-      backgroundColor: colors.surface,
-      borderRadius: 18,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    featureIcon: {
-      width: 52,
-      height: 52,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    featureText: {
-      flex: 1,
-      gap: 3,
-    },
-    featureTitle: {
-      color: colors.text,
-      fontSize: 15,
-      fontFamily: font.bold,
-    },
-    featureDesc: {
-      color: colors.textMuted,
-      fontSize: 12,
-      lineHeight: 17,
-    },
+    container: { flex: 1, backgroundColor: colors.background },
+    dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, paddingVertical: 12 },
+    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
+    dotActive: { backgroundColor: colors.primary, width: 20, borderRadius: 3 },
+    slide: { width: SCREEN_WIDTH, flex: 1, paddingHorizontal: 24, paddingBottom: 24, alignItems: 'center', justifyContent: 'center', gap: 14 },
+    welcomeHero: { alignItems: 'center', gap: 10, marginBottom: 4 },
+    logoImage: { width: 120, height: 120, marginBottom: 4 },
+    appName: { color: colors.primary, fontSize: 32, fontFamily: font.black, letterSpacing: 4 },
+    tagline: { color: colors.text, fontSize: 20, fontFamily: font.bold, textAlign: 'center', lineHeight: 28 },
+    welcomeBullets: { width: '100%', backgroundColor: colors.surface, borderRadius: 18, padding: 18, gap: 12 },
+    bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    bulletText: { color: colors.text, fontSize: 14, fontFamily: font.medium, flex: 1 },
+    slideTitle: { color: colors.text, fontSize: 26, fontFamily: font.extrabold, textAlign: 'center' },
+    slideSubtitle: { color: colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+    heroIcon: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center' },
+    textInput: { width: '100%', backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 16, fontSize: 16, color: colors.text },
+    // Age
+    ageList: { width: '100%', gap: 8 },
+    ageCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 14 },
+    ageCardActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    ageEmoji: { fontSize: 24 },
+    ageInfo: { flex: 1 },
+    ageLabel: { color: colors.text, fontSize: 15, fontFamily: font.bold },
+    ageDesc: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
     // Regime
-    regimeScroll: {
-      width: '100%',
-      maxHeight: 360,
-    },
-    regimeList: {
-      gap: 8,
-      paddingBottom: 8,
-    },
-    regimeCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 14,
-    },
-    regimeCardActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    regimeInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    regimeTitle: {
-      color: colors.text,
-      fontSize: 14,
-      fontFamily: font.bold,
-    },
-    regimeDesc: {
-      color: colors.textMuted,
-      fontSize: 11,
-    },
-    textWhite: {
-      color: '#fff',
-    },
-    textWhiteOpacity: {
-      color: 'rgba(255,255,255,0.8)',
-    },
+    regimeScroll: { width: '100%', maxHeight: 340 },
+    regimeList: { gap: 8, paddingBottom: 8 },
+    regimeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 14 },
+    regimeCardActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    regimeInfo: { flex: 1, gap: 2 },
+    regimeTitle: { color: colors.text, fontSize: 14, fontFamily: font.bold },
+    regimeDesc: { color: colors.textMuted, fontSize: 11 },
+    textWhite: { color: '#fff' },
+    textWhiteOpacity: { color: 'rgba(255,255,255,0.8)' },
+    // Recommendations
+    savingsHero: { alignItems: 'center', gap: 4, backgroundColor: colors.surface, borderRadius: 20, padding: 20, width: '100%', borderWidth: 1, borderColor: colors.border },
+    savingsTitle: { color: colors.textMuted, fontSize: 13, fontFamily: font.semibold },
+    savingsAmount: { color: colors.primary, fontSize: 38, fontFamily: font.black, letterSpacing: -1 },
+    savingsSubtitle: { color: colors.textMuted, fontSize: 12 },
+    recoList: { width: '100%', gap: 10 },
+    recoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.border },
+    recoIconWrap: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary + '18', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+    recoText: { flex: 1, color: colors.text, fontSize: 13, lineHeight: 19 },
+    deductibleBox: { width: '100%', backgroundColor: colors.surface, borderRadius: 16, padding: 14, gap: 8, borderWidth: 1, borderColor: colors.border },
+    deductibleTitle: { color: colors.text, fontSize: 13, fontFamily: font.bold },
+    deductibleList: { gap: 5 },
+    deductibleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    deductibleItem: { color: colors.textMuted, fontSize: 12 },
+    // Widget
+    widgetPreview: { width: '80%', backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'flex-start' },
+    widgetHeader: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+    widgetLogo: { color: colors.primary, fontSize: 11, fontFamily: font.bold },
+    widgetMonth: { color: colors.textMuted, fontSize: 11 },
+    widgetAmount: { color: colors.text, fontSize: 28, fontFamily: font.black, marginTop: 4 },
+    widgetLabel: { color: colors.textMuted, fontSize: 11 },
+    widgetBar: { width: '100%', height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 8 },
+    widgetBarFill: { height: 4, backgroundColor: colors.primary, borderRadius: 2 },
+    widgetSub: { color: colors.textMuted, fontSize: 10 },
+    widgetSteps: { width: '100%', gap: 10 },
+    widgetStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+    widgetStepNum: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+    widgetStepNumText: { color: '#fff', fontSize: 11, fontFamily: font.bold },
+    widgetStepText: { flex: 1, color: colors.textMuted, fontSize: 13, lineHeight: 18 },
     // First expense
-    heroIcon: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      backgroundColor: colors.primary + '18',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    exampleText: {
-      color: colors.primary,
-      fontFamily: font.bold,
-    },
-    textInput: {
-      width: '100%',
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 16,
-      fontSize: 16,
-      color: colors.text,
-    },
-    hints: {
-      width: '100%',
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      padding: 14,
-      gap: 6,
-    },
-    hintText: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    // Savings projection
-    savingsHero: {
-      alignItems: 'center',
-      gap: 6,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 24,
-      width: '100%',
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    savingsTitle: {
-      color: colors.textMuted,
-      fontSize: 14,
-      fontFamily: font.semibold,
-      textAlign: 'center',
-    },
-    savingsAmount: {
-      color: colors.primary,
-      fontSize: 42,
-      fontFamily: font.black,
-      letterSpacing: -1,
-    },
-    savingsSubtitle: {
-      color: colors.textMuted,
-      fontSize: 13,
-      textAlign: 'center',
-    },
-    savingsBox: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 16,
-      width: '100%',
-      gap: 6,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    savingsBoxTitle: {
-      color: colors.text,
-      fontSize: 14,
-      fontFamily: font.bold,
-    },
-    savingsBoxDesc: {
-      color: colors.textMuted,
-      fontSize: 13,
-      lineHeight: 19,
-    },
-    examplesWrap: {
-      width: '100%',
-      gap: 8,
-    },
-    examplesTitle: {
-      color: colors.text,
-      fontSize: 13,
-      fontFamily: font.bold,
-    },
-    examplesList: {
-      gap: 6,
-    },
-    exampleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    exampleItem: {
-      color: colors.textMuted,
-      fontSize: 13,
-    },
+    exampleText: { color: colors.primary, fontFamily: font.bold },
+    hints: { width: '100%', backgroundColor: colors.surface, borderRadius: 14, padding: 14, gap: 6 },
+    hintText: { color: colors.textMuted, fontSize: 12 },
     // Ready
-    readySlide: {
-      justifyContent: 'center',
-    },
-    readyCheck: {
-      marginBottom: 8,
-    },
-    readyTitle: {
-      color: colors.text,
-      fontSize: 32,
-      fontFamily: font.black,
-      textAlign: 'center',
-    },
-    readySubtitle: {
-      color: colors.textMuted,
-      fontSize: 15,
-      textAlign: 'center',
-      lineHeight: 22,
-    },
-    readyStat: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: colors.primary + '15',
-      borderRadius: 14,
-      padding: 14,
-      width: '100%',
-    },
-    readyStatText: {
-      color: colors.text,
-      fontSize: 13,
-      flex: 1,
-      lineHeight: 18,
-    },
-    readyStatBold: {
-      color: colors.primary,
-      fontFamily: font.extrabold,
-    },
+    readySlide: { justifyContent: 'center' },
+    readyCheck: { marginBottom: 8 },
+    readyTitle: { color: colors.text, fontSize: 30, fontFamily: font.black, textAlign: 'center' },
+    readySubtitle: { color: colors.textMuted, fontSize: 15, textAlign: 'center', lineHeight: 22 },
+    readyStat: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primary + '15', borderRadius: 14, padding: 14, width: '100%' },
+    readyStatText: { color: colors.text, fontSize: 13, flex: 1, lineHeight: 18 },
+    readyStatBold: { color: colors.primary, fontFamily: font.extrabold },
     // Shared
-    primaryButton: {
-      width: '100%',
-      backgroundColor: colors.primary,
-      paddingVertical: 16,
-      borderRadius: 16,
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-    },
-    primaryButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontFamily: font.extrabold,
-    },
-    skipButton: {
-      paddingVertical: 10,
-    },
-    skipText: {
-      color: colors.textMuted,
-      fontSize: 14,
-      fontFamily: font.semibold,
-    },
+    primaryButton: { width: '100%', backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
+    primaryButtonText: { color: '#fff', fontSize: 16, fontFamily: font.extrabold },
+    skipButton: { paddingVertical: 10 },
+    skipText: { color: colors.textMuted, fontSize: 14, fontFamily: font.semibold },
   });
