@@ -4,6 +4,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -386,7 +387,17 @@ function RegimeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorP
           ))}
         </View>
       </ScrollView>
-      <Pressable style={[s.primaryButton, { marginTop: 12 }]} onPress={onNext}>
+      {/* Conoce tu régimen */}
+      <Pressable
+        style={s.satLink}
+        onPress={() => Linking.openURL('https://www.sat.gob.mx/personas/declaraciones')}
+      >
+        <Icon name="school-outline" size={15} color={colors.primary} />
+        <Text style={s.satLinkText}>¿No sabes cuál es el tuyo? Consulta el SAT</Text>
+        <Icon name="open-in-new" size={13} color={colors.textMuted} />
+      </Pressable>
+
+      <Pressable style={[s.primaryButton, { marginTop: 4 }]} onPress={onNext}>
         <Text style={s.primaryButtonText}>Continuar</Text>
         <Icon name="arrow-right" size={20} color="#fff" />
       </Pressable>
@@ -634,6 +645,9 @@ const useStyles = (colors: ColorPalette) =>
     deductibleList: { gap: 5 },
     deductibleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     deductibleItem: { color: colors.textMuted, fontSize: 12 },
+    // SAT link
+    satLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: colors.primary + '10', borderRadius: 12, borderWidth: 1, borderColor: colors.primary + '30', width: '100%' },
+    satLinkText: { flex: 1, color: colors.primary, fontSize: 12, fontFamily: font.semibold },
     // Goals
     goalsGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     goalCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10, width: '48%' },

@@ -2,6 +2,7 @@ import { font } from '../theme/typography';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Linking,
   Pressable,
   Share,
   StyleSheet,
@@ -319,6 +320,22 @@ export function SettingsScreen() {
             <Text style={s.currentRegimeHint}>(cambiar en editar perfil)</Text>
           </View>
         ) : null}
+
+        {/* Conoce tu régimen fiscal */}
+        <Pressable
+          style={s.learnRegimeBtn}
+          onPress={() => Linking.openURL('https://www.sat.gob.mx/personas/declaraciones')}
+        >
+          <View style={s.learnRegimeLeft}>
+            <Icon name="school-outline" size={18} color={colors.primary} />
+            <View>
+              <Text style={s.learnRegimeTitle}>Conoce tu régimen fiscal</Text>
+              <Text style={s.learnRegimeSubtitle}>Portal oficial del SAT con guías y calculadoras</Text>
+            </View>
+          </View>
+          <Icon name="open-in-new" size={16} color={colors.textMuted} />
+        </Pressable>
+
         <Pressable
           style={s.reportButton}
           onPress={() => navigation.navigate('Ingresos')}
@@ -894,6 +911,33 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       fontFamily: font.bold,
       fontSize: 14,
       flex: 1,
+    },
+    learnRegimeBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.primary + '30',
+      borderRadius: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+    },
+    learnRegimeLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flex: 1,
+    },
+    learnRegimeTitle: {
+      color: colors.primary,
+      fontFamily: font.bold,
+      fontSize: 14,
+    },
+    learnRegimeSubtitle: {
+      color: colors.textMuted,
+      fontSize: 11,
+      marginTop: 1,
     },
     version: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
   });
