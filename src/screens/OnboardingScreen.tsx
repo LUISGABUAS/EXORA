@@ -503,10 +503,15 @@ function WidgetSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onNe
         <Text style={s.widgetSub}>30% del presupuesto</Text>
       </View>
 
-      <View style={s.widgetSteps}>
-        <Text style={[s.deductibleTitle, { marginBottom: 8 }]}>
-          Cómo agregarlo en {isIOS ? 'iOS' : 'Android'}:
+      {/* Info — iOS no permite abrir el picker automáticamente */}
+      <View style={s.widgetInfoBox}>
+        <Icon name="information-outline" size={16} color={colors.textMuted} />
+        <Text style={s.widgetInfoText}>
+          iOS no permite agregar widgets automáticamente. Sigue estos pasos en tu pantalla de inicio:
         </Text>
+      </View>
+
+      <View style={s.widgetSteps}>
         {steps.map((step, i) => (
           <View key={i} style={s.widgetStep}>
             <View style={s.widgetStepNum}>
@@ -518,7 +523,7 @@ function WidgetSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onNe
       </View>
 
       <Pressable style={s.primaryButton} onPress={onNext}>
-        <Text style={s.primaryButtonText}>Continuar</Text>
+        <Text style={s.primaryButtonText}>Ya lo agregué — Continuar</Text>
         <Icon name="arrow-right" size={20} color="#fff" />
       </Pressable>
       <Pressable style={s.skipButton} onPress={onNext}>
@@ -664,6 +669,8 @@ const useStyles = (colors: ColorPalette) =>
     widgetBar: { width: '100%', height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 8 },
     widgetBarFill: { height: 4, backgroundColor: colors.primary, borderRadius: 2 },
     widgetSub: { color: colors.textMuted, fontSize: 10 },
+    widgetInfoBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 12, width: '100%' },
+    widgetInfoText: { flex: 1, color: colors.textMuted, fontSize: 12, lineHeight: 17 },
     widgetSteps: { width: '100%', gap: 10 },
     widgetStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
     widgetStepNum: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
