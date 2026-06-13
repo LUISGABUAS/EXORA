@@ -1,8 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { checkPremiumStatus } from '../services/revenuecatService';
+import { redeemFounderCodeInSupabase } from '../services/founderService';
+import { track } from '../services/analyticsService';
 
-export type PremiumPlan = 'free' | 'monthly' | 'yearly';
+export type PremiumPlan = 'free' | 'monthly' | 'yearly' | 'founder';
+
+export type FinancialGoal =
+  | 'ahorrar_mas'
+  | 'maximizar_deducciones'
+  | 'reducir_gastos_hormiga'
+  | 'pagar_menos_impuestos'
+  | 'liquidar_deudas'
+  | 'fondo_emergencia'
+  | 'meta_especifica'
+  | 'entender_finanzas';
 export type FiscalRegime =
   | 'resico'
   | 'actividad_empresarial'
@@ -24,12 +36,16 @@ interface PremiumState {
   streak: number;
   lastActiveDate: string;
   fiscalRegime: FiscalRegime;
+  allFiscalRegimes: FiscalRegime[];
   razonSocial: string | null;
   constanciaUri: string | null;
   constanciaUploadDate: string | null;
   onboardingComplete: boolean;
   avatarUri: string | null;
   biometricEnabled: boolean;
+  isFounder: boolean;
+  financialGoals: FinancialGoal[];
+  ageRange: string;
   // Runtime
   loaded: boolean;
   // Actions
@@ -41,17 +57,22 @@ interface PremiumState {
   setFiscalRegime: (r: FiscalRegime) => Promise<void>;
   setFiscalProfile: (data: {
     fiscalRegime?: FiscalRegime;
+    allFiscalRegimes?: FiscalRegime[];
     razonSocial?: string | null;
     constanciaUri?: string | null;
     constanciaUploadDate?: string | null;
   }) => Promise<void>;
   clearConstancia: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  setFinancialGoals: (goals: FinancialGoal[], ageRange: string) => Promise<void>;
   setPlan: (p: PremiumPlan) => Promise<void>;
   setAvatarUri: (uri: string | null) => Promise<void>;
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   extendTrial: (days: number) => Promise<void>;
   syncWithRevenueCat: () => Promise<void>;
+  redeemFounderCode: (
+    code: string,
+  ) => Promise<'success' | 'already_used' | 'invalid' | 'error'>;
 }
 
 const STORAGE_KEY = '@smartexpense_premium';
@@ -93,12 +114,16 @@ const defaults = {
   streak: 0,
   lastActiveDate: '',
   fiscalRegime: 'no_facturo' as FiscalRegime,
+  allFiscalRegimes: [] as FiscalRegime[],
   razonSocial: null as string | null,
   constanciaUri: null as string | null,
   constanciaUploadDate: null as string | null,
   onboardingComplete: false,
   avatarUri: null as string | null,
   biometricEnabled: false,
+  isFounder: false,
+  financialGoals: [] as FinancialGoal[],
+  ageRange: '',
 };
 
 type PersistData = typeof defaults;
@@ -117,12 +142,16 @@ function getData(state: PremiumState): PersistData {
     streak: state.streak,
     lastActiveDate: state.lastActiveDate,
     fiscalRegime: state.fiscalRegime,
+    allFiscalRegimes: state.allFiscalRegimes,
     razonSocial: state.razonSocial,
     constanciaUri: state.constanciaUri,
     constanciaUploadDate: state.constanciaUploadDate,
     onboardingComplete: state.onboardingComplete,
     avatarUri: state.avatarUri,
     biometricEnabled: state.biometricEnabled,
+    isFounder: state.isFounder,
+    financialGoals: state.financialGoals,
+    ageRange: state.ageRange,
   };
 }
 
@@ -133,11 +162,21 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   hydrate: async () => {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        set({ ...defaults, ...parsed, loaded: true });
-      } else {
-        set({ loaded: true });
+      const parsed = raw ? JSON.parse(raw) : {};
+      set({ ...defaults, ...parsed, loaded: true });
+
+      // Siempre verifica fundador en Supabase — garantiza sync tras reinstalar o limpiar datos
+      try {
+        const { checkIsFounderInSupabase } = await import(
+          '../services/founderService'
+        );
+        const isFounder = await checkIsFounderInSupabase();
+        if (isFounder) {
+          set({ isFounder: true, isPremium: true, plan: 'founder' });
+          await persist(getData(get()));
+        }
+      } catch {
+        // Si falla la red, mantiene el estado local
       }
     } catch {
       set({ loaded: true });
@@ -200,6 +239,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   setFiscalProfile: async data => {
     set({
       ...(data.fiscalRegime !== undefined && { fiscalRegime: data.fiscalRegime }),
+      ...(data.allFiscalRegimes !== undefined && { allFiscalRegimes: data.allFiscalRegimes }),
       ...(data.razonSocial !== undefined && { razonSocial: data.razonSocial }),
       ...(data.constanciaUri !== undefined && { constanciaUri: data.constanciaUri }),
       ...(data.constanciaUploadDate !== undefined && { constanciaUploadDate: data.constanciaUploadDate }),
@@ -208,22 +248,36 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   },
 
   clearConstancia: async () => {
-    set({ constanciaUri: null, constanciaUploadDate: null, razonSocial: null });
+    set({ constanciaUri: null, constanciaUploadDate: null, razonSocial: null, allFiscalRegimes: [] });
     await persist(getData(get()));
   },
 
   completeOnboarding: async () => {
     const state = get();
-    // Otorga trial de 7 días si no tiene uno activo ni es premium
-    const trialEndsAt = !state.isPremium && !state.trialEndsAt
-      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-      : state.trialEndsAt;
+    const trialEndsAt =
+      !state.isPremium && !state.trialEndsAt
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10)
+        : state.trialEndsAt;
     set({ onboardingComplete: true, trialEndsAt });
+    await persist(getData(get()));
+    if (trialEndsAt) {
+      const { scheduleTrialReminders } = await import(
+        '../services/notificationService'
+      );
+      scheduleTrialReminders(trialEndsAt);
+    }
+  },
+
+  setFinancialGoals: async (goals, ageRange) => {
+    set({ financialGoals: goals, ageRange });
     await persist(getData(get()));
   },
 
   setPlan: async p => {
     const premium = p !== 'free';
+    if (premium) track('paywall_converted', { plan: p });
     set({ plan: p, isPremium: premium });
     await persist(getData(get()));
   },
@@ -240,9 +294,10 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   extendTrial: async (days: number) => {
     const state = get();
-    const base = state.trialEndsAt && state.trialEndsAt > todayStr()
-      ? new Date(state.trialEndsAt)
-      : new Date();
+    const base =
+      state.trialEndsAt && state.trialEndsAt > todayStr()
+        ? new Date(state.trialEndsAt)
+        : new Date();
     base.setDate(base.getDate() + days);
     const trialEndsAt = base.toISOString().slice(0, 10);
     set({ trialEndsAt });
@@ -259,5 +314,15 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
     } catch {
       // Silently fail — keep local state
     }
+  },
+
+  redeemFounderCode: async (code: string) => {
+    const result = await redeemFounderCodeInSupabase(code.trim().toUpperCase());
+    if (result === 'success') {
+      set({ isPremium: true, plan: 'founder', isFounder: true });
+      await persist(getData(get()));
+      track('founder_code_redeemed');
+    }
+    return result;
   },
 }));

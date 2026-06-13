@@ -74,6 +74,8 @@ export function AsesorScreen() {
   const canAccess = isPremiumUser || (trialEndsAt != null && trialEndsAt >= new Date().toISOString().slice(0, 10));
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const razonSocial = usePremiumStore(state => state.razonSocial);
+  const financialGoals = usePremiumStore(state => state.financialGoals);
+  const ageRange = usePremiumStore(state => state.ageRange);
   const expenses = useExpenseStore(state => state.expenses);
   const incomes = useIncomeStore(state => state.incomes);
   const savings = useSavingsStore(state => state.goals);
@@ -157,8 +159,10 @@ export function AsesorScreen() {
       recurringTotal: recurringTotal.toFixed(0),
       regime: fiscalRegime,
       razonSocial,
+      financialGoals: financialGoals.length > 0 ? financialGoals.join(', ') : null,
+      ageRange: ageRange || null,
     };
-  }, [expenses, incomes, savings, budgets, recurring, fiscalRegime, razonSocial]);
+  }, [expenses, incomes, savings, budgets, recurring, fiscalRegime, razonSocial, financialGoals, ageRange]);
 
   const fetchAnalysis = useCallback(async (q?: string) => {
     if (!canAccess) { setPaywallVisible(true); return; }

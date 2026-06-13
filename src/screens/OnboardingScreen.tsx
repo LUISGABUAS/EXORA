@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useExpenseStore } from '../store/useExpenseStore';
-import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
+import { FinancialGoal, FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
@@ -27,7 +27,7 @@ import { formatCurrency } from '../utils/format';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type SlideKey = 'welcome' | 'name' | 'age' | 'regime' | 'recommendations' | 'widget' | 'first_expense' | 'ready';
+type SlideKey = 'welcome' | 'name' | 'age' | 'goals' | 'regime' | 'recommendations' | 'widget' | 'first_expense' | 'ready';
 
 const REGIMES: Array<{ value: FiscalRegime; icon: string; title: string; desc: string }> = [
   { value: 'resico', icon: 'account-check', title: 'RESICO', desc: 'Régimen Simplificado de Confianza' },
@@ -39,6 +39,17 @@ const REGIMES: Array<{ value: FiscalRegime; icon: string; title: string; desc: s
   { value: 'incorporacion_fiscal', icon: 'store-outline', title: 'Incorporación Fiscal', desc: 'Pequeños negocios' },
   { value: 'regimen_general', icon: 'domain', title: 'Régimen General', desc: 'Personas morales y sociedades' },
   { value: 'no_facturo', icon: 'wallet-outline', title: 'No facturo', desc: 'Solo quiero controlar mis gastos' },
+];
+
+const GOALS: Array<{ value: FinancialGoal; icon: string; label: string }> = [
+  { value: 'ahorrar_mas', icon: '🏦', label: 'Ahorrar más dinero' },
+  { value: 'maximizar_deducciones', icon: '🧾', label: 'Maximizar deducciones fiscales' },
+  { value: 'reducir_gastos_hormiga', icon: '☕', label: 'Reducir gastos hormiga' },
+  { value: 'pagar_menos_impuestos', icon: '📉', label: 'Pagar menos impuestos' },
+  { value: 'liquidar_deudas', icon: '💳', label: 'Liquidar deudas' },
+  { value: 'fondo_emergencia', icon: '🛡️', label: 'Crear fondo de emergencia' },
+  { value: 'meta_especifica', icon: '🎯', label: 'Ahorrar para una meta específica' },
+  { value: 'entender_finanzas', icon: '📊', label: 'Entender mejor mis finanzas' },
 ];
 
 const AGE_RANGES = [
@@ -70,7 +81,7 @@ const REGIME_LABELS: Partial<Record<FiscalRegime, string>> = {
   no_facturo: 'Sin facturar',
 };
 
-function getRecommendations(regime: FiscalRegime | null, ageRange: string): string[] {
+function getRecommendations(regime: FiscalRegime | null, ageRange: string, goals: FinancialGoal[] = []): string[] {
   const base: string[] = [];
   if (!regime) return base;
 
@@ -80,12 +91,21 @@ function getRecommendations(regime: FiscalRegime | null, ageRange: string): stri
   if (regime === 'sueldos_salarios') base.push('Aprovecha deducciones personales: médico, dental, óptica y colegiaturas.');
   if (regime === 'no_facturo') base.push('Llevar control de gastos te ayuda a identificar en qué gastas más y ahorrar.');
 
+  // Goal-based recommendations
+  if (goals.includes('ahorrar_mas')) base.push('Activa metas de ahorro en EXPENSIA y sigue tu progreso semana a semana.');
+  if (goals.includes('maximizar_deducciones')) base.push('Escanea cada ticket. Cada comprobante cuenta para reducir lo que pagas al SAT.');
+  if (goals.includes('reducir_gastos_hormiga')) base.push('Usa los presupuestos por categoría — el Asesor IA te avisa cuando te pasas.');
+  if (goals.includes('pagar_menos_impuestos')) base.push('El Asesor IA calcula cuánto puedes deducir cada mes para que pagues menos.');
+  if (goals.includes('liquidar_deudas')) base.push('Registra tus deudas en gastos recurrentes para visualizar cuánto queda por pagar.');
+  if (goals.includes('fondo_emergencia')) base.push('Crea una meta de ahorro llamada "Fondo de emergencia" con tu objetivo en meses.');
+  if (goals.includes('meta_especifica')) base.push('Las metas de ahorro te muestran el avance y te motivan a llegar al objetivo.');
+
   if (ageRange === '18 – 24') base.push('Empieza desde joven. Cada peso ahorrado ahora vale más en el futuro.');
   if (ageRange === '25 – 34') base.push('Es el mejor momento para configurar metas de ahorro. Úsalas en EXPENSIA.');
   if (ageRange === '35 – 44') base.push('Con ingresos más altos, las deducciones se vuelven más valiosas. No las ignores.');
   if (ageRange === '45 – 54' || ageRange === '55+') base.push('Considera registrar también seguros y planes de retiro como deducciones.');
 
-  base.push('Activa el presupuesto mensual para que te avise cuando te acercas al límite.');
+  if (base.length === 0) base.push('Activa el presupuesto mensual para que te avise cuando te acercas al límite.');
 
   return base.slice(0, 3);
 }
@@ -96,16 +116,18 @@ export function OnboardingScreen() {
   const completeOnboarding = usePremiumStore(state => state.completeOnboarding);
   const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
   const setFiscalProfile = usePremiumStore(state => state.setFiscalProfile);
+  const setFinancialGoals = usePremiumStore(state => state.setFinancialGoals);
   const addExpense = useExpenseStore(state => state.addExpense);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [name, setName] = useState('');
   const [ageRange, setAgeRange] = useState('');
+  const [selectedGoals, setSelectedGoals] = useState<FinancialGoal[]>([]);
   const [selectedRegime, setSelectedRegime] = useState<FiscalRegime | null>(null);
   const [inputText, setInputText] = useState('');
   const flatRef = useRef<FlatList>(null);
 
-  const SLIDES: SlideKey[] = ['welcome', 'name', 'age', 'regime', 'recommendations', 'widget', 'first_expense', 'ready'];
+  const SLIDES: SlideKey[] = ['welcome', 'name', 'age', 'goals', 'regime', 'recommendations', 'widget', 'first_expense', 'ready'];
 
   const goNext = () => {
     const next = currentStep + 1;
@@ -141,6 +163,7 @@ export function OnboardingScreen() {
   const handleFinish = async () => {
     if (selectedRegime) await setFiscalRegime(selectedRegime);
     await setFiscalProfile({ razonSocial: name.trim() || null });
+    await setFinancialGoals(selectedGoals, ageRange);
     if (inputText.trim()) {
       const parsed = parseSmartInput(inputText);
       await addExpense({
@@ -163,6 +186,7 @@ export function OnboardingScreen() {
   const handleSkip = async () => {
     if (selectedRegime) await setFiscalRegime(selectedRegime);
     await setFiscalProfile({ razonSocial: name.trim() || null });
+    await setFinancialGoals(selectedGoals, ageRange);
     await completeOnboarding();
   };
 
@@ -182,10 +206,12 @@ export function OnboardingScreen() {
         return <NameSlide colors={colors} s={s} value={name} onChange={setName} onNext={handleNameNext} />;
       case 'age':
         return <AgeSlide colors={colors} s={s} selected={ageRange} onSelect={setAgeRange} onNext={handleAgeNext} />;
+      case 'goals':
+        return <GoalsSlide colors={colors} s={s} selected={selectedGoals} onToggle={goal => setSelectedGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal])} onNext={goNext} />;
       case 'regime':
         return <RegimeSlide colors={colors} s={s} selected={selectedRegime} onSelect={setSelectedRegime} onNext={handleRegimeNext} />;
       case 'recommendations':
-        return <RecommendationsSlide colors={colors} s={s} regime={selectedRegime} ageRange={ageRange} name={name} onNext={goNext} />;
+        return <RecommendationsSlide colors={colors} s={s} regime={selectedRegime} ageRange={ageRange} goals={selectedGoals} name={name} onNext={goNext} />;
       case 'widget':
         return <WidgetSlide colors={colors} s={s} onNext={goNext} />;
       case 'first_expense':
@@ -306,6 +332,37 @@ function AgeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPale
   );
 }
 
+function GoalsSlide({ colors, s, selected, onToggle, onNext }: { colors: ColorPalette; s: any; selected: FinancialGoal[]; onToggle: (g: FinancialGoal) => void; onNext: () => void }) {
+  return (
+    <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
+      <Text style={s.slideTitle}>¿Cuál es tu meta?</Text>
+      <Text style={s.slideSubtitle}>Elige una o más. El Asesor IA aprenderá tu perfil y te dará recomendaciones personalizadas</Text>
+      <View style={s.goalsGrid}>
+        {GOALS.map(goal => {
+          const active = selected.includes(goal.value);
+          return (
+            <Pressable
+              key={goal.value}
+              style={[s.goalCard, active && s.goalCardActive]}
+              onPress={() => onToggle(goal.value)}
+            >
+              <Text style={s.goalEmoji}>{goal.icon}</Text>
+              <Text style={[s.goalLabel, active && s.textWhite]}>{goal.label}</Text>
+              {active && <Icon name="check-circle" size={14} color="#fff" style={{ marginTop: 4 }} />}
+            </Pressable>
+          );
+        })}
+      </View>
+      <Pressable style={[s.primaryButton, { marginTop: 8 }]} onPress={onNext}>
+        <Text style={s.primaryButtonText}>
+          {selected.length === 0 ? 'Omitir' : `Continuar (${selected.length})`}
+        </Text>
+        <Icon name="arrow-right" size={20} color="#fff" />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 function RegimeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPalette; s: any; selected: FiscalRegime | null; onSelect: (r: FiscalRegime) => void; onNext: () => void }) {
   return (
     <View style={s.slide}>
@@ -337,9 +394,9 @@ function RegimeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorP
   );
 }
 
-function RecommendationsSlide({ colors, s, regime, ageRange, name, onNext }: { colors: ColorPalette; s: any; regime: FiscalRegime | null; ageRange: string; name: string; onNext: () => void }) {
+function RecommendationsSlide({ colors, s, regime, ageRange, goals, name, onNext }: { colors: ColorPalette; s: any; regime: FiscalRegime | null; ageRange: string; goals: FinancialGoal[]; name: string; onNext: () => void }) {
   const firstName = name.split(' ')[0] || 'tú';
-  const recommendations = getRecommendations(regime, ageRange);
+  const recommendations = getRecommendations(regime, ageRange, goals);
   const annualSaving = regime ? estimateTaxSavings(5000 * 12, regime) : 0;
   const deductibles = regime ? (REGIME_DEDUCTIBLES[regime] ?? []) : [];
   const regimeLabel = regime ? REGIME_LABELS[regime] : '';
@@ -577,6 +634,12 @@ const useStyles = (colors: ColorPalette) =>
     deductibleList: { gap: 5 },
     deductibleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     deductibleItem: { color: colors.textMuted, fontSize: 12 },
+    // Goals
+    goalsGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    goalCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10, width: '48%' },
+    goalCardActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    goalEmoji: { fontSize: 18 },
+    goalLabel: { color: colors.text, fontSize: 12, fontFamily: font.semibold, flex: 1, lineHeight: 16 },
     // Widget
     widgetPreview: { width: '80%', backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 6, borderWidth: 1, borderColor: colors.border, alignItems: 'flex-start' },
     widgetHeader: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
