@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+} from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Avatar } from '../components/Avatar';
 import { DashboardSkeleton } from '../components/DashboardSkeleton';
@@ -17,12 +21,17 @@ import { StreakBadge } from '../components/StreakBadge';
 import { UndoToast } from '../components/UndoToast';
 import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
 import { useAuthStore } from '../store/useAuthStore';
+import { useDeepLinkStore } from '../store/useDeepLinkStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
-import { generateAIInsights, generateLocalInsights, Insight } from '../services/insightService';
+import {
+  generateAIInsights,
+  generateLocalInsights,
+  Insight,
+} from '../services/insightService';
 import { font } from '../theme/typography';
 import { useIncomeStore } from '../store/useIncomeStore';
 import { ExpenseCategory } from '../types/expense';
@@ -30,8 +39,18 @@ import { formatCurrency, localDateString } from '../utils/format';
 import { estimateTaxSavings } from '../utils/taxCalculator';
 
 const MONTHS = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 const DAY_LABELS = ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'];
@@ -76,7 +95,8 @@ function formatTime(createdAt: string): string {
 export function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const expenses = useExpenseStore(state => state.expenses);
   const loading = useExpenseStore(state => state.loading);
   const session = useAuthStore(state => state.session);
@@ -88,7 +108,21 @@ export function DashboardScreen() {
   const premiumLoaded = usePremiumStore(state => state.loaded);
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalQuickMode, setModalQuickMode] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+
+  const pendingAction = useDeepLinkStore(state => state.pendingAction);
+  const clearPendingAction = useDeepLinkStore(
+    state => state.clearPendingAction,
+  );
+
+  useEffect(() => {
+    if (pendingAction === 'add-expense') {
+      setModalQuickMode(true);
+      setModalVisible(true);
+      clearPendingAction();
+    }
+  }, [pendingAction, clearPendingAction]);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [lastSavedId, setLastSavedId] = useState<number | null>(null);
@@ -121,7 +155,8 @@ export function DashboardScreen() {
     .reduce((sum, e) => sum + e.amount, 0);
 
   const taxSavingsEstimate = estimateTaxSavings(deductibleTotal, fiscalRegime);
-  const showConversionBanner = !hasFullAccess() && deductibleTotal >= 500 && fiscalRegime !== 'no_facturo';
+  const showConversionBanner =
+    !hasFullAccess() && deductibleTotal >= 500 && fiscalRegime !== 'no_facturo';
 
   const thisWeek = expenses
     .filter(e => e.date >= weekStart && e.date <= todayStr)
@@ -162,12 +197,18 @@ export function DashboardScreen() {
   const chartData = useMemo(() => {
     const today = new Date();
     return Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
+      const d = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - (6 - i),
+      );
       const dateStr = localDateString(d);
       const dayIdx = (d.getDay() + 6) % 7;
       return {
         label: DAY_LABELS[dayIdx],
-        value: expenses.filter(e => e.date.startsWith(dateStr)).reduce((sum, e) => sum + e.amount, 0),
+        value: expenses
+          .filter(e => e.date.startsWith(dateStr))
+          .reduce((sum, e) => sum + e.amount, 0),
       };
     });
   }, [expenses]);
@@ -206,13 +247,18 @@ export function DashboardScreen() {
           <>
             {/* ── Header ── */}
             <Animated.View entering={FadeIn.duration(300)} style={s.header}>
-              <Pressable onPress={() => navigation.navigate('ProfileEdit')} style={s.headerLeft}>
+              <Pressable
+                onPress={() => navigation.navigate('ProfileEdit')}
+                style={s.headerLeft}
+              >
                 <Avatar size={40} name={firstName} />
                 <View>
                   <Text style={s.headerGreeting}>
                     {firstName ? `Hola, ${firstName}` : 'Hola'}
                   </Text>
-                  <Text style={s.headerSub}>{currentMonth} {currentYear}</Text>
+                  <Text style={s.headerSub}>
+                    {currentMonth} {currentYear}
+                  </Text>
                 </View>
               </Pressable>
               <StreakBadge streak={streak} />
@@ -226,6 +272,19 @@ export function DashboardScreen() {
                 onExpandPress={() => setModalVisible(true)}
               />
             </Animated.View>
+
+            {/* ── Búsqueda rápida ── */}
+            {expenses.length > 0 && (
+              <Animated.View entering={FadeInDown.delay(75).duration(350)}>
+                <Pressable
+                  style={s.searchBar}
+                  onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })}
+                >
+                  <Icon name="magnify" size={18} color={colors.textMuted} />
+                  <Text style={s.searchPlaceholder}>Buscar en tus gastos...</Text>
+                </Pressable>
+              </Animated.View>
+            )}
 
             {expenses.length === 0 ? (
               <Animated.View entering={FadeInDown.delay(100).duration(350)}>
@@ -247,19 +306,32 @@ export function DashboardScreen() {
                     <View style={s.heroCircle} />
                     <View style={s.heroContent}>
                       <Text style={s.heroLabel}>Gastos del mes</Text>
-                      <Text style={s.heroAmount}>{formatCurrency(monthly)}</Text>
+                      <Text style={s.heroAmount}>
+                        {formatCurrency(monthly)}
+                      </Text>
                       <View style={s.heroMeta}>
-                        <View style={[s.heroDot, { backgroundColor: weekUp ? colors.danger : colors.success }]} />
+                        <View
+                          style={[
+                            s.heroDot,
+                            {
+                              backgroundColor: weekUp
+                                ? colors.danger
+                                : colors.success,
+                            },
+                          ]}
+                        />
                         <Text style={s.heroMetaText}>
-                          {weekUp ? '+' : '-'}{formatCurrency(Math.abs(weekDiff))} vs semana pasada
+                          {weekUp ? '+' : '-'}
+                          {formatCurrency(Math.abs(weekDiff))} vs semana pasada
                         </Text>
                       </View>
                     </View>
-                    <Pressable
-                      style={s.heroScanBtn}
-                      onPress={navigateToScan}
-                    >
-                      <Icon name="scan-helper" size={18} color={colors.primary} />
+                    <Pressable style={s.heroScanBtn} onPress={navigateToScan}>
+                      <Icon
+                        name="scan-helper"
+                        size={18}
+                        color={colors.primary}
+                      />
                       <Text style={s.heroScanText}>Escanear</Text>
                     </Pressable>
                   </View>
@@ -269,14 +341,46 @@ export function DashboardScreen() {
                 <Animated.View entering={FadeInDown.delay(150).duration(380)}>
                   <View style={s.grid}>
                     {/* Semana */}
-                    <Pressable style={s.gridCard} onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })}>
-                      <Icon name="calendar-week" size={18} color={colors.primary} style={s.gridIcon} />
-                      <Text style={s.gridValue}>{formatCurrency(thisWeek)}</Text>
+                    <Pressable
+                      style={s.gridCard}
+                      onPress={() =>
+                        navigation.navigate('Tabs', { screen: 'Movimientos' })
+                      }
+                    >
+                      <Icon
+                        name="calendar-week"
+                        size={18}
+                        color={colors.primary}
+                        style={s.gridIcon}
+                      />
+                      <Text style={s.gridValue}>
+                        {formatCurrency(thisWeek)}
+                      </Text>
                       <Text style={s.gridLabel}>Esta semana</Text>
                       {weekPct > 0 ? (
-                        <View style={[s.gridBadge, { backgroundColor: weekUp ? '#EF444418' : '#22C55E18' }]}>
-                          <Icon name={weekUp ? 'trending-up' : 'trending-down'} size={11} color={weekUp ? colors.danger : colors.success} />
-                          <Text style={[s.gridBadgeText, { color: weekUp ? colors.danger : colors.success }]}>
+                        <View
+                          style={[
+                            s.gridBadge,
+                            {
+                              backgroundColor: weekUp
+                                ? '#EF444418'
+                                : '#22C55E18',
+                            },
+                          ]}
+                        >
+                          <Icon
+                            name={weekUp ? 'trending-up' : 'trending-down'}
+                            size={11}
+                            color={weekUp ? colors.danger : colors.success}
+                          />
+                          <Text
+                            style={[
+                              s.gridBadgeText,
+                              {
+                                color: weekUp ? colors.danger : colors.success,
+                              },
+                            ]}
+                          >
                             {weekPct.toFixed(0)}%
                           </Text>
                         </View>
@@ -284,22 +388,52 @@ export function DashboardScreen() {
                     </Pressable>
 
                     {/* Ahorro fiscal */}
-                    <Pressable style={s.gridCard} onPress={() => navigation.navigate('ReporteFiscal')}>
-                      <Icon name="shield-check-outline" size={18} color="#8B5CF6" style={s.gridIcon} />
+                    <Pressable
+                      style={s.gridCard}
+                      onPress={() => navigation.navigate('ReporteFiscal')}
+                    >
+                      <Icon
+                        name="shield-check-outline"
+                        size={18}
+                        color="#8B5CF6"
+                        style={s.gridIcon}
+                      />
                       {taxSavingsEstimate > 0 ? (
                         <>
-                          <Text style={s.gridValue}>{formatCurrency(taxSavingsEstimate)}</Text>
+                          <Text style={s.gridValue}>
+                            {formatCurrency(taxSavingsEstimate)}
+                          </Text>
                           <Text style={s.gridLabel}>Ahorro fiscal</Text>
-                          <View style={[s.gridBadge, { backgroundColor: '#8B5CF618' }]}>
-                            <Text style={[s.gridBadgeText, { color: '#8B5CF6' }]}>estimado</Text>
+                          <View
+                            style={[
+                              s.gridBadge,
+                              { backgroundColor: '#8B5CF618' },
+                            ]}
+                          >
+                            <Text
+                              style={[s.gridBadgeText, { color: '#8B5CF6' }]}
+                            >
+                              estimado
+                            </Text>
                           </View>
                         </>
                       ) : (
                         <>
-                          <Text style={s.gridValue}>{formatCurrency(deductibleTotal)}</Text>
+                          <Text style={s.gridValue}>
+                            {formatCurrency(deductibleTotal)}
+                          </Text>
                           <Text style={s.gridLabel}>Deducibles</Text>
-                          <View style={[s.gridBadge, { backgroundColor: '#8B5CF618' }]}>
-                            <Text style={[s.gridBadgeText, { color: '#8B5CF6' }]}>este mes</Text>
+                          <View
+                            style={[
+                              s.gridBadge,
+                              { backgroundColor: '#8B5CF618' },
+                            ]}
+                          >
+                            <Text
+                              style={[s.gridBadgeText, { color: '#8B5CF6' }]}
+                            >
+                              este mes
+                            </Text>
                           </View>
                         </>
                       )}
@@ -307,34 +441,89 @@ export function DashboardScreen() {
 
                     {/* Flujo neto o racha */}
                     {monthlyIncome > 0 ? (
-                      <Pressable style={s.gridCard} onPress={() => navigation.navigate('Ingresos')}>
-                        <Icon name="swap-vertical" size={18} color="#06B6D4" style={s.gridIcon} />
-                        <Text style={[s.gridValue, { color: monthlyIncome >= monthly ? colors.success : colors.danger }]}>
-                          {monthlyIncome >= monthly ? '+' : ''}{formatCurrency(monthlyIncome - monthly)}
+                      <Pressable
+                        style={s.gridCard}
+                        onPress={() => navigation.navigate('Ingresos')}
+                      >
+                        <Icon
+                          name="swap-vertical"
+                          size={18}
+                          color="#06B6D4"
+                          style={s.gridIcon}
+                        />
+                        <Text
+                          style={[
+                            s.gridValue,
+                            {
+                              color:
+                                monthlyIncome >= monthly
+                                  ? colors.success
+                                  : colors.danger,
+                            },
+                          ]}
+                        >
+                          {monthlyIncome >= monthly ? '+' : ''}
+                          {formatCurrency(monthlyIncome - monthly)}
                         </Text>
                         <Text style={s.gridLabel}>Flujo neto</Text>
-                        <View style={[s.gridBadge, { backgroundColor: '#06B6D418' }]}>
-                          <Text style={[s.gridBadgeText, { color: '#06B6D4' }]}>este mes</Text>
+                        <View
+                          style={[
+                            s.gridBadge,
+                            { backgroundColor: '#06B6D418' },
+                          ]}
+                        >
+                          <Text style={[s.gridBadgeText, { color: '#06B6D4' }]}>
+                            este mes
+                          </Text>
                         </View>
                       </Pressable>
                     ) : (
-                      <Pressable style={s.gridCard} onPress={() => navigation.navigate('Ingresos')}>
-                        <Icon name="cash-plus" size={18} color="#F59E0B" style={s.gridIcon} />
+                      <Pressable
+                        style={s.gridCard}
+                        onPress={() => navigation.navigate('Ingresos')}
+                      >
+                        <Icon
+                          name="cash-plus"
+                          size={18}
+                          color="#F59E0B"
+                          style={s.gridIcon}
+                        />
                         <Text style={s.gridValue}>+</Text>
                         <Text style={s.gridLabel}>Ingresos</Text>
-                        <View style={[s.gridBadge, { backgroundColor: '#F59E0B18' }]}>
-                          <Text style={[s.gridBadgeText, { color: '#F59E0B' }]}>registrar</Text>
+                        <View
+                          style={[
+                            s.gridBadge,
+                            { backgroundColor: '#F59E0B18' },
+                          ]}
+                        >
+                          <Text style={[s.gridBadgeText, { color: '#F59E0B' }]}>
+                            registrar
+                          </Text>
                         </View>
                       </Pressable>
                     )}
 
                     {/* Gastos */}
-                    <Pressable style={s.gridCard} onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })}>
-                      <Icon name="receipt" size={18} color="#3B82F6" style={s.gridIcon} />
+                    <Pressable
+                      style={s.gridCard}
+                      onPress={() =>
+                        navigation.navigate('Tabs', { screen: 'Movimientos' })
+                      }
+                    >
+                      <Icon
+                        name="receipt"
+                        size={18}
+                        color="#3B82F6"
+                        style={s.gridIcon}
+                      />
                       <Text style={s.gridValue}>{monthlyExpenses.length}</Text>
                       <Text style={s.gridLabel}>Gastos</Text>
-                      <View style={[s.gridBadge, { backgroundColor: '#3B82F618' }]}>
-                        <Text style={[s.gridBadgeText, { color: '#3B82F6' }]}>este mes</Text>
+                      <View
+                        style={[s.gridBadge, { backgroundColor: '#3B82F618' }]}
+                      >
+                        <Text style={[s.gridBadgeText, { color: '#3B82F6' }]}>
+                          este mes
+                        </Text>
                       </View>
                     </Pressable>
                   </View>
@@ -344,33 +533,62 @@ export function DashboardScreen() {
                 <Animated.View entering={FadeInDown.delay(200).duration(350)}>
                   <View style={s.sectionRow}>
                     <Text style={s.sectionTitle}>Últimos movimientos</Text>
-                    <Pressable onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })} hitSlop={8}>
+                    <Pressable
+                      onPress={() =>
+                        navigation.navigate('Tabs', { screen: 'Movimientos' })
+                      }
+                      hitSlop={8}
+                    >
                       <Text style={s.sectionLink}>Ver todos →</Text>
                     </Pressable>
                   </View>
                   <View style={s.txList}>
                     {recentExpenses.map((exp, idx) => {
-                      const catColor = CATEGORY_COLORS[exp.category as ExpenseCategory] || colors.textMuted;
+                      const catColor =
+                        CATEGORY_COLORS[exp.category as ExpenseCategory] ||
+                        colors.textMuted;
                       return (
                         <Pressable
                           key={exp.id}
-                          style={[s.txItem, idx === recentExpenses.length - 1 && s.txItemLast]}
-                          onPress={() => navigation.navigate('ExpenseDetail', { expenseId: exp.id })}
+                          style={[
+                            s.txItem,
+                            idx === recentExpenses.length - 1 && s.txItemLast,
+                          ]}
+                          onPress={() =>
+                            navigation.navigate('ExpenseDetail', {
+                              expenseId: exp.id,
+                            })
+                          }
                         >
-                          <View style={[s.txIconWrap, { backgroundColor: catColor + '18' }]}>
+                          <View
+                            style={[
+                              s.txIconWrap,
+                              { backgroundColor: catColor + '18' },
+                            ]}
+                          >
                             <Icon
-                              name={categoryIcons[exp.category as ExpenseCategory] || 'dots-horizontal-circle-outline'}
+                              name={
+                                categoryIcons[
+                                  exp.category as ExpenseCategory
+                                ] || 'dots-horizontal-circle-outline'
+                              }
                               size={18}
                               color={catColor}
                             />
                           </View>
                           <View style={s.txInfo}>
                             <Text style={s.txName} numberOfLines={1}>
-                              {exp.merchantName || exp.description || exp.category}
+                              {exp.merchantName ||
+                                exp.description ||
+                                exp.category}
                             </Text>
-                            <Text style={s.txMeta}>{exp.category} · {formatTime(exp.createdAt)}</Text>
+                            <Text style={s.txMeta}>
+                              {exp.category} · {formatTime(exp.createdAt)}
+                            </Text>
                           </View>
-                          <Text style={s.txAmount}>-{formatCurrency(exp.amount)}</Text>
+                          <Text style={s.txAmount}>
+                            -{formatCurrency(exp.amount)}
+                          </Text>
                         </Pressable>
                       );
                     })}
@@ -380,12 +598,20 @@ export function DashboardScreen() {
                 {/* ── Banner de conversión ── */}
                 {showConversionBanner ? (
                   <Animated.View entering={FadeInDown.delay(220).duration(350)}>
-                    <Pressable style={s.conversionBanner} onPress={() => setPaywallVisible(true)}>
+                    <Pressable
+                      style={s.conversionBanner}
+                      onPress={() => setPaywallVisible(true)}
+                    >
                       <View style={s.conversionLeft}>
-                        <Icon name="file-chart-outline" size={22} color={colors.primary} />
+                        <Icon
+                          name="file-chart-outline"
+                          size={22}
+                          color={colors.primary}
+                        />
                         <View style={s.conversionText}>
                           <Text style={s.conversionTitle}>
-                            Tienes {formatCurrency(deductibleTotal)} en deducciones
+                            Tienes {formatCurrency(deductibleTotal)} en
+                            deducciones
                           </Text>
                           <Text style={s.conversionSub}>
                             Exporta tu reporte fiscal al SAT con Pro →
@@ -401,26 +627,96 @@ export function DashboardScreen() {
 
                 {/* ── Insights ── */}
                 {insights.length > 0 ? (
-                  <Animated.View entering={FadeInDown.delay(230).duration(350)} style={s.insightsWrap}>
+                  <Animated.View
+                    entering={FadeInDown.delay(230).duration(350)}
+                    style={s.insightsWrap}
+                  >
                     <Text style={s.sectionTitle}>Insights</Text>
                     <View style={s.insightsList}>
-                      {(hasFullAccess() ? insights : insights.slice(0, 1)).map((ins, idx) => (
-                        <InsightCard
-                          key={ins.id}
-                          insight={ins}
-                          index={idx}
-                          onPremiumPress={ins.isPremium && !hasFullAccess() ? () => setPaywallVisible(true) : undefined}
-                        />
-                      ))}
+                      {(hasFullAccess() ? insights : insights.slice(0, 1)).map(
+                        (ins, idx) => (
+                          <InsightCard
+                            key={ins.id}
+                            insight={ins}
+                            index={idx}
+                            onPremiumPress={
+                              ins.isPremium && !hasFullAccess()
+                                ? () => setPaywallVisible(true)
+                                : undefined
+                            }
+                          />
+                        ),
+                      )}
                       {!hasFullAccess() && insights.length > 1 ? (
-                        <Pressable onPress={() => setPaywallVisible(true)} style={s.insightsLocked}>
-                          <Icon name="lock-outline" size={16} color={colors.textMuted} />
-                          <Text style={s.insightsLockedText}>+{insights.length - 1} insights con Pro</Text>
+                        <Pressable
+                          onPress={() => setPaywallVisible(true)}
+                          style={s.insightsLocked}
+                        >
+                          <Icon
+                            name="lock-outline"
+                            size={16}
+                            color={colors.textMuted}
+                          />
+                          <Text style={s.insightsLockedText}>
+                            +{insights.length - 1} insights con Pro
+                          </Text>
                         </Pressable>
                       ) : null}
                     </View>
                   </Animated.View>
                 ) : null}
+
+                {/* ── Mis Facturas — acceso rápido ── */}
+                <Animated.View entering={FadeInDown.delay(245).duration(350)}>
+                  <Pressable
+                    style={s.facturasCard}
+                    onPress={() => navigation.navigate('MisFacturas')}
+                  >
+                    <View style={s.asesorLeft}>
+                      <View style={[s.asesorIconWrap, { backgroundColor: '#3B82F620' }]}>
+                        <Icon name="file-check-outline" size={22} color="#3B82F6" />
+                      </View>
+                      <View style={s.asesorText}>
+                        <Text style={s.asesorTitle}>Mis Facturas</Text>
+                        <Text style={s.asesorSub}>Sube una factura y la revisamos por ti</Text>
+                      </View>
+                    </View>
+                    <View style={s.facturasAddBtn}>
+                      <Icon name="plus" size={16} color="#fff" />
+                      <Text style={s.facturasAddText}>Agregar</Text>
+                    </View>
+                  </Pressable>
+                </Animated.View>
+
+                {/* ── Asesor Financiero IA ── */}
+                <Animated.View entering={FadeInDown.delay(250).duration(350)}>
+                  <Pressable
+                    style={s.asesorCard}
+                    onPress={() => navigation.navigate('Asesor')}
+                  >
+                    <View style={s.asesorLeft}>
+                      <View style={s.asesorIconWrap}>
+                        <Icon name="brain" size={22} color={colors.primary} />
+                      </View>
+                      <View style={s.asesorText}>
+                        <Text style={s.asesorTitle}>Asesor Financiero IA</Text>
+                        <Text style={s.asesorSub}>
+                          {hasFullAccess()
+                            ? '¿En qué gastas más? ¿Qué puedes mejorar?'
+                            : 'Análisis estratégico de tus finanzas'}
+                        </Text>
+                      </View>
+                    </View>
+                    {hasFullAccess() ? (
+                      <Icon name="chevron-right" size={20} color={colors.textMuted} />
+                    ) : (
+                      <View style={s.asesorProBadge}>
+                        <Icon name="lock-outline" size={12} color={colors.primary} />
+                        <Text style={s.asesorProText}>Pro</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                </Animated.View>
 
                 {/* ── Weekly Chart ── */}
                 <Animated.View entering={FadeInDown.delay(260).duration(350)}>
@@ -436,9 +732,10 @@ export function DashboardScreen() {
 
       <NewExpenseModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={() => { setModalVisible(false); setModalQuickMode(false); }}
         onSaved={handleSaved}
         onScanPress={navigateToScan}
+        quickMode={modalQuickMode}
       />
 
       <PaywallModal
@@ -720,6 +1017,80 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       fontSize: 11,
       fontWeight: '800',
     },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: isDark ? '#111111' : colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    searchPlaceholder: {
+      color: colors.textMuted,
+      fontSize: 14,
+      flex: 1,
+    },
+    facturasCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? '#0D1526' : '#EFF6FF',
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: '#3B82F630',
+      padding: 14,
+      marginBottom: 8,
+    },
+    facturasAddBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: '#3B82F6',
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+    },
+    facturasAddText: {
+      color: '#fff',
+      fontSize: 13,
+      fontFamily: font.bold,
+    },
+    asesorCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? '#0F1A12' : colors.primary + '08',
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.primary + '30',
+      padding: 14,
+      marginBottom: 8,
+    },
+    asesorLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    asesorIconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.primary + '18',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    asesorText: { flex: 1 },
+    asesorTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
+    asesorSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    asesorProBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primary + '15',
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    asesorProText: { color: colors.primary, fontSize: 11, fontWeight: '800' },
     insightsLocked: {
       flexDirection: 'row',
       alignItems: 'center',

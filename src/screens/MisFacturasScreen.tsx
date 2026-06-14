@@ -235,11 +235,19 @@ export function MisFacturasScreen() {
         >
           {uploading
             ? <ActivityIndicator size="small" color="#fff" />
-            : <Icon name="file-upload-outline" size={20} color="#fff" />}
+            : <Icon name="file-plus-outline" size={20} color="#fff" />}
           <Text style={s.uploadBtnText}>
-            {uploading ? 'Revisando factura…' : 'Agregar factura XML'}
+            {uploading ? 'Revisando tu factura…' : 'Tengo una factura nueva'}
           </Text>
         </Pressable>
+
+        {/* ── Hint de ayuda ────────────────────────────────────────────────── */}
+        <View style={s.hintRow}>
+          <Icon name="information-outline" size={14} color={colors.textMuted} />
+          <Text style={s.hintText}>
+            Busca el archivo .xml que te llegó por correo o descárgalo del portal de tu proveedor.
+          </Text>
+        </View>
 
         {/* ── Tabs ─────────────────────────────────────────────────────────── */}
         <View style={s.tabs}>
@@ -576,5 +584,7 @@ function useStyles(colors: ColorPalette, isDark: boolean) {
     lockedCardDesc: { ...(TX.caption as TextStyle), color: colors.textSecondary },
     lockedCardBtn: { backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
     lockedCardBtnText: { ...(TX.caption as TextStyle), color: '#fff', fontWeight: '700' },
+    hintRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginHorizontal: 20, marginBottom: 16, marginTop: -4 },
+    hintText: { ...(TX.small as TextStyle), color: colors.textMuted, flex: 1, lineHeight: 16 },
   });
 }
