@@ -58,10 +58,8 @@ export function MisFacturasScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
   const session = useAuthStore(state => state.session);
-  const { hasFullAccess, rfc } = usePremiumStore(state => ({
-    hasFullAccess: state.hasFullAccess,
-    rfc: state.razonSocial, // rfc viene del store como razonSocial o similar
-  }));
+  const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
+  const rfc = usePremiumStore(state => state.razonSocial);
   const isPremium = hasFullAccess();
 
   const [tab, setTab] = useState<'alertas' | 'facturas'>('alertas');
