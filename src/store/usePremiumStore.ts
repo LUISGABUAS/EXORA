@@ -210,6 +210,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   hasFullAccess: () => {
     const state = get();
+    if (state.isFounder) return true;
     if (state.isPremium) return true;
     if (state.trialEndsAt && state.trialEndsAt >= todayStr()) return true;
     return false;
@@ -306,6 +307,8 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   syncWithRevenueCat: async () => {
     try {
+      // Never downgrade a founder — their access comes from Supabase, not RevenueCat
+      if (get().isFounder) return;
       const status = await checkPremiumStatus();
       const premium = status.isPremium;
       const plan = (status.plan || 'free') as PremiumPlan;
