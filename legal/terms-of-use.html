@@ -3,49 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Términos de Uso — Expensia</title>
+  <title>Términos y Condiciones de Uso — Expensia</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f5f5f7;
       color: #1a1a1a;
-      line-height: 1.7;
+      line-height: 1.75;
+      font-size: 15px;
     }
     header {
       background: #0a0a0a;
-      padding: 32px 24px;
+      padding: 36px 24px;
       text-align: center;
     }
-    header h1 { color: #22c55e; font-size: 28px; font-weight: 800; }
-    header p  { color: #8e8e93; font-size: 14px; margin-top: 6px; }
+    header h1 { color: #22c55e; font-size: 30px; font-weight: 800; letter-spacing: 2px; }
+    header .subtitle { color: #8e8e93; font-size: 13px; margin-top: 6px; }
+    header .doc-title { color: #fff; font-size: 18px; font-weight: 600; margin-top: 12px; }
+    nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e5ea;
+      padding: 14px 24px;
+      font-size: 13px;
+      color: #8e8e93;
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    nav a { color: #22c55e; text-decoration: none; margin: 0 6px; }
     main {
-      max-width: 780px;
+      max-width: 820px;
       margin: 0 auto;
-      padding: 40px 24px 80px;
+      padding: 40px 24px 100px;
     }
     h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin: 36px 0 12px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #22c55e;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0a0a0a;
+      margin: 44px 0 14px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #22c55e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    p  { margin-bottom: 12px; color: #3a3a3a; }
-    ul { margin: 8px 0 16px 20px; }
-    li { margin-bottom: 6px; color: #3a3a3a; }
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 22px 0 8px;
+      color: #1a1a1a;
+    }
+    p { margin-bottom: 12px; color: #3a3a3a; }
+    ul, ol { margin: 8px 0 16px 22px; }
+    li { margin-bottom: 7px; color: #3a3a3a; }
     .card {
       background: #fff;
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 20px 24px;
       margin: 16px 0;
       border: 1px solid #e5e5ea;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
+    .card p, .card li { margin-bottom: 6px; }
+    .card strong { color: #1a1a1a; }
     .highlight {
-      background: #22c55e15;
+      background: #22c55e12;
       border-left: 4px solid #22c55e;
-      border-radius: 0 12px 12px 0;
+      border-radius: 0 10px 10px 0;
       padding: 14px 18px;
       margin: 16px 0;
     }
@@ -53,139 +77,549 @@
     .warning {
       background: #ef444415;
       border-left: 4px solid #ef4444;
-      border-radius: 0 12px 12px 0;
-      padding: 14px 18px;
-      margin: 16px 0;
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+      margin: 20px 0;
     }
     .warning p { margin: 0; color: #1a1a1a; }
+    .warning strong { color: #dc2626; }
+    .notice {
+      background: #f97316;
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin: 20px 0;
+    }
+    .notice p { margin: 0; color: #fff; font-weight: 700; font-size: 15px; }
+    .legal-ref {
+      background: #0a0a0a;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .legal-ref p { color: #8e8e93; margin: 0; }
+    .legal-ref span { color: #22c55e; font-weight: 600; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e5e5ea;
+    }
+    th {
+      background: #0a0a0a;
+      color: #22c55e;
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f0f0f5;
+      color: #3a3a3a;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .plan-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .plan-card {
+      background: #fff;
+      border: 1px solid #e5e5ea;
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .plan-card.premium { border-color: #22c55e; border-width: 2px; }
+    .plan-name { font-size: 16px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
+    .plan-name.premium { color: #22c55e; }
+    .plan-card ul { margin-top: 10px; }
     footer {
       text-align: center;
-      padding: 32px 24px;
+      padding: 36px 24px;
       color: #8e8e93;
-      font-size: 13px;
-      border-top: 1px solid #e5e5ea;
+      font-size: 12.5px;
+      border-top: 2px solid #e5e5ea;
+      line-height: 1.9;
     }
     a { color: #22c55e; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    @media (max-width: 600px) {
+      .plan-grid { grid-template-columns: 1fr; }
+      table { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h1>EXPENSIA</h1>
-  <p>Términos de Uso · Última actualización: 15 de mayo de 2025</p>
+  <div class="doc-title">Términos y Condiciones de Uso</div>
+  <div class="subtitle">Última actualización: 12 de junio de 2026 · Versión 2.0</div>
 </header>
+
+<nav>
+  <strong>Secciones:</strong>
+  <a href="#aceptacion">1. Aceptación</a>·
+  <a href="#definiciones">2. Definiciones</a>·
+  <a href="#servicio">3. Descripción del servicio</a>·
+  <a href="#cuenta">4. Cuenta de usuario</a>·
+  <a href="#licencia">5. Licencia de uso</a>·
+  <a href="#planes">6. Planes y suscripciones</a>·
+  <a href="#pagos">7. Pagos y cancelaciones</a>·
+  <a href="#fiscal">8. Disclaimer fiscal e IA</a>·
+  <a href="#conductas">9. Conductas prohibidas</a>·
+  <a href="#propiedad">10. Propiedad intelectual</a>·
+  <a href="#disponibilidad">11. Disponibilidad</a>·
+  <a href="#responsabilidad">12. Limitación de responsabilidad</a>·
+  <a href="#indemnizacion">13. Indemnización</a>·
+  <a href="#modificaciones">14. Modificaciones</a>·
+  <a href="#terminacion">15. Terminación</a>·
+  <a href="#ley">16. Ley aplicable</a>·
+  <a href="#contacto">17. Contacto</a>
+</nav>
 
 <main>
 
   <div class="highlight">
-    <p><strong>Resumen:</strong> Al usar Expensia aceptas estos términos. La app es una herramienta de control de gastos personales — no somos asesores fiscales certificados. Siempre consulta a un contador para decisiones fiscales importantes.</p>
+    <p><strong>Resumen ejecutivo:</strong> Al utilizar Expensia celebras un contrato de licencia de software con el desarrollador. La Aplicación es una herramienta de gestión y estimación financiera — no constituye asesoría fiscal, legal ni contable certificada. Los cálculos de deducciones son estimaciones orientativas. Siempre consulta a un Contador Público Certificado (CPC) para obligaciones fiscales formales.</p>
   </div>
 
-  <h2>1. Aceptación de los términos</h2>
-  <p>Al descargar, instalar o usar la aplicación Expensia ("la App"), aceptas quedar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguno de estos términos, no uses la App.</p>
-  <p>Estos términos se rigen por las leyes de los <strong>Estados Unidos Mexicanos</strong>.</p>
-
-  <h2>2. Descripción del servicio</h2>
-  <p>Expensia es una aplicación móvil que te permite:</p>
-  <ul>
-    <li>Registrar y categorizar gastos personales y de negocio</li>
-    <li>Escanear tickets y facturas mediante OCR</li>
-    <li>Estimar deducciones fiscales según tu régimen del SAT</li>
-    <li>Generar reportes de gastos en formato CSV</li>
-    <li>Recibir recomendaciones financieras generadas por IA (usuarios premium)</li>
-    <li>Gestionar presupuestos mensuales por categoría</li>
-  </ul>
-
-  <h2>3. Cuentas de usuario</h2>
-  <ul>
-    <li>Debes ser mayor de 18 años para crear una cuenta.</li>
-    <li>Eres responsable de mantener la confidencialidad de tu contraseña.</li>
-    <li>Eres responsable de todas las actividades que ocurran bajo tu cuenta.</li>
-    <li>Debes notificarnos de inmediato cualquier uso no autorizado de tu cuenta a <a href="mailto:soporte@expensia.app">soporte@expensia.app</a>.</li>
-    <li>Nos reservamos el derecho de suspender cuentas que violen estos términos.</li>
-  </ul>
-
-  <h2>4. Plan gratuito y suscripción Premium</h2>
-  <div class="card">
-    <p><strong>Plan Gratuito</strong> — incluye:</p>
-    <ul style="margin-top:8px;">
-      <li>Registro ilimitado de gastos manuales</li>
-      <li>Hasta 3 escaneos de tickets por semana</li>
-      <li>Importación de XML/CFDI</li>
-      <li>Hasta 2 insights financieros locales</li>
-      <li>Exportación de los últimos 30 días</li>
-    </ul>
+  <div class="legal-ref">
+    <p>Marco normativo aplicable: <span>Código Civil Federal (contratos)</span> · <span>Código de Comercio (comercio electrónico)</span> · <span>Ley Federal de Protección al Consumidor (LFPC)</span> · <span>Ley Federal del Derecho de Autor (LFDA)</span> · <span>Código Fiscal de la Federación (CFF)</span> · <span>Ley Federal de Telecomunicaciones y Radiodifusión (LFTR)</span> · <span>Ley de la Propiedad Industrial</span></p>
   </div>
-  <div class="card">
-    <p><strong>Plan Premium</strong> — incluye todo lo anterior más:</p>
-    <ul style="margin-top:8px;">
-      <li>Escaneos ilimitados</li>
-      <li>Insights de IA (Claude Haiku)</li>
-      <li>Ahorro fiscal detallado y acumulado anual</li>
-      <li>Exportación completa de historial</li>
-      <li>Reporte fiscal mensual en CSV</li>
-    </ul>
-  </div>
-  <p>Las suscripciones Premium se gestionan a través de la App Store (Apple) o Google Play. Los precios se muestran en la app antes de confirmar la compra. Las suscripciones se renuevan automáticamente salvo que se cancelen al menos 24 horas antes del fin del período actual.</p>
-  <p>Para cancelar, ve a la configuración de tu cuenta en App Store o Google Play.</p>
 
-  <h2>5. Limitación de responsabilidad fiscal</h2>
+  <!-- ========================================= -->
+  <h2 id="aceptacion">1. Aceptación de los Términos y Condiciones</h2>
+
+  <p>Los presentes Términos y Condiciones de Uso (en adelante, "los Términos") constituyen un contrato jurídicamente vinculante entre el usuario (en adelante, "el Usuario" o "usted") y Expensia, operado por Luis Felipe Alejandro Gabûardi González (en adelante, "el Desarrollador" o "Expensia"), con respecto al uso de la aplicación móvil Expensia (en adelante, "la Aplicación" o "el Servicio").</p>
+
+  <p>Al descargar, instalar, registrarse o utilizar la Aplicación de cualquier manera, el Usuario manifiesta su conformidad plena e incondicional con los presentes Términos, con la <a href="./privacy-policy.html">Política de Privacidad</a> de Expensia, y con las políticas de las tiendas de aplicaciones de Apple Inc. (App Store) o de Google LLC (Google Play), según corresponda.</p>
+
   <div class="warning">
-    <p><strong>Importante:</strong> Expensia es una herramienta de apoyo, no un servicio de asesoría fiscal certificada. Los cálculos de deducciones y ahorro fiscal son <strong>estimaciones aproximadas</strong> basadas en tasas generales del SAT y no constituyen asesoría fiscal profesional.</p>
+    <p><strong>Si no está de acuerdo con alguno de los presentes Términos, deberá abstenerse de utilizar la Aplicación y desinstalarla de su dispositivo.</strong> El uso continuado de la Aplicación constituirá aceptación de cualquier modificación futura a los Términos.</p>
   </div>
+
+  <p>Estos Términos se celebran al amparo del <strong>Código Civil Federal</strong> de los Estados Unidos Mexicanos y el <strong>Código de Comercio</strong>, y se rigen íntegramente por las leyes de los Estados Unidos Mexicanos.</p>
+
+  <!-- ========================================= -->
+  <h2 id="definiciones">2. Definiciones</h2>
+
+  <p>Para los efectos de los presentes Términos, los siguientes términos tendrán el significado que se indica a continuación:</p>
+
+  <table>
+    <tr>
+      <th>Término</th>
+      <th>Definición</th>
+    </tr>
+    <tr>
+      <td><strong>"Aplicación" / "Expensia"</strong></td>
+      <td>La aplicación móvil Expensia, incluyendo su código fuente, algoritmos, base de datos, interfaz gráfica, funcionalidades, actualizaciones y contenido.</td>
+    </tr>
+    <tr>
+      <td><strong>"Desarrollador"</strong></td>
+      <td>Expensia, operado por Luis Felipe Alejandro Gabûardi González, persona física con actividad empresarial, con domicilio en México.</td>
+    </tr>
+    <tr>
+      <td><strong>"Usuario"</strong></td>
+      <td>Persona física mayor de 18 años que descarga, instala o utiliza la Aplicación, con o sin cuenta registrada.</td>
+    </tr>
+    <tr>
+      <td><strong>"Cuenta"</strong></td>
+      <td>El perfil personalizado creado por el Usuario mediante el proceso de registro en la Aplicación.</td>
+    </tr>
+    <tr>
+      <td><strong>"Plan Gratuito"</strong></td>
+      <td>La modalidad de acceso al Servicio sin costo económico, con funcionalidades limitadas conforme a la sección 6.</td>
+    </tr>
+    <tr>
+      <td><strong>"Plan Premium"</strong></td>
+      <td>La modalidad de acceso ampliado al Servicio, sujeta al pago de una suscripción periódica, con todas las funcionalidades habilitadas.</td>
+    </tr>
+    <tr>
+      <td><strong>"Datos Fiscales"</strong></td>
+      <td>Información relacionada con el régimen fiscal del Usuario ante el SAT, incluyendo RFC, régimen de tributación y datos de CFDI.</td>
+    </tr>
+    <tr>
+      <td><strong>"Contenido del Usuario"</strong></td>
+      <td>Toda la información ingresada, cargada o generada por el Usuario en la Aplicación, incluyendo registros de gastos, ingresos, imágenes de tickets y categorías personalizadas.</td>
+    </tr>
+    <tr>
+      <td><strong>"Asesor IA"</strong></td>
+      <td>La función de chat con inteligencia artificial de Expensia, alimentada por los modelos de lenguaje de Anthropic, Inc., disponible para usuarios con Plan Premium.</td>
+    </tr>
+    <tr>
+      <td><strong>"Tienda de Aplicaciones"</strong></td>
+      <td>App Store de Apple Inc. o Google Play de Google LLC, según la plataforma del dispositivo del Usuario.</td>
+    </tr>
+    <tr>
+      <td><strong>"SAT"</strong></td>
+      <td>Servicio de Administración Tributaria de los Estados Unidos Mexicanos.</td>
+    </tr>
+    <tr>
+      <td><strong>"CFDI"</strong></td>
+      <td>Comprobante Fiscal Digital por Internet, conforme al Código Fiscal de la Federación.</td>
+    </tr>
+  </table>
+
+  <!-- ========================================= -->
+  <h2 id="servicio">3. Descripción del Servicio</h2>
+
+  <p>Expensia es una aplicación móvil de gestión financiera personal y empresarial, diseñada específicamente para el contexto fiscal mexicano, que ofrece las siguientes funcionalidades principales:</p>
+
   <ul>
-    <li>No garantizamos la exactitud de los cálculos fiscales para tu situación particular.</li>
-    <li>Siempre consulta a un Contador Público Certificado (CPC) para declaraciones fiscales.</li>
-    <li>No somos responsables de errores, multas o recargos derivados del uso de la información proporcionada por la App.</li>
-    <li>La clasificación automática de gastos como "deducibles" es orientativa y puede no aplicar en tu caso específico.</li>
+    <li><strong>Registro y categorización de gastos e ingresos:</strong> El Usuario puede registrar sus transacciones de forma manual, mediante OCR de tickets o mediante importación de CFDI/XML.</li>
+    <li><strong>Escaneo de tickets mediante OCR:</strong> La Aplicación permite fotografiar tickets y recibos para extraer automáticamente el monto, comercio, fecha y concepto, apoyándose en servicios externos de reconocimiento óptico de caracteres.</li>
+    <li><strong>Estimación de deducciones fiscales:</strong> La Aplicación calcula estimaciones de deducciones fiscales aplicables conforme al régimen SAT del Usuario. Estas estimaciones son <strong>orientativas y no constituyen declaraciones fiscales formales</strong>.</li>
+    <li><strong>Presupuestos y metas de ahorro:</strong> El Usuario puede definir presupuestos mensuales por categoría y establecer metas de ahorro con seguimiento automatizado.</li>
+    <li><strong>Reporte fiscal estimado:</strong> Generación de reportes en formato CSV con el resumen de gastos deducibles estimados en el período seleccionado.</li>
+    <li><strong>Widget de iOS:</strong> Acceso rápido al resumen de gastos desde la pantalla de inicio del dispositivo.</li>
+    <li><strong>Asesor de Inteligencia Artificial (Premium):</strong> Función de chat que permite al Usuario realizar consultas financieras en lenguaje natural y recibir orientación basada en su historial de gastos anonimizado. Véase sección 8 para las limitaciones aplicables.</li>
+    <li><strong>Importación de estados de cuenta bancarios (Premium):</strong> Función experimental que permite importar y categorizar automáticamente movimientos de estados de cuenta mediante OCR.</li>
+    <li><strong>Sincronización en la nube:</strong> Copia de seguridad y sincronización de datos entre dispositivos del mismo Usuario.</li>
+    <li><strong>Notificaciones de recordatorio:</strong> Notificaciones push configurables para recordar al Usuario el registro diario de gastos.</li>
   </ul>
 
-  <h2>6. Uso aceptable</h2>
-  <p>Al usar Expensia, te comprometes a <strong>no</strong>:</p>
+  <p>El Servicio está disponible en español y se encuentra orientado a personas físicas con actividad empresarial, trabajadores independientes (freelancers), contribuyentes bajo el régimen RESICO y emprendedores con actividad económica en México.</p>
+
+  <!-- ========================================= -->
+  <h2 id="cuenta">4. Registro y Cuenta de Usuario</h2>
+
+  <h3>4.1 Requisitos para el Registro</h3>
+  <p>Para crear una Cuenta en Expensia, el Usuario deberá:</p>
   <ul>
-    <li>Usar la App para actividades ilegales o fraudulentas</li>
-    <li>Intentar acceder a cuentas de otros usuarios</li>
-    <li>Modificar, descompilar o hacer ingeniería inversa de la App</li>
-    <li>Usar la App para lavar dinero o evadir impuestos</li>
-    <li>Subir contenido malicioso, virus o código dañino</li>
-    <li>Sobrecargar o atacar la infraestructura del servicio</li>
+    <li>Ser persona física mayor de <strong>18 años de edad</strong>.</li>
+    <li>Contar con una dirección de correo electrónico válida, una cuenta de Google activa, o una cuenta de Apple ID activa.</li>
+    <li>Proporcionar información veraz, actualizada y completa durante el proceso de registro.</li>
+    <li>Aceptar los presentes Términos y la Política de Privacidad de Expensia.</li>
   </ul>
 
-  <h2>7. Propiedad intelectual</h2>
-  <p>Expensia y todo su contenido (logo, diseño, código, textos, algoritmos de IA) son propiedad exclusiva del desarrollador. Queda prohibida su reproducción total o parcial sin autorización escrita.</p>
-  <p>Los datos que introduces en la App (gastos, RFC, imágenes) son tuyos. Nos otorgas una licencia limitada para procesarlos únicamente con el fin de prestarte el servicio.</p>
-
-  <h2>8. Disponibilidad del servicio</h2>
+  <h3>4.2 Confidencialidad de Credenciales</h3>
+  <p>El Usuario es el único responsable de mantener la confidencialidad de sus credenciales de acceso (correo electrónico y contraseña, o token de autenticación social). El Usuario se obliga a:</p>
   <ul>
-    <li>Nos esforzamos por mantener la App disponible 24/7, pero no garantizamos disponibilidad ininterrumpida.</li>
-    <li>Podemos realizar mantenimientos programados con o sin aviso previo.</li>
-    <li>No somos responsables por pérdida de datos causada por fallos del dispositivo, desinstalación de la App o fuerza mayor.</li>
-    <li>Recomendamos activar la sincronización con la nube para respaldo de tus datos.</li>
+    <li>No compartir sus credenciales con terceros bajo ninguna circunstancia.</li>
+    <li>Notificar a Expensia de manera inmediata ante cualquier uso no autorizado de su Cuenta, a través del correo <a href="mailto:soporte@expensia.app">soporte@expensia.app</a>.</li>
+    <li>Cerrar su sesión al finalizar cada uso en dispositivos compartidos.</li>
+  </ul>
+  <p>Expensia <strong>no será responsable</strong> por daños o pérdidas derivadas del incumplimiento del Usuario de las obligaciones de confidencialidad descritas en esta sección.</p>
+
+  <h3>4.3 Unicidad de la Cuenta</h3>
+  <p>Cada Usuario puede registrar una sola Cuenta en Expensia. La creación de múltiples cuentas por parte de un mismo Usuario para eludir restricciones del Plan Gratuito o políticas de uso constituye una violación a los presentes Términos.</p>
+
+  <h3>4.4 Exactitud de la Información</h3>
+  <p>El Usuario es responsable de la exactitud de la información que ingresa en la Aplicación, incluyendo datos fiscales como RFC, régimen tributario y datos de transacciones. Expensia no verifica la veracidad de dicha información y no será responsable por cálculos incorrectos derivados de datos erróneos proporcionados por el Usuario.</p>
+
+  <h3>4.5 Suspensión y Terminación de Cuentas por Expensia</h3>
+  <p>Expensia se reserva el derecho de suspender, restringir o terminar unilateralmente la Cuenta de cualquier Usuario que, a juicio del Desarrollador, haya incurrido en las conductas prohibidas descritas en la sección 9 o haya violado cualquier disposición de los presentes Términos, sin responsabilidad ni obligación de reembolso por suscripciones activas.</p>
+
+  <!-- ========================================= -->
+  <h2 id="licencia">5. Licencia de Uso de la Aplicación</h2>
+
+  <h3>5.1 Otorgamiento de Licencia</h3>
+  <p>Sujeto al cumplimiento de los presentes Términos y al pago de las tarifas aplicables, Expensia otorga al Usuario una <strong>licencia personal, no exclusiva, intransferible, revocable y limitada</strong> para descargar, instalar y utilizar la Aplicación en dispositivos móviles de su propiedad o bajo su control legítimo, únicamente para uso personal o empresarial propio, conforme a las funcionalidades del plan contratado.</p>
+
+  <h3>5.2 Restricciones de la Licencia</h3>
+  <p>El Usuario no podrá, bajo ninguna circunstancia:</p>
+  <ul>
+    <li>Sublicenciar, vender, transferir, ceder, distribuir o explotar comercialmente la Aplicación o cualquier derecho derivado de los presentes Términos.</li>
+    <li>Modificar, adaptar, traducir, crear obras derivadas, descompilar, desensamblar o realizar ingeniería inversa sobre el código fuente de la Aplicación.</li>
+    <li>Eliminar, alterar u ocultar avisos de derechos de autor, marcas comerciales u otros derechos de propiedad intelectual incluidos en la Aplicación.</li>
+    <li>Utilizar la Aplicación para desarrollar un producto o servicio competidor.</li>
+    <li>Acceder a la Aplicación mediante medios automatizados (bots, scrapers, scripts) no autorizados expresamente por Expensia.</li>
+    <li>Eludir, desactivar o interferir con medidas de seguridad o de control de acceso de la Aplicación.</li>
   </ul>
 
-  <h2>9. Modificaciones a la App y los términos</h2>
-  <p>Nos reservamos el derecho de modificar, suspender o descontinuar cualquier parte de la App en cualquier momento. También podemos actualizar estos Términos de Uso. Te notificaremos dentro de la App ante cambios significativos. El uso continuado de la App tras los cambios implica la aceptación de los nuevos términos.</p>
+  <h3>5.3 Actualizaciones</h3>
+  <p>Expensia podrá publicar actualizaciones de la Aplicación a través de la Tienda de Aplicaciones. El Usuario reconoce que dichas actualizaciones pueden ser necesarias para mantener la funcionalidad y seguridad del Servicio, y que el uso de versiones desactualizadas puede resultar en funcionalidades degradadas o interrumpidas.</p>
 
-  <h2>10. Terminación</h2>
-  <p>Puedes cancelar tu cuenta en cualquier momento desde la App o contactando a <a href="mailto:soporte@expensia.app">soporte@expensia.app</a>. Nos reservamos el derecho de terminar o suspender tu acceso si violas estos términos, sin previo aviso ni responsabilidad.</p>
-  <p>Al eliminar tu cuenta, tus datos serán eliminados de nuestros servidores en un plazo de 30 días conforme a nuestra <a href="./index.html">Política de Privacidad</a>.</p>
+  <!-- ========================================= -->
+  <h2 id="planes">6. Planes de Acceso y Funcionalidades</h2>
 
-  <h2>11. Ley aplicable y jurisdicción</h2>
-  <p>Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier controversia se someterá a la jurisdicción de los tribunales competentes de la Ciudad de México, renunciando a cualquier otro fuero que pudiera corresponder.</p>
+  <div class="plan-grid">
+    <div class="plan-card">
+      <div class="plan-name">Plan Gratuito</div>
+      <ul>
+        <li>Registro ilimitado de gastos manuales</li>
+        <li>Hasta <strong>5 escaneos de tickets por mes</strong></li>
+        <li>Importación de CFDI/XML</li>
+        <li>Categorización automática de gastos</li>
+        <li>Estimación básica de deducciones fiscales</li>
+        <li>Exportación de los últimos 30 días en CSV</li>
+        <li>Presupuestos mensuales por categoría</li>
+        <li>Widget de iOS (resumen básico)</li>
+        <li>Sincronización en la nube</li>
+      </ul>
+    </div>
+    <div class="plan-card premium">
+      <div class="plan-name premium">Plan Premium</div>
+      <ul>
+        <li>Todo lo del Plan Gratuito, más:</li>
+        <li><strong>Escaneos de tickets ilimitados</strong></li>
+        <li><strong>Asesor de Inteligencia Artificial</strong> (chat ilimitado)</li>
+        <li>Insights automáticos de gastos con IA</li>
+        <li>Reporte fiscal mensual y anual detallado</li>
+        <li>Exportación histórica completa en CSV y PDF</li>
+        <li>Importación de estados de cuenta bancarios (OCR)</li>
+        <li>Metas de ahorro avanzadas</li>
+        <li>Soporte prioritario</li>
+      </ul>
+    </div>
+  </div>
 
-  <h2>12. Contacto</h2>
+  <p>Las funcionalidades incluidas en cada plan están sujetas a modificación por parte de Expensia, con notificación previa a los suscriptores activos. Expensia podrá añadir nuevas funcionalidades a cualquier plan o modificar los límites de uso sin previo aviso, siempre que dichas modificaciones no impliquen una reducción de las funcionalidades ya pagadas durante el período de suscripción vigente.</p>
+
+  <!-- ========================================= -->
+  <h2 id="pagos">7. Suscripciones, Pagos y Política de Cancelación</h2>
+
+  <h3>7.1 Procesamiento de Pagos</h3>
+  <p>Los pagos correspondientes al Plan Premium se procesan exclusivamente a través de la <strong>Tienda de Aplicaciones</strong> del dispositivo del Usuario (App Store de Apple o Google Play de Google). Expensia <strong>no recopila, procesa ni almacena datos de tarjetas de crédito, débito ni información bancaria</strong>. La facturación y gestión de suscripciones se realiza conforme a los términos de servicio de Apple Inc. o Google LLC, según corresponda.</p>
+
+  <h3>7.2 Precios</h3>
+  <p>Los precios del Plan Premium se muestran al Usuario dentro de la Aplicación antes de confirmar la suscripción, en la moneda local del mercado del Usuario (pesos mexicanos para usuarios en México). Los precios pueden variar en función de promociones, conversiones de moneda o cambios de tarifas de la Tienda de Aplicaciones, con notificación previa al Usuario.</p>
+
+  <h3>7.3 Renovación Automática</h3>
+  <p>Las suscripciones Premium se renuevan automáticamente al término de cada período contratado (mensual o anual), salvo que el Usuario las cancele con al menos <strong>24 horas de anticipación</strong> al vencimiento del período vigente. La renovación se cargará a la forma de pago registrada en la Tienda de Aplicaciones al precio vigente en ese momento.</p>
+
+  <h3>7.4 Cancelación de la Suscripción</h3>
+  <p>El Usuario puede cancelar su suscripción en cualquier momento mediante la Tienda de Aplicaciones:</p>
+  <ul>
+    <li><strong>iOS:</strong> Configuración → [Tu nombre] → Suscripciones → Expensia → Cancelar suscripción</li>
+    <li><strong>Android:</strong> Google Play → Cuenta → Suscripciones → Expensia → Cancelar</li>
+  </ul>
+  <p>La cancelación será efectiva al final del período de facturación vigente. El Usuario conservará acceso a las funciones Premium hasta el término del período pagado.</p>
+
+  <h3>7.5 Política de Reembolsos</h3>
+  <p>Conforme a las políticas de Apple App Store y Google Play, los reembolsos de suscripciones in-app se gestionan directamente por dichas plataformas, no por Expensia. Para solicitar un reembolso, el Usuario deberá utilizar los canales oficiales de la Tienda de Aplicaciones correspondiente:</p>
+  <ul>
+    <li><strong>Apple:</strong> <a href="https://reportaproblem.apple.com" target="_blank">reportaproblem.apple.com</a></li>
+    <li><strong>Google:</strong> A través de Google Play a <a href="https://play.google.com/store/account/subscriptions" target="_blank">play.google.com/store/account/subscriptions</a></li>
+  </ul>
+
+  <h3>7.6 Período de Prueba</h3>
+  <p>Expensia podrá ofrecer períodos de prueba gratuita del Plan Premium. Al término del período de prueba, la suscripción se convertirá automáticamente en de pago salvo que el Usuario la cancele antes del vencimiento de dicho período, conforme a los procesos descritos en la sección 7.4.</p>
+
+  <h3>7.7 Impuestos</h3>
+  <p>Los precios mostrados pueden no incluir impuestos aplicables (IVA u otros). Los impuestos correspondientes serán calculados y cobrados por la Tienda de Aplicaciones conforme a la legislación fiscal del país del Usuario.</p>
+
+  <!-- ========================================= -->
+  <h2 id="fiscal">8. Disclaimer Fiscal, Limitaciones del Servicio y del Asesor de Inteligencia Artificial</h2>
+
+  <div class="notice">
+    <p>AVISO LEGAL OBLIGATORIO: EXPENSIA NO ES UN SERVICIO DE ASESORÍA FISCAL, CONTABLE, JURÍDICA NI FINANCIERA CERTIFICADA. LOS CÁLCULOS DE DEDUCCIONES, ESTIMACIONES DE AHORRO FISCAL Y CUALQUIER INFORMACIÓN DE CARÁCTER FISCAL GENERADA POR LA APLICACIÓN SON EXCLUSIVAMENTE ORIENTATIVOS Y NO CONSTITUYEN DECLARACIONES FISCALES FORMALES ANTE EL SAT NI ANTE NINGUNA OTRA AUTORIDAD.</p>
+  </div>
+
+  <h3>8.1 Naturaleza Orientativa de los Cálculos Fiscales</h3>
+  <p>La Aplicación calcula estimaciones de deducciones fiscales aplicables con base en información general sobre los regímenes fiscales del SAT y en los gastos registrados por el Usuario. Sin perjuicio de lo anterior:</p>
+  <ul>
+    <li>Expensia <strong>no verifica</strong> si los comprobantes fiscales registrados cumplen con todos los requisitos del <em>Código Fiscal de la Federación</em> y la normativa del SAT para ser deducibles.</li>
+    <li>La clasificación automática de un gasto como "deducible" es una sugerencia basada en patrones generales y <strong>puede no corresponder a la situación fiscal particular</strong> del Usuario.</li>
+    <li>Las estimaciones de ahorro fiscal <strong>no consideran</strong> todos los factores que pueden afectar la carga tributaria real del Usuario, como deducciones personales, estímulos fiscales específicos, coeficientes de utilidad, amortizaciones, ni otros elementos propios de cada declaración.</li>
+    <li>Expensia <strong>no presenta declaraciones fiscales</strong> ante el SAT ni ante ninguna otra autoridad en nombre del Usuario.</li>
+  </ul>
+
+  <div class="highlight">
+    <p><strong>Recomendación:</strong> Para efectos de declaraciones fiscales, cumplimiento de obligaciones ante el SAT, determinación de contribuciones y toma de decisiones fiscales de impacto económico, el Usuario deberá siempre consultar a un <strong>Contador Público Certificado (CPC)</strong> con cédula profesional vigente, o a un asesor fiscal debidamente acreditado.</p>
+  </div>
+
+  <h3>8.2 Limitaciones del Asesor de Inteligencia Artificial</h3>
+  <p>El Asesor IA de Expensia es una herramienta de apoyo basada en modelos de lenguaje de inteligencia artificial generativa de Anthropic, Inc. El Usuario reconoce y acepta que:</p>
+  <ul>
+    <li>Las respuestas generadas por el Asesor IA son producidas por un sistema de inteligencia artificial y <strong>no provienen de un profesional fiscal o financiero certificado</strong>.</li>
+    <li>El Asesor IA puede generar respuestas inexactas, desactualizadas o inapropiadas para la situación particular del Usuario (fenómeno conocido como "alucinación" en sistemas de IA).</li>
+    <li>Las recomendaciones del Asesor IA <strong>no deben utilizarse como sustituto</strong> de asesoría profesional para decisiones fiscales, de inversión o financieras de carácter formal.</li>
+    <li>Expensia <strong>no es responsable</strong> de las consecuencias derivadas de decisiones tomadas con base en las respuestas del Asesor IA.</li>
+    <li>El Asesor IA se alimenta con un resumen anonimizado de los gastos del Usuario; no tiene acceso al RFC, nombre completo ni correo del Usuario.</li>
+    <li>El desempeño y la disponibilidad del Asesor IA dependen de los servicios de Anthropic, Inc., sobre los cuales Expensia no tiene control total.</li>
+  </ul>
+
+  <h3>8.3 Responsabilidad del Usuario por Datos Ingresados</h3>
+  <p>El Usuario es el único responsable de la veracidad, exactitud y completitud de los datos que ingresa en la Aplicación. Expensia no será responsable por cálculos incorrectos ni recomendaciones inadecuadas derivadas de información falsa, incompleta o errónea proporcionada por el Usuario.</p>
+
+  <!-- ========================================= -->
+  <h2 id="conductas">9. Conductas Prohibidas y Uso Aceptable</h2>
+
+  <p>Al utilizar la Aplicación, el Usuario se obliga expresamente a <strong>no</strong> realizar las conductas siguientes, las cuales podrán dar lugar a la suspensión o terminación inmediata de la Cuenta, así como a las acciones legales correspondientes:</p>
+
+  <h3>9.1 Conductas de Naturaleza Ilegal o Fraudulenta</h3>
+  <ul>
+    <li>Utilizar la Aplicación para cometer, facilitar o encubrir actos ilícitos conforme a las leyes de los Estados Unidos Mexicanos o de cualquier otro país.</li>
+    <li>Registrar gastos, ingresos o datos fiscales falsos con el propósito de evadir contribuciones fiscales, defraudar al SAT o a terceros, o cometer cualquier conducta tipificada en el <em>Código Fiscal de la Federación</em> o el <em>Código Penal Federal</em>.</li>
+    <li>Utilizar la Aplicación para el lavado de activos, financiamiento al terrorismo o cualquier otra actividad ilícita de carácter económico.</li>
+    <li>Intentar acceder de forma no autorizada a cuentas, sistemas o datos de otros usuarios.</li>
+    <li>Suplantar la identidad de otra persona, empresa o entidad.</li>
+  </ul>
+
+  <h3>9.2 Conductas que Afectan la Integridad del Servicio</h3>
+  <ul>
+    <li>Modificar, descompilar, desensamblar o realizar ingeniería inversa sobre el código fuente de la Aplicación o sus componentes.</li>
+    <li>Introducir en la Aplicación virus informáticos, malware, ransomware, spyware, código malicioso o cualquier elemento tecnológico dañino.</li>
+    <li>Realizar ataques de denegación de servicio (DoS/DDoS), intentos de intrusión, escaneo de puertos u otras acciones que afecten la disponibilidad o integridad de la infraestructura del Servicio.</li>
+    <li>Utilizar herramientas automatizadas (bots, crawlers, scrapers) para extraer datos de la Aplicación sin autorización escrita de Expensia.</li>
+    <li>Explotar vulnerabilidades de seguridad de la Aplicación sin notificarlas de buena fe a <a href="mailto:soporte@expensia.app">soporte@expensia.app</a>.</li>
+    <li>Eludir, desactivar o manipular medidas de control de acceso, autenticación o cifrado de la Aplicación.</li>
+  </ul>
+
+  <h3>9.3 Conductas que Infringen Derechos de Terceros o de Expensia</h3>
+  <ul>
+    <li>Copiar, distribuir, reproducir, modificar o crear obras derivadas de la Aplicación o su contenido sin autorización escrita de Expensia.</li>
+    <li>Utilizar las marcas, logotipos, nombres comerciales o contenido de Expensia sin autorización expresa.</li>
+    <li>Cargar en la Aplicación imágenes o archivos que contengan material ilícito, difamatorio, obsceno o que infrinjan derechos de terceros.</li>
+  </ul>
+
+  <!-- ========================================= -->
+  <h2 id="propiedad">10. Propiedad Intelectual</h2>
+
+  <h3>10.1 Derechos de Expensia</h3>
+  <p>La Aplicación, incluyendo sin limitación su código fuente, código objeto, algoritmos, modelos de inteligencia artificial entrenados, diseño gráfico, interfaz de usuario, logotipos, marcas, nombres comerciales, textos, metodologías de clasificación fiscal y demás contenido, son propiedad exclusiva del Desarrollador y se encuentran protegidos por:</p>
+  <ul>
+    <li>La <strong>Ley Federal del Derecho de Autor</strong> (LFDA) de los Estados Unidos Mexicanos.</li>
+    <li>La <strong>Ley de la Propiedad Industrial</strong> de los Estados Unidos Mexicanos.</li>
+    <li>Los tratados internacionales de propiedad intelectual suscritos por México, incluyendo el Convenio de Berna y el Tratado de la OMPI sobre Derecho de Autor.</li>
+  </ul>
+  <p>Queda estrictamente prohibida la reproducción total o parcial de la Aplicación o su contenido sin autorización previa y por escrito del Desarrollador. La violación de estos derechos podrá dar lugar a las acciones civiles y penales previstas en la legislación aplicable.</p>
+
+  <h3>10.2 Derechos del Usuario sobre su Contenido</h3>
+  <p>El Usuario conserva en todo momento la titularidad sobre el Contenido del Usuario (gastos, ingresos, imágenes, datos fiscales) que introduzca en la Aplicación. Al utilizar el Servicio, el Usuario otorga al Desarrollador una <strong>licencia limitada, no exclusiva, gratuita e intransferible</strong> para almacenar, procesar y utilizar dicho contenido con el único propósito de prestar el Servicio contratado, conforme a la Política de Privacidad.</p>
+
+  <h3>10.3 Retroalimentación</h3>
+  <p>En el supuesto de que el Usuario proporcione comentarios, sugerencias o ideas sobre la Aplicación (en adelante, "Retroalimentación"), el Usuario otorga al Desarrollador una licencia perpetua, irrevocable, mundial, gratuita y sublicenciable para utilizar, reproducir, modificar y explotar dicha Retroalimentación sin obligación de compensación.</p>
+
+  <!-- ========================================= -->
+  <h2 id="disponibilidad">11. Disponibilidad del Servicio y Fuerza Mayor</h2>
+
+  <h3>11.1 Disponibilidad</h3>
+  <p>Expensia realizará esfuerzos razonables para mantener la Aplicación disponible de manera continua. No obstante, el Desarrollador <strong>no garantiza</strong> disponibilidad ininterrumpida, sin errores ni libre de interrupciones del Servicio, y podrá realizarse mantenimiento programado o no programado que afecte temporalmente su disponibilidad, con o sin notificación previa.</p>
+
+  <p>Dado que la Aplicación opera bajo arquitectura offline-first (los datos se almacenan localmente en el dispositivo del Usuario), la mayoría de las funcionalidades básicas estarán disponibles incluso sin conexión a Internet.</p>
+
+  <h3>11.2 Fuerza Mayor</h3>
+  <p>Expensia no será responsable por el incumplimiento, retraso o interrupción del Servicio cuando dicha circunstancia sea consecuencia de causas ajenas a su control razonable, incluyendo sin limitación: desastres naturales, fallas en la infraestructura de telecomunicaciones, interrupciones de servicios de terceros proveedores (Supabase, Apple, Google), actos de autoridad, ciberataques de terceros, pandemia, huelga, o cualquier otro evento de fuerza mayor o caso fortuito en términos del artículo 2111 del Código Civil Federal.</p>
+
+  <!-- ========================================= -->
+  <h2 id="responsabilidad">12. Limitación de Responsabilidad</h2>
+
+  <h3>12.1 Exclusión General de Garantías</h3>
+  <p>En la máxima medida permitida por la legislación aplicable, la Aplicación se provee en el estado en que se encuentra (<em>"as is"</em> y <em>"as available"</em>), sin garantías de ningún tipo, expresas o implícitas, incluyendo sin limitación garantías de comerciabilidad, idoneidad para un propósito particular, exactitud, completitud, ausencia de errores o disponibilidad ininterrumpida.</p>
+
+  <h3>12.2 Exclusiones Específicas de Responsabilidad</h3>
+  <p>Sin perjuicio de lo anterior, Expensia <strong>no será responsable</strong> bajo ninguna circunstancia por:</p>
+  <ul>
+    <li>Errores, omisiones, inexactitudes o desactualizaciones en los cálculos de deducciones fiscales estimadas.</li>
+    <li>Multas, recargos, sanciones, actualizaciones u obligaciones fiscales adicionales determinadas por el SAT o cualquier otra autoridad, derivadas del uso de la información proporcionada por la Aplicación.</li>
+    <li>Pérdida de datos ocasionada por fallo del dispositivo del Usuario, desinstalación accidental de la Aplicación, o falta de activación de la sincronización en la nube.</li>
+    <li>Decisiones financieras, de inversión o fiscales tomadas con base en la información o recomendaciones de la Aplicación o del Asesor IA.</li>
+    <li>Daños indirectos, incidentales, especiales, punitivos o consecuentes, incluyendo pérdida de ganancias, pérdida de datos o pérdida de oportunidades de negocio.</li>
+    <li>Accesos no autorizados a la Cuenta del Usuario causados por negligencia del propio Usuario en la protección de sus credenciales.</li>
+    <li>Interrupciones del Servicio atribuibles a terceros proveedores (Supabase, Anthropic, Apple, Google, etc.).</li>
+  </ul>
+
+  <h3>12.3 Límite Máximo de Responsabilidad</h3>
+  <p>En los supuestos en que la legislación aplicable no permita la exclusión total de responsabilidad, la responsabilidad total y acumulada del Desarrollador frente al Usuario, por cualquier causa y bajo cualquier teoría jurídica, se limitará al <strong>monto total de las suscripciones pagadas por el Usuario a Expensia durante los 6 meses inmediatamente anteriores al evento que dio origen al reclamo</strong>, o a $500.00 MXN (quinientos pesos mexicanos), la cantidad que resulte mayor.</p>
+
+  <!-- ========================================= -->
+  <h2 id="indemnizacion">13. Indemnización</h2>
+
+  <p>El Usuario se obliga a defender, indemnizar y mantener indemne al Desarrollador, sus empleados, colaboradores, representantes y proveedores, frente a cualquier reclamación, demanda, acción legal, daño, pérdida, costo o gasto (incluyendo honorarios razonables de abogados) que surja de o esté relacionado con:</p>
+  <ul>
+    <li>El uso de la Aplicación por parte del Usuario en violación de los presentes Términos.</li>
+    <li>La violación por parte del Usuario de cualquier disposición legal aplicable.</li>
+    <li>El Contenido del Usuario introducido en la Aplicación.</li>
+    <li>La infracción por parte del Usuario de derechos de propiedad intelectual o de otro tipo de terceros.</li>
+  </ul>
+
+  <!-- ========================================= -->
+  <h2 id="modificaciones">14. Modificaciones al Servicio y a los Términos</h2>
+
+  <h3>14.1 Modificaciones a los Términos</h3>
+  <p>Expensia se reserva el derecho de modificar los presentes Términos en cualquier momento, con el fin de reflejar cambios en el Servicio, requisitos legales o prácticas comerciales. Las modificaciones serán comunicadas al Usuario mediante notificación dentro de la Aplicación y, en el caso de cambios sustanciales que alteren derechos u obligaciones del Usuario, mediante correo electrónico con al menos <strong>30 días de anticipación</strong> a su entrada en vigor.</p>
+  <p>Si el Usuario no está de acuerdo con los Términos modificados, deberá dejar de utilizar la Aplicación antes de la fecha de entrada en vigor de dichas modificaciones. El uso continuado de la Aplicación tras dicha fecha implicará la aceptación de los Términos actualizados.</p>
+
+  <h3>14.2 Modificaciones al Servicio</h3>
+  <p>Expensia podrá, en cualquier momento y a su exclusiva discreción, modificar, actualizar, ampliar, reducir, suspender o descontinuar total o parcialmente el Servicio o cualquiera de sus funcionalidades. En el supuesto de descontinuación del Servicio, Expensia notificará al Usuario con al menos <strong>30 días de anticipación</strong>, y en caso de suscripciones Premium activas, gestionará el reembolso proporcional conforme a las políticas de la Tienda de Aplicaciones.</p>
+
+  <!-- ========================================= -->
+  <h2 id="terminacion">15. Terminación del Contrato</h2>
+
+  <h3>15.1 Terminación por el Usuario</h3>
+  <p>El Usuario podrá terminar la relación contractual con Expensia en cualquier momento mediante la eliminación de su Cuenta, a través de la función disponible en la Aplicación (Perfil → Ajustes → Eliminar cuenta) o solicitándolo por correo a <a href="mailto:soporte@expensia.app">soporte@expensia.app</a>. La eliminación de la Cuenta es un acto irreversible que resultará en la eliminación definitiva del Contenido del Usuario conforme al plazo establecido en la Política de Privacidad.</p>
+
+  <h3>15.2 Terminación por Expensia</h3>
+  <p>Expensia podrá terminar o suspender el acceso del Usuario al Servicio de manera inmediata y sin previo aviso en los siguientes supuestos:</p>
+  <ul>
+    <li>Incumplimiento grave o reiterado de los presentes Términos.</li>
+    <li>Realización de conductas prohibidas conforme a la sección 9.</li>
+    <li>Determinación de autoridad competente que ordene la suspensión o cancelación de la Cuenta.</li>
+    <li>Inactividad prolongada de la Cuenta (superior a 24 meses consecutivos sin acceso).</li>
+  </ul>
+
+  <h3>15.3 Efectos de la Terminación</h3>
+  <p>A la terminación del contrato, por cualquier causa, cesarán todos los derechos otorgados al Usuario bajo los presentes Términos, incluyendo la licencia de uso descrita en la sección 5. El Usuario deberá cesar de inmediato el uso de la Aplicación y desinstalarla de sus dispositivos. Las disposiciones de los presentes Términos que por su naturaleza deban sobrevivir a la terminación continuarán vigentes, incluyendo las secciones de propiedad intelectual, limitación de responsabilidad, indemnización y ley aplicable.</p>
+
+  <!-- ========================================= -->
+  <h2>16. Privacidad y Protección de Datos Personales</h2>
+
+  <p>El tratamiento de los datos personales del Usuario se rige por el <strong>Aviso de Privacidad Integral</strong> de Expensia, disponible en <a href="./privacy-policy.html">este enlace</a>, el cual forma parte integrante de los presentes Términos por referencia. Al aceptar los presentes Términos, el Usuario manifiesta haber leído, comprendido y aceptado el Aviso de Privacidad.</p>
+
+  <!-- ========================================= -->
+  <h2 id="ley">17. Ley Aplicable, Jurisdicción y Resolución de Controversias</h2>
+
+  <h3>17.1 Ley Aplicable</h3>
+  <p>Los presentes Términos se celebran y se interpretarán conforme a las leyes vigentes de los <strong>Estados Unidos Mexicanos</strong>, con exclusión de sus normas de conflicto de leyes que pudieran remitir a la legislación de otro Estado.</p>
+
+  <h3>17.2 Solución Amistosa</h3>
+  <p>Ante cualquier controversia derivada de los presentes Términos o del uso de la Aplicación, las partes se obligan a intentar una solución amistosa, para lo cual el Usuario deberá notificar su reclamación por escrito a <a href="mailto:soporte@expensia.app">soporte@expensia.app</a>. Expensia responderá en un plazo máximo de <strong>15 días hábiles</strong>. Si transcurrido dicho plazo no se alcanza una solución, cualquiera de las partes podrá acudir a los medios de resolución formal.</p>
+
+  <h3>17.3 PROFECO</h3>
+  <p>El Usuario, en su calidad de consumidor, podrá presentar queja ante la <strong>Procuraduría Federal del Consumidor (PROFECO)</strong> en caso de controversia relativa a la relación de consumo, conforme a la <em>Ley Federal de Protección al Consumidor</em>, a través de su portal en <a href="https://www.profeco.gob.mx" target="_blank">www.profeco.gob.mx</a> o llamando al 800 468 8722.</p>
+
+  <h3>17.4 Jurisdicción</h3>
+  <p>Para el caso de controversias que no puedan resolverse de manera amistosa ni ante PROFECO, las partes se someten expresamente a la jurisdicción y competencia de los <strong>tribunales federales y locales competentes de la Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles en razón de sus domicilios presentes o futuros o por cualquier otra causa.</p>
+
+  <!-- ========================================= -->
+  <h2>18. Divisibilidad e Integralidad</h2>
+
+  <h3>18.1 Divisibilidad</h3>
+  <p>Si alguna disposición de los presentes Términos fuera declarada inválida, nula o inaplicable por una autoridad competente, dicha declaración no afectará la validez ni la aplicabilidad del resto de las disposiciones, las cuales continuarán en pleno vigor y efecto.</p>
+
+  <h3>18.2 Integralidad del Acuerdo</h3>
+  <p>Los presentes Términos, junto con el Aviso de Privacidad de Expensia, constituyen el acuerdo íntegro entre el Usuario y el Desarrollador respecto al uso de la Aplicación, y sustituyen cualquier acuerdo, representación, promesa o entendimiento anterior, ya sea oral o escrito, sobre el mismo objeto.</p>
+
+  <h3>18.3 No Renuncia</h3>
+  <p>El hecho de que Expensia no ejerza o haga valer un derecho o disposición de los presentes Términos no constituirá renuncia a dicho derecho o disposición, ni impedirá su ejercicio posterior.</p>
+
+  <!-- ========================================= -->
+  <h2 id="contacto">19. Información de Contacto</h2>
+
   <div class="card">
-    <p><strong>Expensia — Soporte y Legal</strong></p>
-    <p>Correo: <a href="mailto:soporte@expensia.app">soporte@expensia.app</a></p>
-    <p>País: México</p>
+    <p><strong>Expensia — Legal y Soporte</strong></p>
+    <p><strong>Responsable:</strong> Luis Felipe Alejandro Gabûardi González</p>
+    <p><strong>Correo electrónico (asuntos legales):</strong> <a href="mailto:soporte@expensia.app">soporte@expensia.app</a></p>
+    <p><strong>Correo electrónico (privacidad y datos personales):</strong> <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a></p>
+    <p><strong>Horario de atención:</strong> Días hábiles, de 9:00 a 18:00 h (UTC-6, Zona Centro de México)</p>
+    <p><strong>Plazo de respuesta:</strong> Máximo 15 días hábiles</p>
+    <p><strong>Política de Privacidad:</strong> <a href="./privacy-policy.html">Aviso de Privacidad Integral</a></p>
+  </div>
+
+  <div class="legal-ref">
+    <p>Los presentes Términos y Condiciones de Uso fueron elaborados conforme a: <span>Código Civil Federal</span> · <span>Código de Comercio</span> · <span>Ley Federal de Protección al Consumidor (LFPC)</span> · <span>Ley Federal del Derecho de Autor (LFDA)</span> · <span>Ley de la Propiedad Industrial</span> · <span>Código Fiscal de la Federación (CFF)</span> · <span>Ley Federal de Telecomunicaciones y Radiodifusión (LFTR)</span> · <span>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</span> · <span>Leyes de los Estados Unidos Mexicanos</span></p>
   </div>
 
 </main>
 
 <footer>
-  <p>© 2025 Expensia. Todos los derechos reservados.</p>
-  <p style="margin-top:6px;">Estos términos se rigen por las leyes de los Estados Unidos Mexicanos.</p>
+  <p>© 2026 Expensia. Todos los derechos reservados.</p>
+  <p>Términos y Condiciones de Uso · Versión 2.0 · Última actualización: 12 de junio de 2026</p>
+  <p style="margin-top:6px;">Estos Términos se celebran y rigen conforme a las leyes de los <strong>Estados Unidos Mexicanos</strong>.</p>
+  <p style="margin-top:6px;">Jurisdicción: Tribunales competentes de la <strong>Ciudad de México</strong>.</p>
 </footer>
 
 </body>

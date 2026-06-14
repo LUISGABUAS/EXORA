@@ -3,286 +3,668 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Política de Privacidad — Expensia</title>
+  <title>Aviso de Privacidad Integral — Expensia</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f5f5f7;
       color: #1a1a1a;
-      line-height: 1.7;
+      line-height: 1.75;
+      font-size: 15px;
     }
     header {
       background: #0a0a0a;
-      padding: 32px 24px;
+      padding: 36px 24px;
       text-align: center;
     }
-    header h1 { color: #22c55e; font-size: 28px; font-weight: 800; }
-    header p  { color: #8e8e93; font-size: 14px; margin-top: 6px; }
+    header h1 { color: #22c55e; font-size: 30px; font-weight: 800; letter-spacing: 2px; }
+    header .subtitle { color: #8e8e93; font-size: 13px; margin-top: 6px; }
+    header .doc-title { color: #fff; font-size: 18px; font-weight: 600; margin-top: 12px; }
+    nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e5ea;
+      padding: 14px 24px;
+      font-size: 13px;
+      color: #8e8e93;
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    nav a { color: #22c55e; text-decoration: none; margin: 0 6px; }
     main {
-      max-width: 780px;
+      max-width: 820px;
       margin: 0 auto;
-      padding: 40px 24px 80px;
+      padding: 40px 24px 100px;
     }
     h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin: 36px 0 12px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #22c55e;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0a0a0a;
+      margin: 44px 0 14px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #22c55e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     h3 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
-      margin: 20px 0 8px;
+      margin: 22px 0 8px;
       color: #1a1a1a;
     }
-    p  { margin-bottom: 12px; color: #3a3a3a; }
-    ul { margin: 8px 0 16px 20px; }
-    li { margin-bottom: 6px; color: #3a3a3a; }
+    h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 16px 0 6px;
+      color: #3a3a3a;
+    }
+    p { margin-bottom: 12px; color: #3a3a3a; }
+    ul, ol { margin: 8px 0 16px 22px; }
+    li { margin-bottom: 7px; color: #3a3a3a; }
     .card {
       background: #fff;
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 20px 24px;
       margin: 16px 0;
       border: 1px solid #e5e5ea;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
-    .card p { margin: 0; }
+    .card p, .card li { margin-bottom: 6px; }
+    .card strong { color: #1a1a1a; }
     .highlight {
-      background: #22c55e15;
+      background: #22c55e12;
       border-left: 4px solid #22c55e;
-      border-radius: 0 12px 12px 0;
+      border-radius: 0 10px 10px 0;
       padding: 14px 18px;
       margin: 16px 0;
     }
     .highlight p { margin: 0; color: #1a1a1a; }
+    .warning {
+      background: #f97316;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      color: #fff;
+    }
+    .warning p { margin: 0; color: #fff; font-weight: 600; }
+    .legal-ref {
+      background: #0a0a0a;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .legal-ref p { color: #8e8e93; margin: 0; }
+    .legal-ref span { color: #22c55e; font-weight: 600; }
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 16px 0;
-      font-size: 14px;
+      font-size: 13.5px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e5e5ea;
     }
     th {
       background: #0a0a0a;
       color: #22c55e;
-      padding: 10px 14px;
+      padding: 11px 14px;
       text-align: left;
       font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     td {
-      padding: 10px 14px;
-      border-bottom: 1px solid #e5e5ea;
+      padding: 11px 14px;
+      border-bottom: 1px solid #f0f0f5;
       color: #3a3a3a;
       vertical-align: top;
     }
     tr:last-child td { border-bottom: none; }
-    tr:nth-child(even) td { background: #f9f9fb; }
+    tr:nth-child(even) td { background: #fafafa; }
     footer {
       text-align: center;
-      padding: 32px 24px;
+      padding: 36px 24px;
       color: #8e8e93;
-      font-size: 13px;
-      border-top: 1px solid #e5e5ea;
+      font-size: 12.5px;
+      border-top: 2px solid #e5e5ea;
+      line-height: 1.9;
     }
     a { color: #22c55e; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    .version-badge {
+      display: inline-block;
+      background: #22c55e20;
+      color: #22c55e;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+    .arco-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .arco-card {
+      background: #fff;
+      border: 1px solid #e5e5ea;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .arco-letter {
+      font-size: 28px;
+      font-weight: 900;
+      color: #22c55e;
+      line-height: 1;
+    }
+    .arco-name { font-weight: 700; font-size: 14px; color: #1a1a1a; margin: 4px 0 6px; }
+    .arco-desc { font-size: 13px; color: #6e6e73; margin: 0; }
+    @media (max-width: 600px) {
+      .arco-grid { grid-template-columns: 1fr; }
+      table { font-size: 12px; }
+      th, td { padding: 9px 10px; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <h1>EXPENSIA</h1>
-  <p>Política de Privacidad · Última actualización: 15 de mayo de 2025</p>
+  <div class="doc-title">Aviso de Privacidad Integral</div>
+  <div class="subtitle">Última actualización: 12 de junio de 2026 · Versión 2.0</div>
 </header>
+
+<nav>
+  <strong>Secciones:</strong>
+  <a href="#responsable">1. Responsable</a>·
+  <a href="#datos">2. Datos recabados</a>·
+  <a href="#finalidades">3. Finalidades</a>·
+  <a href="#sensibles">4. Datos sensibles</a>·
+  <a href="#terceros">5. Terceros</a>·
+  <a href="#transferencias">6. Transferencias</a>·
+  <a href="#seguridad">7. Seguridad</a>·
+  <a href="#arco">8. Derechos ARCO</a>·
+  <a href="#retencion">9. Retención</a>·
+  <a href="#menores">10. Menores</a>·
+  <a href="#cambios">11. Cambios</a>·
+  <a href="#contacto">12. Contacto</a>
+</nav>
 
 <main>
 
   <div class="highlight">
-    <p><strong>Resumen:</strong> Expensia recopila únicamente los datos necesarios para ayudarte a controlar tus gastos y calcular tu ahorro fiscal. No vendemos tu información a terceros ni la usamos para publicidad.</p>
+    <p><strong>Aviso resumido:</strong> Expensia recopila únicamente los datos estrictamente necesarios para prestarte el servicio de gestión de gastos e información fiscal estimada. No vendemos, alquilamos ni comercializamos tus datos personales a terceros con fines distintos a los expresamente declarados en el presente instrumento. El tratamiento de tus datos se realiza conforme a la <em>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</em> (LFPDPPP) y demás disposiciones aplicables en los Estados Unidos Mexicanos.</p>
   </div>
 
-  <h2>1. Responsable del tratamiento</h2>
+  <div class="legal-ref">
+    <p>Fundamento legal: <span>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (DOF 05-07-2010)</span> · <span>Reglamento de la LFPDPPP (DOF 21-12-2011)</span> · <span>Lineamientos del Aviso de Privacidad (DOF 17-01-2013)</span> · <span>Artículos 15, 16 y 17 de la LFPDPPP</span></p>
+  </div>
+
+  <!-- ========================================= -->
+  <h2 id="responsable">1. Identidad y Domicilio del Responsable</h2>
+
   <div class="card">
-    <p><strong>Nombre:</strong> Expensia (operado como persona física con actividad empresarial)</p>
-    <p><strong>Correo de contacto:</strong> <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a></p>
-    <p><strong>País de operación:</strong> México</p>
+    <p><strong>Denominación:</strong> Expensia (operado por persona física con actividad empresarial)</p>
+    <p><strong>Nombre del Titular:</strong> Luis Felipe Alejandro Gabûardi González</p>
+    <p><strong>País de operación:</strong> Estados Unidos Mexicanos</p>
+    <p><strong>Correo del Responsable de Privacidad:</strong> <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a></p>
+    <p><strong>Correo de atención general:</strong> <a href="mailto:soporte@expensia.app">soporte@expensia.app</a></p>
+    <p><strong>Aplicación:</strong> Expensia — Finanzas inteligentes para profesionistas en México</p>
+    <p><strong>Plataforma:</strong> iOS (App Store) · Android (Google Play)</p>
   </div>
-  <p>Esta Política de Privacidad se rige por la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong> y su Reglamento.</p>
 
-  <h2>2. Datos personales que recopilamos</h2>
+  <p>En adelante, el Responsable del tratamiento de datos personales es la persona mencionada anteriormente, quien determina las finalidades y medios del tratamiento de los datos personales recabados a través de la aplicación móvil Expensia (en adelante, "la Aplicación" o "el Servicio").</p>
 
-  <h3>2.1 Datos de cuenta</h3>
+  <p>El presente instrumento constituye el <strong>Aviso de Privacidad Integral</strong> en términos del artículo 15 de la LFPDPPP y el artículo 23 de su Reglamento, y es de carácter obligatorio para todo usuario que descargue, instale o utilice la Aplicación.</p>
+
+  <!-- ========================================= -->
+  <h2 id="datos">2. Datos Personales Sujetos a Tratamiento</h2>
+
+  <p>Con fundamento en los artículos 3, fracción V, y 8 de la LFPDPPP, el Responsable recaba las siguientes categorías de datos personales:</p>
+
+  <h3>2.1 Datos de Identificación y Contacto</h3>
   <ul>
-    <li>Correo electrónico y contraseña (cifrada)</li>
-    <li>Nombre completo (si usas Google Sign-In)</li>
-    <li>Número de teléfono (si usas autenticación por SMS)</li>
-    <li>Foto de perfil (opcional)</li>
+    <li>Nombre completo</li>
+    <li>Dirección de correo electrónico</li>
+    <li>Fotografía de perfil (únicamente cuando el usuario opta por autenticación mediante Google o Apple; su uso es opcional)</li>
+    <li>Identificador único de usuario (UUID) generado por el sistema</li>
   </ul>
 
-  <h3>2.2 Datos fiscales</h3>
+  <h3>2.2 Datos de Autenticación</h3>
   <ul>
-    <li>RFC (Registro Federal de Contribuyentes)</li>
-    <li>Régimen fiscal seleccionado</li>
-    <li>Razón social</li>
-    <li>Constancia de Situación Fiscal (PDF, procesado localmente para extraer RFC y régimen)</li>
+    <li>Credenciales de acceso (correo electrónico y contraseña; esta última se almacena mediante función de hash criptográfico irreversible — nunca en texto plano)</li>
+    <li>Token de autenticación de Google (cuando el usuario opta por el inicio de sesión con Google)</li>
+    <li>Token de autenticación de Apple (cuando el usuario opta por el inicio de sesión con Apple ID)</li>
+    <li>Metadatos de sesión: fecha de creación, fecha de última autenticación, dirección IP de inicio de sesión (procesada por Supabase Auth)</li>
   </ul>
 
-  <h3>2.3 Datos de gastos</h3>
+  <h3>2.3 Datos Fiscales y Patrimoniales</h3>
   <ul>
-    <li>Montos, fechas, categorías y descripciones de gastos</li>
-    <li>Nombre del comercio y concepto</li>
-    <li>Imágenes de tickets y facturas (procesadas para OCR)</li>
-    <li>Datos de CFDI/XML (RFC emisor, uso CFDI, monto)</li>
+    <li>Registro Federal de Contribuyentes (RFC)</li>
+    <li>Régimen fiscal ante el Servicio de Administración Tributaria (SAT)</li>
+    <li>Razón social o nombre del contribuyente (extraído de la Constancia de Situación Fiscal, opcionalmente)</li>
+    <li>Nivel de ingresos declarado por el usuario para efectos de estimación fiscal (categoría general: RESICO, Acto Empresarial, u otro)</li>
+    <li>Datos contenidos en Comprobantes Fiscales Digitales por Internet (CFDI/XML): RFC del emisor, uso del CFDI, monto, fecha de emisión, concepto</li>
   </ul>
 
-  <h3>2.4 Datos de uso</h3>
+  <h3>2.4 Datos de Gastos e Ingresos</h3>
   <ul>
-    <li>Preferencias de la app (tema, régimen fiscal, presupuestos)</li>
-    <li>Historial de uso de funciones premium</li>
-    <li>Racha de días activos (streak)</li>
+    <li>Montos de gastos e ingresos registrados</li>
+    <li>Fechas de las transacciones</li>
+    <li>Categorías asignadas (alimentación, transporte, salud, entretenimiento, educación, otros)</li>
+    <li>Nombre del comercio o emisor</li>
+    <li>Descripción o concepto de la transacción</li>
+    <li>Imágenes de tickets, recibos y facturas cargadas por el usuario para su procesamiento mediante Reconocimiento Óptico de Caracteres (OCR)</li>
+    <li>Texto extraído de las imágenes mediante OCR</li>
+    <li>Indicador de deducibilidad fiscal asignado automáticamente o por el usuario</li>
+    <li>Fuente del registro: manual, OCR, importación XML</li>
   </ul>
 
-  <h3>2.5 Datos del dispositivo</h3>
+  <h3>2.5 Datos de Presupuestos, Ahorros y Metas Financieras</h3>
   <ul>
-    <li>Token de notificaciones push (para recordatorios)</li>
-    <li>Tipo de sistema operativo (iOS/Android) para compatibilidad</li>
+    <li>Presupuestos mensuales definidos por categoría</li>
+    <li>Metas de ahorro y montos objetivo</li>
+    <li>Gastos recurrentes programados por el usuario</li>
+    <li>Dividendos o splits de gastos entre personas</li>
   </ul>
 
-  <h2>3. Finalidades del tratamiento</h2>
+  <h3>2.6 Datos de Uso e Interacción con la Aplicación</h3>
+  <ul>
+    <li>Preferencias de apariencia (tema claro, oscuro o sistema)</li>
+    <li>Racha de uso diario (streak)</li>
+    <li>Historial de uso de funciones (para mejora del servicio)</li>
+    <li>Conversaciones con el Asesor con Inteligencia Artificial (cuando el usuario las inicia; véase sección 2.7)</li>
+  </ul>
+
+  <h3>2.7 Datos Procesados por el Asesor de Inteligencia Artificial</h3>
+  <p>La función "Asesor IA" de Expensia (disponible en plan Premium) permite al usuario realizar consultas financieras en lenguaje natural. Para generar las respuestas:</p>
+  <ul>
+    <li>Se transmite a los servidores de Anthropic, Inc. un <strong>resumen anonimizado</strong> del historial de gastos del usuario (montos totales por categoría, sin datos identificadores personales como nombre, RFC o correo).</li>
+    <li>Las preguntas o mensajes ingresados por el usuario en el chat son procesados por los modelos de lenguaje de Anthropic.</li>
+    <li>Las conversaciones <strong>no se almacenan de forma permanente</strong> en los servidores de Expensia; el historial de conversación se mantiene de manera temporal en el dispositivo del usuario.</li>
+  </ul>
+
+  <h3>2.8 Datos del Dispositivo y Técnicos</h3>
+  <ul>
+    <li>Token de notificaciones push (APNs de Apple / FCM de Google), necesario para el envío de recordatorios</li>
+    <li>Sistema operativo y versión (iOS o Android)</li>
+    <li>Versión de la Aplicación instalada</li>
+    <li>Identificador de dispositivo anonimizado</li>
+    <li>Datos de diagnóstico y reporte de errores: trazas de pila (stack traces), tipo y versión del dispositivo, hora del fallo — procesados por Sentry (véase sección 5)</li>
+  </ul>
+
+  <h3>2.9 Datos de Suscripción y Pagos</h3>
+  <ul>
+    <li>Estado de la suscripción (gratuita o Premium)</li>
+    <li>Historial de compras in-app (gestionado íntegramente por App Store o Google Play)</li>
+    <li>Identificador de suscripción asignado por RevenueCat</li>
+  </ul>
+  <p><em>Nota: Expensia <strong>no recaba, almacena ni procesa</strong> datos de tarjetas de crédito, débito ni información bancaria. Todos los pagos se procesan exclusivamente a través de Apple App Store o Google Play Store, conforme a sus respectivas políticas.</em></p>
+
+  <!-- ========================================= -->
+  <h2 id="finalidades">3. Finalidades del Tratamiento</h2>
+
+  <p>El Responsable trata los datos personales para las siguientes finalidades, clasificadas conforme al artículo 12 de la LFPDPPP en <strong>finalidades primarias</strong> (necesarias para la prestación del servicio) y <strong>finalidades secundarias</strong> (complementarias y sujetas a opt-out):</p>
+
+  <h3>3.1 Finalidades Primarias (necesarias para la prestación del servicio)</h3>
 
   <table>
     <tr>
-      <th>Dato</th>
+      <th>Categoría de dato</th>
       <th>Finalidad</th>
       <th>Base legal</th>
     </tr>
     <tr>
-      <td>Correo / contraseña</td>
-      <td>Autenticación y seguridad de la cuenta</td>
-      <td>Ejecución de contrato</td>
+      <td>Correo electrónico y credenciales</td>
+      <td>Creación, autenticación y seguridad de la cuenta de usuario</td>
+      <td>Ejecución del contrato (art. 8 LFPDPPP)</td>
+    </tr>
+    <tr>
+      <td>Nombre y foto de perfil</td>
+      <td>Personalización de la interfaz y saludo dentro de la Aplicación</td>
+      <td>Ejecución del contrato</td>
     </tr>
     <tr>
       <td>RFC y régimen fiscal</td>
-      <td>Calcular deducciones y ahorro fiscal estimado</td>
+      <td>Calcular estimaciones de deducciones y ahorro fiscal conforme al régimen SAT del usuario</td>
+      <td>Consentimiento expreso (art. 9 LFPDPPP)</td>
+    </tr>
+    <tr>
+      <td>Gastos, ingresos y categorías</td>
+      <td>Registro, organización y análisis del historial financiero del usuario</td>
+      <td>Ejecución del contrato</td>
+    </tr>
+    <tr>
+      <td>Imágenes de tickets y texto OCR</td>
+      <td>Extracción automática de monto, comercio, fecha y concepto del gasto para facilitar el registro</td>
       <td>Consentimiento expreso</td>
     </tr>
     <tr>
-      <td>Gastos e imágenes</td>
-      <td>Registro, categorización y análisis de gastos</td>
-      <td>Ejecución de contrato</td>
-    </tr>
-    <tr>
-      <td>Constancia SAT (PDF)</td>
-      <td>Extraer RFC y régimen fiscal automáticamente; se almacena localmente</td>
+      <td>Datos de CFDI/XML</td>
+      <td>Importación y clasificación automática de comprobantes fiscales</td>
       <td>Consentimiento expreso</td>
     </tr>
     <tr>
-      <td>Resumen anonimizado de gastos</td>
-      <td>Generar recomendaciones de IA (solo usuarios premium)</td>
+      <td>Token de notificaciones push</td>
+      <td>Envío de recordatorios de registro de gastos (configurados por el usuario; requieren permiso explícito del sistema operativo)</td>
       <td>Consentimiento expreso</td>
     </tr>
     <tr>
-      <td>Token de notificaciones</td>
-      <td>Enviar recordatorios de registro de gastos</td>
-      <td>Consentimiento expreso</td>
+      <td>Estado de suscripción</td>
+      <td>Habilitar o restringir el acceso a funciones Premium</td>
+      <td>Ejecución del contrato</td>
     </tr>
     <tr>
-      <td>Datos de suscripción</td>
-      <td>Gestionar acceso a funciones premium</td>
-      <td>Ejecución de contrato</td>
+      <td>Datos de diagnóstico (Sentry)</td>
+      <td>Detección y corrección de errores técnicos en la Aplicación (crash reporting)</td>
+      <td>Interés legítimo del Responsable (art. 7 LFPDPPP)</td>
+    </tr>
+    <tr>
+      <td>Datos de conversación con Asesor IA</td>
+      <td>Generar respuestas personalizadas del Asesor de IA para usuarios Premium</td>
+      <td>Consentimiento expreso</td>
     </tr>
   </table>
 
-  <h2>4. Terceros con acceso a tus datos</h2>
-  <p>Trabajamos con los siguientes proveedores de servicios. Ninguno vende tus datos ni los usa para fines ajenos a los descritos:</p>
+  <h3>3.2 Finalidades Secundarias (el usuario puede oponerse)</h3>
+  <ul>
+    <li><strong>Mejora del servicio:</strong> Análisis estadístico y anonimizado de patrones de uso para optimizar funcionalidades (no incluye datos personales identificables).</li>
+    <li><strong>Comunicaciones de actualización:</strong> Notificación de nuevas funciones, actualizaciones relevantes o cambios en las condiciones del servicio, mediante correo electrónico.</li>
+  </ul>
+  <p>Para oponerse a las finalidades secundarias, el titular puede escribir a <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a> en cualquier momento.</p>
+
+  <!-- ========================================= -->
+  <h2 id="sensibles">4. Tratamiento de Datos Sensibles y Datos Patrimoniales</h2>
+
+  <div class="warning">
+    <p>AVISO IMPORTANTE: Expensia trata datos de naturaleza patrimonial y financiera. De conformidad con el artículo 9 de la LFPDPPP, el tratamiento de datos que puedan impactar en la esfera económica del titular requiere <strong>consentimiento expreso</strong>, mismo que el usuario otorga al activar la función correspondiente dentro de la Aplicación y confirmar su aceptación.</p>
+  </div>
+
+  <h3>4.1 Naturaleza de los Datos Fiscales y Patrimoniales</h3>
+  <p>Los siguientes datos se consideran de naturaleza patrimonial o financiera y reciben tratamiento especialmente cuidadoso:</p>
+  <ul>
+    <li><strong>RFC:</strong> Identificador fiscal único del contribuyente. Se almacena de forma cifrada y no se comparte con terceros salvo en los supuestos expresamente descritos.</li>
+    <li><strong>Historial de gastos e ingresos:</strong> Información que refleja la capacidad económica y los hábitos de consumo del titular.</li>
+    <li><strong>Datos de CFDI:</strong> Comprobantes fiscales con valor legal ante el SAT.</li>
+  </ul>
+
+  <h3>4.2 Medidas de Protección Adicionales</h3>
+  <ul>
+    <li>Los datos patrimoniales se almacenan localmente en el dispositivo del usuario mediante SQLite con cifrado a nivel de base de datos.</li>
+    <li>La sincronización en la nube se realiza mediante conexiones TLS 1.3.</li>
+    <li>El RFC nunca se transmite a los modelos de inteligencia artificial de terceros (Anthropic).</li>
+    <li>Las imágenes de tickets se procesan para OCR y no se almacenan de forma permanente en servidores externos; el texto extraído se almacena en la cuenta del usuario.</li>
+  </ul>
+
+  <!-- ========================================= -->
+  <h2 id="terceros">5. Encargados del Tratamiento (Terceros Proveedores)</h2>
+
+  <p>El Responsable ha celebrado contratos de confidencialidad y tratamiento de datos con los siguientes encargados, conforme al artículo 50 del Reglamento de la LFPDPPP. Dichos encargados actúan bajo instrucción del Responsable y están prohibidos de utilizar los datos para fines distintos a los convenidos:</p>
 
   <table>
     <tr>
       <th>Proveedor</th>
-      <th>Función</th>
+      <th>Función dentro del Servicio</th>
+      <th>Datos transmitidos</th>
+      <th>Ubicación</th>
       <th>Política de privacidad</th>
     </tr>
     <tr>
-      <td><strong>Supabase</strong></td>
-      <td>Base de datos, autenticación y almacenamiento en la nube (servidores en EE.UU.)</td>
+      <td><strong>Supabase, Inc.</strong></td>
+      <td>Infraestructura de base de datos en la nube, autenticación de usuarios y almacenamiento de archivos</td>
+      <td>Datos de cuenta, gastos, ingresos, RFC, preferencias</td>
+      <td>EE.UU. (AWS us-east-1)</td>
       <td><a href="https://supabase.com/privacy" target="_blank">supabase.com/privacy</a></td>
     </tr>
     <tr>
-      <td><strong>Google Sign-In</strong></td>
-      <td>Autenticación opcional con cuenta Google</td>
+      <td><strong>Google LLC</strong></td>
+      <td>Autenticación opcional mediante Google Sign-In</td>
+      <td>Correo electrónico, nombre, foto de perfil (solo si el usuario elige esta opción)</td>
+      <td>EE.UU.</td>
       <td><a href="https://policies.google.com/privacy" target="_blank">policies.google.com/privacy</a></td>
     </tr>
     <tr>
-      <td><strong>RevenueCat</strong></td>
-      <td>Gestión de suscripciones y compras in-app</td>
+      <td><strong>Apple Inc.</strong></td>
+      <td>Autenticación opcional mediante Sign in with Apple; distribución de la app vía App Store</td>
+      <td>Correo electrónico (o alias de correo), nombre (solo si el usuario lo comparte)</td>
+      <td>EE.UU.</td>
+      <td><a href="https://www.apple.com/legal/privacy/es/" target="_blank">apple.com/legal/privacy</a></td>
+    </tr>
+    <tr>
+      <td><strong>RevenueCat, Inc.</strong></td>
+      <td>Gestión de suscripciones y validación de compras in-app</td>
+      <td>Identificador de usuario anonimizado, estado de suscripción, historial de compras in-app</td>
+      <td>EE.UU.</td>
       <td><a href="https://www.revenuecat.com/privacy" target="_blank">revenuecat.com/privacy</a></td>
     </tr>
     <tr>
-      <td><strong>Anthropic (Claude AI)</strong></td>
-      <td>Generación de recomendaciones financieras (solo premium; se envía un resumen anonimizado sin datos personales identificables)</td>
+      <td><strong>Anthropic, Inc.</strong></td>
+      <td>Generación de recomendaciones y respuestas del Asesor de Inteligencia Artificial (solo usuarios Premium)</td>
+      <td>Resumen anonimizado de gastos por categoría y texto de las preguntas ingresadas por el usuario. <strong>No se transmite RFC, nombre ni correo.</strong></td>
+      <td>EE.UU.</td>
       <td><a href="https://www.anthropic.com/privacy" target="_blank">anthropic.com/privacy</a></td>
     </tr>
     <tr>
-      <td><strong>OCR.Space</strong></td>
-      <td>Reconocimiento de texto en imágenes de tickets (solo si usas el escáner)</td>
+      <td><strong>OCR.Space (a9t9 Software GmbH)</strong></td>
+      <td>Reconocimiento Óptico de Caracteres (OCR) en imágenes de tickets y recibos</td>
+      <td>Imagen del ticket o recibo (únicamente cuando el usuario activa la función de escaneo)</td>
+      <td>Alemania / EE.UU.</td>
       <td><a href="https://ocr.space/privacypolicy" target="_blank">ocr.space/privacypolicy</a></td>
+    </tr>
+    <tr>
+      <td><strong>Sentry (Functional Software, Inc.)</strong></td>
+      <td>Monitoreo de estabilidad, reporte automático de errores y fallos de la Aplicación (crash reporting)</td>
+      <td>Datos técnicos del fallo: traza de pila, versión de la app, versión del SO, tipo de dispositivo, identificador de instalación anonimizado. <strong>No incluye datos financieros ni fiscales.</strong></td>
+      <td>EE.UU.</td>
+      <td><a href="https://sentry.io/privacy/" target="_blank">sentry.io/privacy</a></td>
     </tr>
   </table>
 
-  <h2>5. Almacenamiento y seguridad</h2>
+  <!-- ========================================= -->
+  <h2 id="transferencias">6. Transferencias de Datos Personales</h2>
+
+  <p>Conforme al artículo 36 de la LFPDPPP, se entiende por transferencia toda comunicación de datos personales a una persona distinta del Responsable o del Encargado. El Responsable <strong>no realiza transferencias</strong> de datos personales a terceros con fines comerciales, publicitarios ni de mercadotecnia.</p>
+
+  <h3>6.1 Transferencias Nacionales</h3>
+  <p>No se realizan transferencias nacionales a personas físicas o morales distintas a las mencionadas en la sección 5.</p>
+
+  <h3>6.2 Transferencias Internacionales</h3>
+  <p>Los datos son procesados por los encargados listados en la sección 5, todos ellos con sede en Estados Unidos de América o la Unión Europea. Dichas transferencias se realizan con fundamento en el artículo 37, fracción II de la LFPDPPP (transferencias a encargados que prestan un servicio al Responsable), y se encuentran amparadas por los acuerdos de tratamiento de datos suscritos con cada proveedor.</p>
+
+  <h3>6.3 Supuestos de Divulgación Obligatoria</h3>
+  <p>El Responsable podrá divulgar datos personales sin consentimiento previo del titular únicamente cuando:</p>
   <ul>
-    <li>Tus gastos se guardan localmente en tu dispositivo (SQLite) y se sincronizan con Supabase cuando tienes conexión.</li>
-    <li>Las contraseñas se almacenan con hash — nunca en texto plano.</li>
-    <li>La Constancia de Situación Fiscal se procesa localmente; el PDF se almacena únicamente en tu dispositivo.</li>
-    <li>Las comunicaciones entre la app y nuestros servidores usan cifrado TLS/HTTPS.</li>
-    <li>Las claves de API de terceros se almacenan en servidores seguros y nunca se incluyen en el código de la app.</li>
+    <li>Sea requerido por autoridad competente (orden judicial, autoridad fiscal, Ministerio Público), conforme al artículo 37, fracción I de la LFPDPPP.</li>
+    <li>Sea necesario para salvaguardar la vida del titular u otras personas, en caso de emergencia.</li>
+    <li>Los datos figuren en fuentes de acceso público.</li>
   </ul>
 
-  <h2>6. Transferencia internacional de datos</h2>
-  <p>Supabase, RevenueCat y Anthropic operan en Estados Unidos. Al usar Expensia consientes que tus datos puedan ser procesados fuera de México, bajo las salvaguardas de cada proveedor indicadas en la sección 4.</p>
+  <!-- ========================================= -->
+  <h2 id="seguridad">7. Medidas de Seguridad</h2>
 
-  <h2>7. Derechos ARCO</h2>
-  <p>Conforme a la LFPDPPP, tienes derecho a:</p>
+  <p>Con fundamento en los artículos 19 a 21 de la LFPDPPP y el Capítulo IV de su Reglamento, el Responsable implementa las siguientes medidas de seguridad administrativas, técnicas y físicas para proteger los datos personales:</p>
+
+  <h3>7.1 Medidas Técnicas</h3>
   <ul>
-    <li><strong>Acceso:</strong> conocer qué datos personales tenemos de ti.</li>
-    <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
-    <li><strong>Cancelación:</strong> solicitar la eliminación de tus datos.</li>
-    <li><strong>Oposición:</strong> oponerte al tratamiento de tus datos para fines específicos.</li>
+    <li><strong>Cifrado en tránsito:</strong> Toda comunicación entre la Aplicación y los servidores se realiza mediante protocolo HTTPS/TLS 1.3.</li>
+    <li><strong>Cifrado en reposo:</strong> Los datos almacenados localmente en el dispositivo del usuario (SQLite) se cifran con estándares AES-256.</li>
+    <li><strong>Almacenamiento de contraseñas:</strong> Las contraseñas se procesan mediante función de hash criptográfico (bcrypt / Argon2) y nunca se almacenan en texto plano.</li>
+    <li><strong>Autenticación multifactor:</strong> La plataforma Supabase Auth soporta autenticación en dos pasos; el usuario puede habilitarla voluntariamente.</li>
+    <li><strong>Control de acceso:</strong> Acceso a la base de datos en la nube restringido mediante Row Level Security (RLS) de Supabase: cada usuario solo puede acceder a sus propios datos.</li>
+    <li><strong>Aislamiento de secretos:</strong> Las claves de API de servicios de terceros se almacenan en variables de entorno del servidor y nunca se incluyen en el código compilado de la Aplicación.</li>
   </ul>
-  <div class="highlight">
-    <p>Para ejercer tus derechos ARCO, escríbenos a <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a>. Responderemos en un plazo máximo de <strong>20 días hábiles</strong>.</p>
+
+  <h3>7.2 Medidas Administrativas</h3>
+  <ul>
+    <li>Acceso a datos de producción restringido exclusivamente al equipo técnico de Expensia bajo principio de mínimo privilegio.</li>
+    <li>Revisión periódica de las prácticas de seguridad y privacidad.</li>
+    <li>Los contratos con encargados incluyen cláusulas de confidencialidad y obligaciones de seguridad.</li>
+  </ul>
+
+  <h3>7.3 Notificación de Incidentes de Seguridad</h3>
+  <p>En caso de que ocurra una vulneración significativa de seguridad que afecte de manera relevante los derechos o intereses patrimoniales de los titulares, el Responsable lo notificará conforme al artículo 20 de la LFPDPPP, a través de los canales de comunicación disponibles (correo electrónico y notificación dentro de la Aplicación), en el menor tiempo posible.</p>
+
+  <!-- ========================================= -->
+  <h2 id="arco">8. Derechos ARCO y Mecanismos para su Ejercicio</h2>
+
+  <p>De conformidad con los artículos 22 al 36 de la LFPDPPP, el titular de los datos personales tiene derecho a:</p>
+
+  <div class="arco-grid">
+    <div class="arco-card">
+      <div class="arco-letter">A</div>
+      <div class="arco-name">Acceso</div>
+      <p class="arco-desc">Conocer qué datos personales posee el Responsable, el origen de los mismos, las finalidades de su tratamiento y las transferencias realizadas.</p>
+    </div>
+    <div class="arco-card">
+      <div class="arco-letter">R</div>
+      <div class="arco-name">Rectificación</div>
+      <p class="arco-desc">Solicitar la corrección de datos personales inexactos, incompletos o desactualizados.</p>
+    </div>
+    <div class="arco-card">
+      <div class="arco-letter">C</div>
+      <div class="arco-name">Cancelación</div>
+      <p class="arco-desc">Solicitar la supresión de sus datos personales del sistema, cuando no exista obligación legal de conservarlos.</p>
+    </div>
+    <div class="arco-card">
+      <div class="arco-letter">O</div>
+      <div class="arco-name">Oposición</div>
+      <p class="arco-desc">Oponerse al tratamiento de sus datos para finalidades secundarias o en casos donde el tratamiento cause perjuicio legítimo.</p>
+    </div>
   </div>
-  <p>También puedes eliminar tu cuenta directamente desde la app en <strong>Perfil → Ajustes → Cerrar sesión</strong> y contactarnos para solicitar la eliminación completa de tus datos.</p>
 
-  <h2>8. Retención de datos</h2>
+  <h3>8.1 Procedimiento para el Ejercicio de Derechos ARCO</h3>
+  <p>Para ejercer cualquiera de los derechos anteriores, el titular deberá presentar una solicitud por escrito al correo <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a>, indicando:</p>
+  <ol>
+    <li>Nombre completo del titular y correo electrónico asociado a la cuenta en Expensia.</li>
+    <li>Descripción clara y precisa de los datos sobre los que se solicita el ejercicio del derecho.</li>
+    <li>El derecho ARCO que desea ejercer (Acceso, Rectificación, Cancelación u Oposición).</li>
+    <li>En su caso, los argumentos que sustentan la solicitud.</li>
+    <li>Copia de identificación oficial vigente (INE, pasaporte) para verificar la identidad del solicitante.</li>
+  </ol>
+
+  <div class="highlight">
+    <p><strong>Plazo de respuesta:</strong> El Responsable atenderá la solicitud y comunicará su resolución en un plazo máximo de <strong>20 días hábiles</strong> contados a partir de la fecha de recepción. Si la resolución es procedente, el Responsable hará efectivo el derecho en un plazo adicional de <strong>15 días hábiles</strong>. Los plazos anteriores podrán ampliarse por una sola vez por igual período, cuando así lo justifiquen las circunstancias del caso, conforme al artículo 24 de la LFPDPPP.</p>
+  </div>
+
+  <h3>8.2 Revocación del Consentimiento</h3>
+  <p>El titular puede revocar su consentimiento para el tratamiento de datos en cualquier momento mediante el mismo procedimiento descrito en la sección 8.1, especificando los datos y finalidades cuyo tratamiento desea cesar. La revocación del consentimiento no tiene efectos retroactivos y puede implicar la imposibilidad de continuar utilizando algunas o todas las funciones del Servicio.</p>
+
+  <h3>8.3 Limitación del Uso o Divulgación</h3>
+  <p>El titular puede solicitar que sus datos no sean tratados para finalidades secundarias inscribiéndose en el "Listado de Exclusión de Expensia". Para ello, envíe su solicitud a <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a> con el asunto "Exclusión de finalidades secundarias".</p>
+
+  <h3>8.4 Recurso ante el INAI</h3>
+  <p>En caso de que el Responsable no atienda debidamente la solicitud de ejercicio de derechos ARCO, o en caso de que el titular considere que sus derechos han sido vulnerados, podrá interponer queja o denuncia ante el <strong>Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales (INAI)</strong>, a través de su portal en <a href="https://home.inai.org.mx" target="_blank">home.inai.org.mx</a> o llamando al 800 835 4324.</p>
+
+  <h3>8.5 Eliminación Directa desde la Aplicación</h3>
+  <p>El usuario puede eliminar su cuenta directamente desde la Aplicación accediendo a <strong>Perfil → Ajustes → Eliminar cuenta</strong>. Esta acción es irreversible e inicia el proceso de eliminación de datos descrito en la sección 9.</p>
+
+  <!-- ========================================= -->
+  <h2 id="retencion">9. Conservación y Retención de Datos</h2>
+
+  <p>Con fundamento en el artículo 11 de la LFPDPPP (principio de calidad) y el artículo 17 del Reglamento, los datos personales serán conservados únicamente durante el tiempo necesario para cumplir con las finalidades que justifican su tratamiento:</p>
+
+  <table>
+    <tr>
+      <th>Categoría de dato</th>
+      <th>Período de conservación</th>
+      <th>Fundamento</th>
+    </tr>
+    <tr>
+      <td>Datos de cuenta y autenticación</td>
+      <td>Mientras la cuenta permanezca activa. Eliminación en 30 días naturales tras la cancelación</td>
+      <td>Duración del contrato de servicio</td>
+    </tr>
+    <tr>
+      <td>Gastos, ingresos y datos fiscales</td>
+      <td>Mientras la cuenta permanezca activa. Eliminación en 30 días naturales tras la cancelación</td>
+      <td>Duración del contrato de servicio</td>
+    </tr>
+    <tr>
+      <td>Imágenes de tickets (en servidores OCR)</td>
+      <td>No se almacenan; se procesan en tiempo real y se descartan</td>
+      <td>Minimización de datos (art. 6 LFPDPPP)</td>
+    </tr>
+    <tr>
+      <td>Conversaciones con Asesor IA</td>
+      <td>Sesión de conversación en dispositivo; no se persisten en servidores de Expensia</td>
+      <td>Minimización de datos</td>
+    </tr>
+    <tr>
+      <td>Datos de diagnóstico (Sentry)</td>
+      <td>90 días en servidores de Sentry, conforme a sus políticas</td>
+      <td>Interés legítimo en estabilidad del servicio</td>
+    </tr>
+    <tr>
+      <td>Registros de autenticación (logs)</td>
+      <td>90 días (Supabase Auth)</td>
+      <td>Seguridad y prevención de fraude</td>
+    </tr>
+    <tr>
+      <td>Datos de suscripción (RevenueCat)</td>
+      <td>Conforme a las políticas de RevenueCat; mínimo mientras sea necesario para soporte de facturación</td>
+      <td>Obligación fiscal / contractual</td>
+    </tr>
+  </table>
+
+  <p>Los datos almacenados localmente en el dispositivo del usuario (SQLite) se eliminan permanentemente al desinstalar la Aplicación, salvo que el usuario haya activado la sincronización en la nube.</p>
+
+  <!-- ========================================= -->
+  <h2 id="menores">10. Tratamiento de Datos de Menores de Edad</h2>
+
+  <p>De conformidad con el artículo 9 de la LFPDPPP y las disposiciones aplicables de la <em>Ley General de los Derechos de Niñas, Niños y Adolescentes</em>, Expensia está diseñada y destinada exclusivamente para personas mayores de <strong>18 años de edad</strong> con actividad fiscal o económica en México.</p>
+
+  <p>El Responsable <strong>no recaba intencionalmente</strong> datos personales de menores de edad. Si el Responsable tomara conocimiento de que se han recabado datos de un menor de 18 años sin el consentimiento verificable de su padre, madre o tutor legal, procederá a eliminar dicha información de sus sistemas en el menor tiempo posible.</p>
+
+  <p>Si usted es padre, madre o tutor de un menor de edad y tiene conocimiento de que dicho menor ha proporcionado datos personales a través de la Aplicación, le solicitamos contactarnos de inmediato a <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a>.</p>
+
+  <!-- ========================================= -->
+  <h2>11. Uso de Tecnologías de Rastreo y Cookies</h2>
+
+  <p>La Aplicación móvil Expensia <strong>no utiliza cookies</strong> de rastreo, ni tecnologías equivalentes de rastreo conductual para fines publicitarios. No compartimos datos de comportamiento del usuario con redes publicitarias ni con agencias de mercadotecnia.</p>
+
+  <p>La Aplicación utiliza almacenamiento local (<em>AsyncStorage</em> y <em>SQLite</em>) exclusivamente para persistir las preferencias del usuario y los datos del servicio en el dispositivo. Dicho almacenamiento no constituye una tecnología de rastreo en los términos del artículo 16 de la LFPDPPP.</p>
+
+  <!-- ========================================= -->
+  <h2 id="cambios">12. Modificaciones al Aviso de Privacidad</h2>
+
+  <p>El Responsable se reserva el derecho de modificar el presente Aviso de Privacidad en cualquier momento, ya sea para actualizar las prácticas de privacidad, incorporar nuevas funcionalidades del Servicio, o atender cambios normativos. Las modificaciones serán comunicadas al titular mediante:</p>
   <ul>
-    <li>Datos de cuenta y gastos: se conservan mientras la cuenta esté activa.</li>
-    <li>Al eliminar tu cuenta, los datos se borran de nuestros servidores en un plazo de 30 días.</li>
-    <li>Los datos almacenados localmente en tu dispositivo se eliminan al desinstalar la app.</li>
+    <li>Notificación dentro de la Aplicación.</li>
+    <li>Correo electrónico a la dirección registrada en la cuenta, en caso de cambios sustanciales que requieran nuevo consentimiento.</li>
+    <li>Actualización de la versión y fecha en el encabezado de este documento.</li>
   </ul>
+  <p>El uso continuado de la Aplicación tras la publicación de las modificaciones implicará la aceptación de las mismas, salvo en los casos en que se requiera consentimiento expreso adicional conforme a la LFPDPPP.</p>
 
-  <h2>9. Menores de edad</h2>
-  <p>Expensia está dirigida a personas mayores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos una cuenta de un menor, la eliminaremos de inmediato.</p>
+  <!-- ========================================= -->
+  <h2 id="contacto">13. Información de Contacto y Responsable de Privacidad</h2>
 
-  <h2>10. Cookies y rastreo</h2>
-  <p>La app móvil no usa cookies. No rastreamos tu comportamiento para publicidad ni compartimos datos con redes publicitarias.</p>
-
-  <h2>11. Cambios a esta política</h2>
-  <p>Podemos actualizar esta política ocasionalmente. Te notificaremos dentro de la app ante cambios significativos. La versión más reciente siempre estará disponible en esta URL.</p>
-
-  <h2>12. Contacto</h2>
   <div class="card">
-    <p><strong>Expensia — Privacidad y Datos Personales</strong></p>
-    <p>Correo: <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a></p>
-    <p>País: México</p>
+    <p><strong>Expensia — Unidad de Privacidad y Datos Personales</strong></p>
+    <p><strong>Responsable de Privacidad:</strong> Luis Felipe Alejandro Gabûardi González</p>
+    <p><strong>Correo electrónico (privacidad):</strong> <a href="mailto:privacidad@expensia.app">privacidad@expensia.app</a></p>
+    <p><strong>Correo electrónico (soporte general):</strong> <a href="mailto:soporte@expensia.app">soporte@expensia.app</a></p>
+    <p><strong>Horario de atención:</strong> Días hábiles, de 9:00 a 18:00 h (UTC-6, Zona Centro de México)</p>
+    <p><strong>Plazo de respuesta a solicitudes ARCO:</strong> Máximo 20 días hábiles</p>
+    <p><strong>Autoridad regulatoria:</strong> Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales (INAI) — <a href="https://home.inai.org.mx" target="_blank">home.inai.org.mx</a></p>
+  </div>
+
+  <div class="legal-ref">
+    <p>El presente Aviso de Privacidad Integral fue elaborado conforme a: <span>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (DOF 05-07-2010)</span> · <span>Reglamento de la LFPDPPP (DOF 21-12-2011)</span> · <span>Lineamientos del Aviso de Privacidad (DOF 17-01-2013)</span> · <span>Ley General de los Derechos de Niñas, Niños y Adolescentes</span> · <span>Código Federal de Procedimientos Civiles (supletorio)</span></p>
   </div>
 
 </main>
 
 <footer>
-  <p>© 2025 Expensia. Todos los derechos reservados.</p>
-  <p style="margin-top:6px;">Conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), México.</p>
+  <p>© 2026 Expensia. Todos los derechos reservados.</p>
+  <p>Aviso de Privacidad Integral · Versión 2.0 · Última actualización: 12 de junio de 2026</p>
+  <p style="margin-top:6px;">Conforme a la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)</strong>, publicada en el Diario Oficial de la Federación el 5 de julio de 2010, y su Reglamento publicado el 21 de diciembre de 2011.</p>
+  <p style="margin-top:6px;">Estados Unidos Mexicanos.</p>
 </footer>
 
 </body>

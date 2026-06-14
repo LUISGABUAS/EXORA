@@ -11,6 +11,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AsesorScreen } from '../screens/AsesorScreen';
+import { MisFacturasScreen } from '../screens/MisFacturasScreen';
 import { BackupScreen } from '../screens/BackupScreen';
 import { BankImportScreen } from '../screens/BankImportScreen';
 import { CurrencySettingsScreen } from '../screens/CurrencySettingsScreen';
@@ -57,6 +58,7 @@ export type RootStackParamList = {
   Ingresos: undefined;
   IngresosRecurrentes: undefined;
   Asesor: undefined;
+  MisFacturas: undefined;
 };
 
 export type TabParamList = {
@@ -282,6 +284,11 @@ export function AppNavigator() {
               name="IngresosRecurrentes"
               component={RecurringIncomeScreen}
               options={{ title: 'Ingresos fijos', headerBackTitle: 'Ingresos' }}
+            />
+            <Stack.Screen
+              name="MisFacturas"
+              component={MisFacturasScreen}
+              options={{ title: 'Mis Facturas', headerBackTitle: 'Perfil' }}
             />
             <Stack.Screen
               name="Asesor"

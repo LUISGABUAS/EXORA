@@ -355,6 +355,14 @@ export function SettingsScreen() {
           <Icon name="chevron-right" size={18} color={colors.primary} />
         </Pressable>
         <Pressable
+          style={[s.reportButton, { backgroundColor: colors.primary + '12', borderRadius: 12 }]}
+          onPress={() => navigation.navigate('MisFacturas')}
+        >
+          <Icon name="file-check-outline" size={18} color={colors.primary} />
+          <Text style={[s.reportButtonText, { fontWeight: '700' }]}>Revisar mis facturas</Text>
+          <Icon name="chevron-right" size={18} color={colors.primary} />
+        </Pressable>
+        <Pressable
           style={s.reportButton}
           onPress={() => navigation.navigate('ReporteFiscal')}
         >
