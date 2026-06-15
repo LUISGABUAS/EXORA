@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { Session } from '@supabase/supabase-js';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { supabase } from '../lib/supabase';
+import { clearAllUserData } from '../utils/clearUserData';
 
 // Lazy-load Apple Auth — iOS only, crashes on Android if imported unconditionally
 const getAppleAuth = () =>
@@ -106,6 +107,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
+    await clearAllUserData();
     set({ session: null });
   },
 }));
