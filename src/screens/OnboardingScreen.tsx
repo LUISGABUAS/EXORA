@@ -23,6 +23,7 @@ import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { parseSmartInput } from '../utils/smartInputParser';
+import { readPdfText, validateIsConstancia, parseConstanciaText } from '../services/constanciaService';
 import { estimateTaxSavings, savingsRateLabel } from '../utils/taxCalculator';
 import { formatCurrency } from '../utils/format';
 
@@ -124,7 +125,14 @@ export function OnboardingScreen() {
   const [name, setName] = useState('');
   const [ageRange, setAgeRange] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<FinancialGoal[]>([]);
-  const [selectedRegime, setSelectedRegime] = useState<FiscalRegime | null>(null);
+  const [selectedRegimes, setSelectedRegimes] = useState<FiscalRegime[]>([]);
+  const [csfRfc, setCsfRfc] = useState<string | null>(null);
+  const [csfRazonSocial, setCsfRazonSocial] = useState<string | null>(null);
+
+  const toggleRegime = (r: FiscalRegime) =>
+    setSelectedRegimes(prev =>
+      prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r],
+    );
   const [inputText, setInputText] = useState('');
   const flatRef = useRef<FlatList>(null);
 
@@ -154,16 +162,20 @@ export function OnboardingScreen() {
   };
 
   const handleRegimeNext = () => {
-    if (!selectedRegime) {
-      Alert.alert('Elige tu régimen', 'Selecciona cómo facturas para personalizar el cálculo fiscal.');
+    if (selectedRegimes.length === 0) {
+      Alert.alert('Elige al menos un régimen', 'Selecciona cómo facturas para personalizar el cálculo fiscal.');
       return;
     }
     goNext();
   };
 
   const handleFinish = async () => {
-    if (selectedRegime) await setFiscalRegime(selectedRegime);
-    await setFiscalProfile({ razonSocial: name.trim() || null });
+    if (selectedRegimes.length > 0) await setFiscalRegime(selectedRegimes[0]);
+    await setFiscalProfile({
+      razonSocial: csfRazonSocial || name.trim() || null,
+      allFiscalRegimes: selectedRegimes,
+      ...(csfRfc ? { rfc: csfRfc } : {}),
+    });
     await setFinancialGoals(selectedGoals, ageRange);
     if (inputText.trim()) {
       const parsed = parseSmartInput(inputText);
@@ -185,8 +197,12 @@ export function OnboardingScreen() {
   };
 
   const handleSkip = async () => {
-    if (selectedRegime) await setFiscalRegime(selectedRegime);
-    await setFiscalProfile({ razonSocial: name.trim() || null });
+    if (selectedRegimes.length > 0) await setFiscalRegime(selectedRegimes[0]);
+    await setFiscalProfile({
+      razonSocial: csfRazonSocial || name.trim() || null,
+      allFiscalRegimes: selectedRegimes,
+      ...(csfRfc ? { rfc: csfRfc } : {}),
+    });
     await setFinancialGoals(selectedGoals, ageRange);
     await completeOnboarding();
   };
@@ -210,15 +226,27 @@ export function OnboardingScreen() {
       case 'goals':
         return <GoalsSlide colors={colors} s={s} selected={selectedGoals} onToggle={goal => setSelectedGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal])} onNext={goNext} />;
       case 'regime':
-        return <RegimeSlide colors={colors} s={s} selected={selectedRegime} onSelect={setSelectedRegime} onNext={handleRegimeNext} />;
+        return (
+          <RegimeSlide
+            colors={colors} s={s}
+            selected={selectedRegimes}
+            onToggle={toggleRegime}
+            onNext={handleRegimeNext}
+            onCsfImport={(regimes, rfc, razonSocial) => {
+              setSelectedRegimes(regimes);
+              setCsfRfc(rfc);
+              setCsfRazonSocial(razonSocial);
+            }}
+          />
+        );
       case 'recommendations':
-        return <RecommendationsSlide colors={colors} s={s} regime={selectedRegime} ageRange={ageRange} goals={selectedGoals} name={name} onNext={goNext} />;
+        return <RecommendationsSlide colors={colors} s={s} regime={selectedRegimes[0] ?? null} ageRange={ageRange} goals={selectedGoals} name={name} onNext={goNext} />;
       case 'widget':
         return <WidgetSlide colors={colors} s={s} onNext={goNext} />;
       case 'first_expense':
         return <FirstExpenseSlide colors={colors} s={s} value={inputText} onChange={setInputText} onNext={goNext} onSkip={handleSkip} />;
       case 'ready':
-        return <ReadySlide colors={colors} s={s} name={name} regime={selectedRegime} onFinish={handleFinish} />;
+        return <ReadySlide colors={colors} s={s} name={name} regime={selectedRegimes[0] ?? null} onFinish={handleFinish} />;
       default:
         return null;
     }
@@ -364,30 +392,120 @@ function GoalsSlide({ colors, s, selected, onToggle, onNext }: { colors: ColorPa
   );
 }
 
-function RegimeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPalette; s: any; selected: FiscalRegime | null; onSelect: (r: FiscalRegime) => void; onNext: () => void }) {
+function RegimeSlide({
+  colors, s, selected, onToggle, onNext, onCsfImport,
+}: {
+  colors: ColorPalette;
+  s: any;
+  selected: FiscalRegime[];
+  onToggle: (r: FiscalRegime) => void;
+  onNext: () => void;
+  onCsfImport: (regimes: FiscalRegime[], rfc: string | null, razonSocial: string | null) => void;
+}) {
+  const [csfLoading, setCsfLoading] = useState(false);
+  const [csfSuccess, setCsfSuccess] = useState(false);
+
+  const handleUploadCSF = async () => {
+    try {
+      const DocumentPicker = require('react-native-document-picker').default;
+      const result = await DocumentPicker.pickSingle({ type: DocumentPicker.types.pdf });
+      if (!result?.uri) return;
+
+      setCsfLoading(true);
+      setCsfSuccess(false);
+
+      const uri = Platform.OS === 'ios' ? result.uri.replace('file://', '') : result.uri;
+      const text = await readPdfText(uri);
+
+      if (!text || !validateIsConstancia(text)) {
+        Alert.alert(
+          'Documento no reconocido',
+          'El PDF no parece ser una Constancia de Situación Fiscal del SAT. Asegúrate de descargar el documento correcto desde el portal del SAT.',
+        );
+        setCsfLoading(false);
+        return;
+      }
+
+      const parsed = parseConstanciaText(text);
+      if (!parsed.success || !parsed.allFiscalRegimes?.length) {
+        Alert.alert('No se encontraron regímenes', 'Revisa que el PDF esté completo o selecciónalos manualmente.');
+        setCsfLoading(false);
+        return;
+      }
+
+      onCsfImport(
+        parsed.allFiscalRegimes,
+        parsed.rfc ?? null,
+        parsed.razonSocial ?? null,
+      );
+      setCsfSuccess(true);
+    } catch (err: any) {
+      if (!err?.message?.toLowerCase().includes('cancel')) {
+        Alert.alert('Error', 'No se pudo leer el archivo. Intenta de nuevo.');
+      }
+    } finally {
+      setCsfLoading(false);
+    }
+  };
+
   return (
     <View style={s.slide}>
       <Text style={s.slideTitle}>¿Cómo facturas?</Text>
-      <Text style={s.slideSubtitle}>Personalizamos el cálculo de deducciones según tu régimen</Text>
+      <Text style={s.slideSubtitle}>Puedes seleccionar varios — muchos contribuyentes tienen más de un régimen</Text>
+
+      {/* Botón subir CSF */}
+      <Pressable
+        style={[s.csfButton, csfSuccess && s.csfButtonSuccess]}
+        onPress={handleUploadCSF}
+        disabled={csfLoading}
+      >
+        <Icon
+          name={csfSuccess ? 'check-circle' : 'file-upload-outline'}
+          size={20}
+          color={csfSuccess ? '#22C55E' : colors.primary}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={[s.csfButtonTitle, csfSuccess && { color: '#22C55E' }]}>
+            {csfLoading ? 'Leyendo constancia…' : csfSuccess ? '¡Constancia cargada!' : 'Subir Constancia del SAT (PDF)'}
+          </Text>
+          <Text style={s.csfButtonDesc}>
+            {csfSuccess
+              ? `Se detectaron ${selected.length} régimen${selected.length !== 1 ? 'es' : ''} automáticamente`
+              : 'Detectamos tus regímenes automáticamente'}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size={18} color={colors.textMuted} />
+      </Pressable>
+
+      {/* Divisor */}
+      <View style={s.dividerRow}>
+        <View style={s.dividerLine} />
+        <Text style={s.dividerText}>o selecciona manualmente</Text>
+        <View style={s.dividerLine} />
+      </View>
+
       <ScrollView style={s.regimeScroll} showsVerticalScrollIndicator={false}>
         <View style={s.regimeList}>
-          {REGIMES.map(r => (
-            <Pressable
-              key={r.value}
-              style={[s.regimeCard, selected === r.value && s.regimeCardActive]}
-              onPress={() => onSelect(r.value)}
-            >
-              <Icon name={r.icon} size={22} color={selected === r.value ? '#fff' : colors.primary} />
-              <View style={s.regimeInfo}>
-                <Text style={[s.regimeTitle, selected === r.value && s.textWhite]}>{r.title}</Text>
-                <Text style={[s.regimeDesc, selected === r.value && s.textWhiteOpacity]}>{r.desc}</Text>
-              </View>
-              {selected === r.value && <Icon name="check-circle" size={18} color="#fff" />}
-            </Pressable>
-          ))}
+          {REGIMES.map(r => {
+            const active = selected.includes(r.value);
+            return (
+              <Pressable
+                key={r.value}
+                style={[s.regimeCard, active && s.regimeCardActive]}
+                onPress={() => onToggle(r.value)}
+              >
+                <Icon name={r.icon} size={22} color={active ? '#fff' : colors.primary} />
+                <View style={s.regimeInfo}>
+                  <Text style={[s.regimeTitle, active && s.textWhite]}>{r.title}</Text>
+                  <Text style={[s.regimeDesc, active && s.textWhiteOpacity]}>{r.desc}</Text>
+                </View>
+                {active && <Icon name="check-circle" size={18} color="#fff" />}
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
-      {/* Conoce tu régimen */}
+
       <Pressable
         style={s.satLink}
         onPress={() => Linking.openURL('https://www.sat.gob.mx/personas/declaraciones')}
@@ -398,7 +516,9 @@ function RegimeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorP
       </Pressable>
 
       <Pressable style={[s.primaryButton, { marginTop: 4 }]} onPress={onNext}>
-        <Text style={s.primaryButtonText}>Continuar</Text>
+        <Text style={s.primaryButtonText}>
+          {selected.length === 0 ? 'Continuar' : `Continuar (${selected.length} seleccionado${selected.length !== 1 ? 's' : ''})`}
+        </Text>
         <Icon name="arrow-right" size={20} color="#fff" />
       </Pressable>
     </View>
@@ -653,6 +773,15 @@ const useStyles = (colors: ColorPalette) =>
     // SAT link
     satLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: colors.primary + '10', borderRadius: 12, borderWidth: 1, borderColor: colors.primary + '30', width: '100%' },
     satLinkText: { flex: 1, color: colors.primary, fontSize: 12, fontFamily: font.semibold },
+    // CSF upload button
+    csfButton: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.primary + '40', padding: 14, width: '100%', marginBottom: 4 },
+    csfButtonSuccess: { borderColor: '#22C55E40', backgroundColor: '#22C55E08' },
+    csfButtonTitle: { fontSize: 13, fontFamily: font.bold, color: colors.text },
+    csfButtonDesc: { fontSize: 11, fontFamily: font.regular, color: colors.textMuted, marginTop: 2 },
+    // Divider
+    dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', marginVertical: 8 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+    dividerText: { fontSize: 11, color: colors.textMuted, fontFamily: font.medium },
     // Goals
     goalsGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     goalCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10, width: '48%' },
