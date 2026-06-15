@@ -18,12 +18,63 @@ const MAX_RETRIES = 5;
 
 async function processItem(item: SyncQueueItem, userId: string) {
   const payload = JSON.parse(item.payload);
+  const localId = item.expense_local_id;
+
+  if (item.entity_type === 'income') {
+    switch (item.action) {
+      case 'insert': {
+        const { error } = await supabase.from('incomes').upsert(
+          {
+            user_id: userId,
+            local_id: localId,
+            amount: payload.amount,
+            date: payload.date,
+            type: payload.type,
+            description: payload.description ?? '',
+            invoiced: payload.invoiced ?? false,
+            recurring: payload.recurring ?? false,
+            payment_method: payload.paymentMethod ?? 'transferencia',
+          },
+          { onConflict: 'user_id,local_id' },
+        );
+        if (error) throw error;
+        break;
+      }
+      case 'update': {
+        const { error } = await supabase
+          .from('incomes')
+          .update({
+            amount: payload.amount,
+            date: payload.date,
+            type: payload.type,
+            description: payload.description ?? '',
+            invoiced: payload.invoiced ?? false,
+            recurring: payload.recurring ?? false,
+            payment_method: payload.paymentMethod ?? 'transferencia',
+          })
+          .eq('user_id', userId)
+          .eq('local_id', localId);
+        if (error) throw error;
+        break;
+      }
+      case 'delete': {
+        const { error } = await supabase
+          .from('incomes')
+          .delete()
+          .eq('user_id', userId)
+          .eq('local_id', localId);
+        if (error) throw error;
+        break;
+      }
+    }
+    return;
+  }
 
   switch (item.action) {
     case 'insert': {
       const { error } = await supabase.from('expenses').insert({
         user_id: userId,
-        local_id: item.expense_local_id,
+        local_id: localId,
         amount: payload.amount,
         date: payload.date,
         category: payload.category,
@@ -57,7 +108,7 @@ async function processItem(item: SyncQueueItem, userId: string) {
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId)
-        .eq('local_id', item.expense_local_id);
+        .eq('local_id', localId);
       if (error) throw error;
       break;
     }
@@ -66,7 +117,7 @@ async function processItem(item: SyncQueueItem, userId: string) {
         .from('expenses')
         .update({ deleted_at: new Date().toISOString() })
         .eq('user_id', userId)
-        .eq('local_id', item.expense_local_id);
+        .eq('local_id', localId);
       if (error) throw error;
       break;
     }
@@ -143,6 +194,11 @@ export async function pullFromSupabase(): Promise<void> {
 
   try {
     const db = await getDatabase();
+
+    // Solo jalar si no hay datos locales — evita duplicados en reloads
+    const [countResult] = await db.executeSql('SELECT COUNT(*) as count FROM expenses');
+    const localCount = countResult.rows.item(0).count ?? 0;
+    if (localCount > 0) return;
 
     // ── Gastos ────────────────────────────────────────────────────────────────
     const { data: expenses, error: expError } = await supabase
