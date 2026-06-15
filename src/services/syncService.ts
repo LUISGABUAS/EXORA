@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { getDatabase } from '../database/db';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { useIncomeStore } from '../store/useIncomeStore';
+import { usePremiumStore } from '../store/usePremiumStore';
 
 let unsubscribe: (() => void) | null = null;
 let flushing = false;
@@ -193,6 +194,17 @@ export async function pullFromSupabase(): Promise<void> {
   const userId = session.user.id;
 
   try {
+    // Avatar — siempre jalar al login, independiente de datos locales
+    supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        if (data?.avatar_url) usePremiumStore.getState().setAvatarUri(data.avatar_url);
+      })
+      .catch(() => {});
+
     const db = await getDatabase();
 
     // Solo jalar si no hay datos locales — evita duplicados en reloads
