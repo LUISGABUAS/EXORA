@@ -43,6 +43,10 @@ export async function addToSyncQueue(
     'INSERT INTO sync_queue (action, entity_type, expense_local_id, payload) VALUES (?, ?, ?, ?)',
     [action, entityType, localId, JSON.stringify(payload)],
   );
+  // Dispara el flush inmediatamente — import dinámico para evitar dependencia circular
+  import('../services/syncService').then(({ flushSyncQueue }) => {
+    flushSyncQueue().catch(() => {});
+  });
 }
 
 export async function getPendingSyncItems(): Promise<SyncQueueItem[]> {
