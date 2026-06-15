@@ -4,6 +4,7 @@ import { Session } from '@supabase/supabase-js';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { supabase } from '../lib/supabase';
 import { clearAllUserData } from '../utils/clearUserData';
+import { pullFromSupabase } from '../services/syncService';
 
 // Lazy-load Apple Auth — iOS only, crashes on Android if imported unconditionally
 const getAppleAuth = () =>
@@ -43,6 +44,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     supabase.auth.onAuthStateChange((_event, newSession) => {
       set({ session: newSession });
+      // Al recibir una sesión nueva (login), jalar datos de la nube
+      if (newSession?.user?.id) {
+        pullFromSupabase().catch(() => {});
+      }
     });
   },
 

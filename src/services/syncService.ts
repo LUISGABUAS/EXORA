@@ -6,6 +6,9 @@ import {
   SyncQueueItem,
 } from '../database/syncQueue';
 import { useAuthStore } from '../store/useAuthStore';
+import { getDatabase } from '../database/db';
+import { useExpenseStore } from '../store/useExpenseStore';
+import { useIncomeStore } from '../store/useIncomeStore';
 
 let unsubscribe: (() => void) | null = null;
 let flushing = false;
@@ -127,5 +130,83 @@ export function stopSyncService() {
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
+  }
+}
+
+// ── Pull: descarga datos de Supabase al SQLite local ─────────────────────────
+// Se llama después de iniciar sesión para restaurar los datos del usuario.
+
+export async function pullFromSupabase(): Promise<void> {
+  const session = useAuthStore.getState().session;
+  if (!session?.user?.id) return;
+  const userId = session.user.id;
+
+  try {
+    const db = await getDatabase();
+
+    // ── Gastos ────────────────────────────────────────────────────────────────
+    const { data: expenses, error: expError } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('date', { ascending: false });
+
+    if (!expError && expenses && expenses.length > 0) {
+      for (const row of expenses) {
+        await db.executeSql(
+          `INSERT OR IGNORE INTO expenses
+            (amount, date, category, description, merchantName, conceptsText,
+             ocrRawText, deductible, rfc, usoCFDI, source, createdAt, receiptImageUri)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            row.amount,
+            row.date,
+            row.category,
+            row.description ?? '',
+            row.merchant_name ?? '',
+            row.concepts_text ?? '',
+            row.ocr_raw_text ?? '',
+            row.deductible ? 1 : 0,
+            row.rfc ?? '',
+            row.uso_cfdi ?? '',
+            row.source ?? 'manual',
+            row.created_at ?? new Date().toISOString(),
+            row.receipt_image_uri ?? '',
+          ],
+        );
+      }
+      await useExpenseStore.getState().loadExpenses();
+    }
+
+    // ── Ingresos ──────────────────────────────────────────────────────────────
+    const { data: incomes, error: incError } = await supabase
+      .from('incomes')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+
+    if (!incError && incomes && incomes.length > 0) {
+      for (const row of incomes) {
+        await db.executeSql(
+          `INSERT OR IGNORE INTO incomes
+            (amount, date, type, description, invoiced, recurring, paymentMethod, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            row.amount,
+            row.date,
+            row.type ?? 'otros',
+            row.description ?? '',
+            row.invoiced ? 1 : 0,
+            row.recurring ? 1 : 0,
+            row.payment_method ?? 'transferencia',
+            row.created_at ?? new Date().toISOString(),
+          ],
+        );
+      }
+      await useIncomeStore.getState().loadIncomes();
+    }
+  } catch {
+    // Pull silencioso — si falla, el usuario puede seguir usando la app offline
   }
 }
