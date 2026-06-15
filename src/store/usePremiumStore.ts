@@ -76,6 +76,7 @@ interface PremiumState {
 }
 
 const STORAGE_KEY = '@smartexpense_premium';
+const ONBOARDING_KEY = '@expensia_onboarding_complete';
 
 function getMonday(date: Date): string {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -161,8 +162,13 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   hydrate: async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      const [raw, onboardingFlag] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEY),
+        AsyncStorage.getItem(ONBOARDING_KEY),
+      ]);
       const parsed = raw ? JSON.parse(raw) : {};
+      // onboardingComplete sobrevive sign-out — se guarda en clave separada
+      if (onboardingFlag === 'true') parsed.onboardingComplete = true;
       set({ ...defaults, ...parsed, loaded: true });
 
       // Siempre verifica fundador en Supabase — garantiza sync tras reinstalar o limpiar datos
@@ -263,6 +269,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
         : state.trialEndsAt;
     set({ onboardingComplete: true, trialEndsAt });
     await persist(getData(get()));
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     if (trialEndsAt) {
       const { scheduleTrialReminders } = await import(
         '../services/notificationService'

@@ -43,7 +43,6 @@ export async function clearAllUserData(): Promise<void> {
   useExpenseStore.setState({ expenses: [], loading: false });
   useIncomeStore.setState({ incomes: [], loading: false });
 
-  // Premium: resetear todo EXCEPTO onboardingComplete (para que no repita el onboarding en la nueva cuenta)
   usePremiumStore.setState({
     isPremium: false,
     plan: 'free',
@@ -57,7 +56,7 @@ export async function clearAllUserData(): Promise<void> {
     razonSocial: null,
     constanciaUri: null,
     constanciaUploadDate: null,
-    onboardingComplete: false,  // nueva cuenta = nuevo onboarding
+    // onboardingComplete se preserva — hydrate lo restaura desde @expensia_onboarding_complete
     avatarUri: null,
     biometricEnabled: false,
     isFounder: false,

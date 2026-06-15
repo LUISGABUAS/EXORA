@@ -129,10 +129,16 @@ export function OnboardingScreen() {
   const [csfRfc, setCsfRfc] = useState<string | null>(null);
   const [csfRazonSocial, setCsfRazonSocial] = useState<string | null>(null);
 
-  const toggleRegime = (r: FiscalRegime) =>
-    setSelectedRegimes(prev =>
-      prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r],
-    );
+  const toggleRegime = (r: FiscalRegime) => {
+    if (r === 'no_facturo') {
+      setSelectedRegimes(prev => prev.includes(r) ? [] : ['no_facturo']);
+    } else {
+      setSelectedRegimes(prev => {
+        const sin = prev.filter(x => x !== 'no_facturo');
+        return sin.includes(r) ? sin.filter(x => x !== r) : [...sin, r];
+      });
+    }
+  };
   const [inputText, setInputText] = useState('');
   const flatRef = useRef<FlatList>(null);
 
@@ -143,6 +149,13 @@ export function OnboardingScreen() {
     if (next >= SLIDES.length) return;
     flatRef.current?.scrollToIndex({ index: next, animated: true });
     setCurrentStep(next);
+  };
+
+  const goBack = () => {
+    const prev = currentStep - 1;
+    if (prev < 0) return;
+    flatRef.current?.scrollToIndex({ index: prev, animated: true });
+    setCurrentStep(prev);
   };
 
   const handleNameNext = () => {
@@ -254,10 +267,20 @@ export function OnboardingScreen() {
 
   return (
     <SafeAreaView style={s.container}>
-      <View style={s.dotsRow}>
-        {SLIDES.map((_, i) => (
-          <View key={i} style={[s.dot, i === currentStep && s.dotActive]} />
-        ))}
+      <View style={s.header}>
+        {currentStep > 0 ? (
+          <Pressable style={s.backButton} onPress={goBack} hitSlop={12}>
+            <Icon name="arrow-left" size={22} color={colors.text} />
+          </Pressable>
+        ) : (
+          <View style={s.backButton} />
+        )}
+        <View style={s.dotsRow}>
+          {SLIDES.map((_, i) => (
+            <View key={i} style={[s.dot, i === currentStep && s.dotActive]} />
+          ))}
+        </View>
+        <View style={s.backButton} />
       </View>
       <FlatList
         ref={flatRef}
@@ -723,7 +746,9 @@ function ReadySlide({ colors, s, name, regime, onFinish }: { colors: ColorPalett
 const useStyles = (colors: ColorPalette) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, paddingVertical: 12 },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+    backButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+    dotsRow: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5 },
     dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
     dotActive: { backgroundColor: colors.primary, width: 20, borderRadius: 3 },
     slide: { width: SCREEN_WIDTH, flex: 1, paddingHorizontal: 24, paddingBottom: 24, alignItems: 'center', justifyContent: 'center', gap: 14 },
