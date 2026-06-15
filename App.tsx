@@ -18,7 +18,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { BiometricLock } from './src/components/BiometricLock';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { configureNotifications, scheduleSatDeadlines } from './src/services/notificationService';
-import { startSyncService } from './src/services/syncService';
+import { startSyncService, pullFromSupabase } from './src/services/syncService';
 import { setUserContext } from './src/services/crashReporting';
 import { syncWidgetData } from './src/utils/widgetBridge';
 import { track, flushNow } from './src/services/analyticsService';
@@ -54,6 +54,7 @@ Sentry.init({
 
 function AppContent() {
   const loadExpenses = useExpenseStore(state => state.loadExpenses);
+  const session = useAuthStore(state => state.session);
   const initializeAuth = useAuthStore(state => state.initialize);
   const authLoading = useAuthStore(state => state.loading);
   const hydratePremium = usePremiumStore(state => state.hydrate);
@@ -77,6 +78,19 @@ function AppContent() {
   const getDueIncomeThisMonth = useRecurringIncomeStore(state => state.getDueThisMonth);
   const markIncomeProcessed = useRecurringIncomeStore(state => state.markProcessed);
   const { colors, isDark } = useTheme();
+
+  // Pull datos desde Supabase cuando el usuario inicia sesión
+  const prevSessionRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    const userId = session?.user?.id ?? null;
+    if (userId && userId !== prevSessionRef.current) {
+      prevSessionRef.current = userId;
+      pullFromSupabase().catch(() => {});
+    }
+    if (!userId) {
+      prevSessionRef.current = null;
+    }
+  }, [session]);
 
   // Flush analytics + lock on background
   useEffect(() => {
