@@ -38,6 +38,7 @@ interface PremiumState {
   fiscalRegime: FiscalRegime;
   allFiscalRegimes: FiscalRegime[];
   razonSocial: string | null;
+  actividadEconomica: string | null;
   constanciaUri: string | null;
   constanciaUploadDate: string | null;
   onboardingComplete: boolean;
@@ -59,6 +60,7 @@ interface PremiumState {
     fiscalRegime?: FiscalRegime;
     allFiscalRegimes?: FiscalRegime[];
     razonSocial?: string | null;
+    actividadEconomica?: string | null;
     constanciaUri?: string | null;
     constanciaUploadDate?: string | null;
   }) => Promise<void>;
@@ -117,6 +119,7 @@ const defaults = {
   fiscalRegime: 'no_facturo' as FiscalRegime,
   allFiscalRegimes: [] as FiscalRegime[],
   razonSocial: null as string | null,
+  actividadEconomica: null as string | null,
   constanciaUri: null as string | null,
   constanciaUploadDate: null as string | null,
   onboardingComplete: false,
@@ -145,6 +148,7 @@ function getData(state: PremiumState): PersistData {
     fiscalRegime: state.fiscalRegime,
     allFiscalRegimes: state.allFiscalRegimes,
     razonSocial: state.razonSocial,
+    actividadEconomica: state.actividadEconomica,
     constanciaUri: state.constanciaUri,
     constanciaUploadDate: state.constanciaUploadDate,
     onboardingComplete: state.onboardingComplete,
@@ -248,6 +252,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
       ...(data.fiscalRegime !== undefined && { fiscalRegime: data.fiscalRegime }),
       ...(data.allFiscalRegimes !== undefined && { allFiscalRegimes: data.allFiscalRegimes }),
       ...(data.razonSocial !== undefined && { razonSocial: data.razonSocial }),
+      ...(data.actividadEconomica !== undefined && { actividadEconomica: data.actividadEconomica }),
       ...(data.constanciaUri !== undefined && { constanciaUri: data.constanciaUri }),
       ...(data.constanciaUploadDate !== undefined && { constanciaUploadDate: data.constanciaUploadDate }),
     });
@@ -255,7 +260,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
   },
 
   clearConstancia: async () => {
-    set({ constanciaUri: null, constanciaUploadDate: null, razonSocial: null, allFiscalRegimes: [] });
+    set({ constanciaUri: null, constanciaUploadDate: null, razonSocial: null, actividadEconomica: null, allFiscalRegimes: [] });
     await persist(getData(get()));
   },
 

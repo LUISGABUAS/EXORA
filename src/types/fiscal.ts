@@ -5,8 +5,10 @@ export interface ConstanciaParseResult {
   rfc?: string;
   razonSocial?: string;
   fiscalRegime?: FiscalRegime;
+  allFiscalRegimes?: FiscalRegime[];
   regimeSatCode?: string;
   regimeLabel?: string;
+  actividadEconomica?: string;
   error?: string;
 }
 

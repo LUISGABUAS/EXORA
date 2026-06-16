@@ -61,12 +61,12 @@ export async function readPdfText(filePath: string): Promise<string | null> {
 }
 
 const CONSTANCIA_KEYWORDS = [
-  'situaci\u00f3n fiscal',
+  'situación fiscal',
   'situacion fiscal',
-  'servicio de administraci\u00f3n tributaria',
+  'servicio de administración tributaria',
   'servicio de administracion tributaria',
   'registro federal',
-  'r\u00e9gimen',
+  'régimen',
   'regimen',
 ];
 
@@ -85,7 +85,8 @@ export function validateIsConstancia(text: string): boolean {
 }
 
 /**
- * Parsea el texto de una constancia para extraer RFC, razón social y régimen fiscal.
+ * Parsea el texto de una constancia para extraer RFC, razón social y todos los regímenes fiscales.
+ * Una constancia puede listar múltiples regímenes simultáneos (ej. Sueldos + RESICO).
  */
 export function parseConstanciaText(text: string): ConstanciaParseResult {
   if (!text || text.trim().length === 0) {
@@ -146,8 +147,8 @@ export function parseConstanciaText(text: string): ConstanciaParseResult {
     }
   }
 
-  // --- Extraer Régimen Fiscal ---
-  // Primero intentar por descripción (más preciso, distingue 625 plataformas vs empresarial)
+  // --- Extraer Régimen(es) Fiscal(es) ---
+  // Detectar TODOS los regímenes presentes (una constancia puede listar varios)
   const lowerText = fullText.toLowerCase();
   const descriptionMap: Array<[string, FiscalRegime, string]> = [
     ['simplificado de confianza', 'resico', '626'],
@@ -155,30 +156,37 @@ export function parseConstanciaText(text: string): ConstanciaParseResult {
     ['arrendamiento', 'arrendamiento', '606'],
     ['actividades empresariales y profesionales', 'honorarios', '612'],
     ['plataformas tecnol', 'plataformas_digitales', '625'],
-    ['incorporaci\u00f3n fiscal', 'incorporacion_fiscal', '621'],
+    ['incorporación fiscal', 'incorporacion_fiscal', '621'],
     ['incorporacion fiscal', 'incorporacion_fiscal', '621'],
     ['general de ley', 'regimen_general', '601'],
   ];
+
+  const allFiscalRegimes: FiscalRegime[] = [];
   for (const [desc, regime, code] of descriptionMap) {
-    if (lowerText.includes(desc)) {
-      fiscalRegime = regime;
-      regimeSatCode = code;
-      regimeLabel = SAT_CODE_LABELS[code];
-      break;
+    if (lowerText.includes(desc) && !allFiscalRegimes.includes(regime)) {
+      allFiscalRegimes.push(regime);
+      if (!fiscalRegime) {
+        fiscalRegime = regime;
+        regimeSatCode = code;
+        regimeLabel = SAT_CODE_LABELS[code];
+      }
     }
   }
 
-  // Fallback: buscar código SAT (3 dígitos)
-  if (!fiscalRegime) {
+  // Fallback: buscar códigos SAT (3 dígitos) si no se encontró nada por texto
+  if (allFiscalRegimes.length === 0) {
     for (const line of lines) {
       const codeMatch = line.match(/\b(601|605|606|612|621|625|626)\b/);
       if (codeMatch) {
         const code = codeMatch[1];
-        if (SAT_CODE_TO_REGIME[code]) {
-          regimeSatCode = code;
-          fiscalRegime = SAT_CODE_TO_REGIME[code];
-          regimeLabel = SAT_CODE_LABELS[code];
-          break;
+        const regime = SAT_CODE_TO_REGIME[code];
+        if (regime && !allFiscalRegimes.includes(regime)) {
+          allFiscalRegimes.push(regime);
+          if (!fiscalRegime) {
+            regimeSatCode = code;
+            fiscalRegime = regime;
+            regimeLabel = SAT_CODE_LABELS[code];
+          }
         }
       }
     }
@@ -188,12 +196,57 @@ export function parseConstanciaText(text: string): ConstanciaParseResult {
     return { success: false, error: 'No se encontró RFC ni régimen fiscal en el documento.' };
   }
 
+  // --- Extraer Actividad Económica ---
+  let actividadEconomica: string | undefined;
+
+  // Estrategia 1: etiqueta explícita "Actividad económica: DESCRIPCION"
+  const actividadLabelMatch = fullText.match(
+    /actividad(?:es)?\s+econ[oó]mica[s]?\s*[-:]\s*([A-ZÁÉÍÓÚÑ0-9 ,./&()-]{4,80}?)(?:\s*\d+%|\s*RFC|\s*R[eé]gimen|\s*Clave|\n|$)/i,
+  );
+  if (actividadLabelMatch) {
+    actividadEconomica = actividadLabelMatch[1].trim();
+  }
+
+  // Estrategia 2: buscar en líneas que siguen a "Actividad" o "ACTIVIDAD" una descripción en mayúsculas
+  if (!actividadEconomica) {
+    let foundSection = false;
+    for (const line of lines) {
+      if (/actividad(?:es)?\s+econ[oó]mica/i.test(line)) {
+        foundSection = true;
+        continue;
+      }
+      if (foundSection) {
+        // La descripción de actividad suele estar en mayúsculas, ignorar líneas de porcentaje/clave
+        const clean = line.replace(/\d{1,3}%/, '').replace(/^\d{3,4}\s+/, '').trim();
+        if (clean.length >= 4 && /[A-ZÁÉÍÓÚÑ]{3,}/.test(clean) && !/RFC|CURP|R[eé]gimen/i.test(clean)) {
+          actividadEconomica = clean;
+          break;
+        }
+        // Salir si llegamos a otra sección
+        if (/RFC|CURP|domicilio|r[eé]gimen fiscal/i.test(line)) break;
+      }
+    }
+  }
+
+  // Estrategia 3: líneas con patrón "DESCRIPCION EN MAYUSCULAS   100%"
+  if (!actividadEconomica) {
+    for (const line of lines) {
+      const m = line.match(/^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s,./&()-]{5,70}?)\s+\d{1,3}%/);
+      if (m && !/RFC|SAT|CURP|R[EÉ]GIMEN/i.test(m[1])) {
+        actividadEconomica = m[1].trim();
+        break;
+      }
+    }
+  }
+
   return {
     success: true,
     rfc,
     razonSocial,
     fiscalRegime,
+    allFiscalRegimes: allFiscalRegimes.length > 0 ? allFiscalRegimes : undefined,
     regimeSatCode,
     regimeLabel,
+    actividadEconomica,
   };
 }

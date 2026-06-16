@@ -32,6 +32,7 @@ export function ProfileEditScreen() {
   const storeConstanciaUri = usePremiumStore(state => state.constanciaUri);
   const storeConstanciaDate = usePremiumStore(state => state.constanciaUploadDate);
   const allFiscalRegimes = usePremiumStore(state => state.allFiscalRegimes);
+  const actividadEconomica = usePremiumStore(state => state.actividadEconomica);
   const hasConstancia = !!storeConstanciaUri;
 
   const currentName = session?.user?.user_metadata?.full_name || '';
@@ -187,12 +188,14 @@ export function ProfileEditScreen() {
         ...(parsed.razonSocial && { razonSocial: parsed.razonSocial }),
         ...(parsed.fiscalRegime && { fiscalRegime: parsed.fiscalRegime }),
         ...(parsed.allFiscalRegimes && { allFiscalRegimes: parsed.allFiscalRegimes }),
+        ...(parsed.actividadEconomica && { actividadEconomica: parsed.actividadEconomica }),
       });
 
       const details = [
         parsed.rfc && `RFC: ${parsed.rfc}`,
         parsed.razonSocial && `Nombre: ${parsed.razonSocial}`,
         parsed.regimeLabel && `Régimen: ${parsed.regimeLabel}`,
+        parsed.actividadEconomica && `Actividad: ${parsed.actividadEconomica}`,
       ].filter(Boolean).join('\n');
 
       Alert.alert('Constancia procesada', details || 'Datos extraídos correctamente.');
@@ -300,6 +303,12 @@ export function ProfileEditScreen() {
                 </View>
               );
             })}
+            {actividadEconomica ? (
+              <View style={s.actividadRow}>
+                <Icon name="briefcase-outline" size={14} color={colors.textMuted} />
+                <Text style={s.actividadText}>{actividadEconomica}</Text>
+              </View>
+            ) : null}
             <Text style={s.constanciaRegimeHint}>
               Para cambiar tu régimen, sube una nueva Constancia del SAT abajo.
             </Text>
@@ -580,6 +589,18 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       fontSize: 11,
       fontFamily: font.regular,
       lineHeight: 16,
+    },
+    actividadRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingTop: 2,
+    },
+    actividadText: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.medium,
+      flex: 1,
     },
     uploadCard: {
       flexDirection: 'row',
