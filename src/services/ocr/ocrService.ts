@@ -1,7 +1,9 @@
+import { Platform, NativeModules } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
 
-const MAX_RETRIES = 2;
+const { AppleVisionOCR } = NativeModules;
+
 const MIN_TEXT_LENGTH = 10;
 
 export async function requestCameraPermission(): Promise<boolean> {
@@ -21,62 +23,64 @@ function assessConfidence(text: string, blockCount: number): OcrResult['confiden
   return 'low';
 }
 
-/**
- * Reconoce texto de una imagen de ticket/factura.
- * Reintenta hasta MAX_RETRIES veces si el resultado es muy corto.
- */
+async function recognizeIOS(imageUri: string): Promise<OcrResult> {
+  if (!AppleVisionOCR?.recognizeText) {
+    // Fallback a ML Kit si el módulo nativo no está disponible
+    return recognizeMLKit(imageUri);
+  }
+  const text: string = await AppleVisionOCR.recognizeText(imageUri);
+  const clean = cleanOcrText(text);
+  const lines = clean.split('\n').filter(Boolean).length;
+  return {
+    text: clean,
+    confidence: assessConfidence(clean, lines),
+    blockCount: lines,
+  };
+}
+
+async function recognizeMLKit(imageUri: string): Promise<OcrResult> {
+  const result = await TextRecognition.recognize(imageUri);
+  const text = cleanOcrText(result.text);
+  const blockCount = result.blocks?.length ?? 0;
+  return {
+    text,
+    confidence: assessConfidence(text, blockCount),
+    blockCount,
+  };
+}
+
+async function recognizeWithRetry(imageUri: string): Promise<OcrResult> {
+  const recognize = Platform.OS === 'ios' ? recognizeIOS : recognizeMLKit;
+
+  let bestResult: OcrResult = { text: '', confidence: 'low', blockCount: 0 };
+
+  for (let attempt = 0; attempt <= 1; attempt++) {
+    try {
+      const result = await recognize(imageUri);
+      if (result.text.length >= MIN_TEXT_LENGTH) return result;
+      if (result.text.length > bestResult.text.length) bestResult = result;
+    } catch (err) {
+      if (attempt === 1) throw err;
+    }
+  }
+
+  if (bestResult.text.length > 0) return bestResult;
+  throw new Error('No se pudo extraer texto de la imagen. Intenta con mejor iluminación o más cerca del ticket.');
+}
+
 export async function recognizeReceiptText(imageUri: string): Promise<string> {
   const result = await recognizeWithRetry(imageUri);
   return result.text;
 }
 
-/**
- * Versión extendida que devuelve confianza y bloques detectados.
- */
 export async function recognizeReceiptDetailed(imageUri: string): Promise<OcrResult> {
   return recognizeWithRetry(imageUri);
 }
 
-async function recognizeWithRetry(imageUri: string): Promise<OcrResult> {
-  let lastError: Error | null = null;
-  let bestResult: OcrResult = { text: '', confidence: 'low', blockCount: 0 };
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const result = await TextRecognition.recognize(imageUri);
-      const text = cleanOcrText(result.text);
-      const blockCount = result.blocks?.length ?? 0;
-      const confidence = assessConfidence(text, blockCount);
-
-      if (text.length >= MIN_TEXT_LENGTH) {
-        return { text, confidence, blockCount };
-      }
-
-      // Guardar el mejor resultado parcial
-      if (text.length > bestResult.text.length) {
-        bestResult = { text, confidence, blockCount };
-      }
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
-  // Si tenemos algo de texto, devolverlo
-  if (bestResult.text.length > 0) {
-    return bestResult;
-  }
-
-  throw lastError ?? new Error('No se pudo extraer texto de la imagen. Intenta con mejor iluminación o más cerca del ticket.');
-}
-
-/**
- * Limpia el texto OCR: elimina lineas vacias duplicadas,
- * normaliza espacios y quita caracteres basura.
- */
 function cleanOcrText(raw: string): string {
   return raw
-    .replace(/[^\S\n]+/g, ' ')       // colapsar espacios (no newlines)
-    .replace(/\n{3,}/g, '\n\n')       // max 2 newlines seguidos
-    .replace(/^[\s\n]+|[\s\n]+$/g, '') // trim
-    .replace(/[^\x20-\x7EáéíóúÁÉÍÓÚñÑüÜ¿¡$%.,;:()/\n@#&-]/g, ''); // quitar basura unicode
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^[\s\n]+|[\s\n]+$/g, '')
+    .replace(/[^\x20-\x7EáéíóúÁÉÍÓÚñÑüÜ¿¡$%.,;:()/\n@#&-]/g, '');
 }
