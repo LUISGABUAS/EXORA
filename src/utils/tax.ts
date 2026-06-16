@@ -13,7 +13,8 @@ export function isValidMexicanRfc(rfc: string) {
 // ---------------------------------------------------------------------------
 const ALWAYS_DEDUCTIBLE_KEYWORDS = [
   'factura', 'cfdi', 'uuid', 'folio fiscal', 'regimen fiscal',
-  'comprobante fiscal', 'xml',
+  'comprobante fiscal', 'xml', 'folio digital', 'sello digital',
+  'certificado sat', 'comprobante de pago', 'nota de venta con cfdi',
 ];
 
 // ---------------------------------------------------------------------------
@@ -25,15 +26,21 @@ const PERSONAL_DEDUCTION_KEYWORDS: string[] = [
   // Salud
   'hospital', 'clinica', 'medico', 'doctor', 'consulta', 'consultorio',
   'farmacia', 'farmacia guadalajara', 'farmacias del ahorro', 'similares',
-  'farmacias similares', 'benavides', 'salud digna', 'chopo',
+  'farmacias similares', 'benavides', 'salud digna', 'chopo', 'cruz verde',
   'laboratorio', 'dentista', 'dental', 'optica', 'lentes', 'oculista',
   'oftalmologo', 'psicologia', 'psiquiatra', 'nutriologo', 'terapia',
-  'fisioterapia', 'medicamento', 'medicina', 'tratamiento',
+  'fisioterapia', 'medicamento', 'medicina', 'tratamiento', 'cirugia',
   'seguro de gastos medicos', 'seguro medico', 'imss', 'issste',
+  'medica sur', 'medica abc', 'star medica', 'hospital angeles',
+  'centro medico', 'ortodoncia', 'aparato dental', 'protesis',
+  'audiologia', 'audifono', 'silla de ruedas', 'muleta',
+  'analisis clinico', 'estudio medico', 'resonancia', 'tomografia', 'ultrasonido',
+  'vacuna', 'vacunacion', 'pediatria', 'ginecologo', 'dermatologo',
   // Educación (colegiaturas — límites por nivel)
   'colegiatura', 'inscripcion escolar', 'matricula escolar',
   'kinder', 'preescolar', 'primaria', 'secundaria', 'preparatoria',
-  'bachillerato', 'universidad', 'transporte escolar',
+  'bachillerato', 'universidad', 'transporte escolar', 'guarderia',
+  'estancia infantil', 'tec de monterrey', 'unam', 'ibero', 'anahuac',
   // Funerales
   'funeraria', 'funerales', 'servicio funerario',
   // Donativos
@@ -43,7 +50,7 @@ const PERSONAL_DEDUCTION_KEYWORDS: string[] = [
   // Planes de retiro
   'afore', 'plan de retiro', 'pension', 'plan personal de retiro',
   // Primas de seguros
-  'prima de seguro', 'seguro de vida', 'seguro de auto',
+  'prima de seguro', 'seguro de vida', 'seguro de auto', 'seguro de gastos',
 ];
 
 // ---------------------------------------------------------------------------
@@ -54,25 +61,34 @@ const BUSINESS_DEDUCTION_KEYWORDS: string[] = [
   // Tecnología y software
   'software', 'licencia', 'suscripcion', 'hosting', 'dominio',
   'google workspace', 'microsoft 365', 'office 365', 'adobe',
-  'aws', 'azure', 'dropbox', 'notion', 'slack', 'zoom',
+  'aws', 'azure', 'dropbox', 'notion', 'slack', 'zoom', 'figma',
+  'github', 'gitlab', 'shopify', 'stripe', 'twilio', 'sendgrid',
+  'canva', 'chatgpt', 'openai', 'claude', 'anthropic',
   // Telecom
   'telefono', 'celular', 'internet', 'telcel', 'att', 'telmex',
-  'movistar', 'izzi', 'megacable', 'totalplay',
+  'movistar', 'izzi', 'megacable', 'totalplay', 'plan de datos',
   // Papelería y oficina
   'papeleria', 'oficina', 'material de oficina', 'impresora',
-  'toner', 'cartucho', 'folder', 'cuaderno',
+  'toner', 'cartucho', 'folder', 'cuaderno', 'office depot', 'office max',
   // Transporte de negocios
   'uber', 'didi', 'taxi', 'gasolina', 'combustible', 'caseta', 'peaje',
-  'estacionamiento', 'aerolinea', 'volaris', 'aeromexico', 'vivaaerobus',
-  'hotel', 'hospedaje',
-  // Alimentación con cliente (con factura — pero marcamos si tiene invoice kw)
+  'estacionamiento', 'parking', 'aerolinea', 'volaris', 'aeromexico', 'vivaaerobus',
+  'hotel', 'hospedaje', 'airbnb', 'viaticos',
+  'hidrosina', 'pemex', 'shell', 'oxxo gas', 'g500',
   // Publicidad
   'publicidad', 'marketing', 'facebook ads', 'google ads', 'instagram ads',
+  'meta ads', 'tiktok ads', 'campana publicitaria',
   // Servicios profesionales
   'contador', 'abogado', 'notario', 'consultor', 'honorarios',
-  'servicio profesional',
-  // Renta de oficina
-  'renta de oficina', 'coworking', 'renta local',
+  'servicio profesional', 'asesoria', 'despacho',
+  // Renta
+  'renta de oficina', 'coworking', 'renta local', 'renta bodega',
+  'arrendamiento local', 'local comercial',
+  // Equipos
+  'laptop', 'computadora', 'monitor', 'teclado', 'mouse', 'camara',
+  'microfono', 'audifonos', 'tablet', 'ipad', 'iphone', 'celular empresa',
+  // Capacitación
+  'capacitacion', 'curso', 'certificacion', 'entrenamiento empresarial',
 ];
 
 // ---------------------------------------------------------------------------

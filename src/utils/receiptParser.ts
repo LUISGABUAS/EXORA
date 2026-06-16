@@ -143,12 +143,30 @@ function findAmount(rawText: string): number | undefined {
   }
 
   if (candidates.length > 0) {
-    // Prioridad más alta gana; si empatan, el que aparece más abajo en el ticket
     candidates.sort((a, b) => b.priority - a.priority || b.lineIdx - a.lineIdx);
     return candidates[0].value;
   }
 
-  // Fallback: el número más grande (excluyendo líneas de cambio/efectivo)
+  // Gasolineras: buscar "IMPORTE" o "TOTAL LITROS" que es el total real
+  for (let i = 0; i < lines.length; i++) {
+    if (/\bimporte\b/i.test(lines[i]) && !NOT_TOTAL_KEYWORDS.test(lines[i])) {
+      const prices = extractPrices(lines[i]);
+      if (prices.length > 0) return prices[prices.length - 1];
+      if (i + 1 < lines.length) {
+        const next = extractPrices(lines[i + 1]);
+        if (next.length > 0) return next[0];
+      }
+    }
+  }
+
+  // Fallback: el número más grande en la mitad inferior del ticket
+  // (el total aparece cerca del final, no al principio)
+  const lowerHalf = lines.slice(Math.floor(lines.length / 2));
+  const lowerSafe = lowerHalf.filter(l => !NOT_TOTAL_KEYWORDS.test(l));
+  const lowerPrices = extractPrices(lowerSafe.join('\n'));
+  if (lowerPrices.length > 0) return Math.max(...lowerPrices);
+
+  // Último fallback: precio más grande de todo el ticket
   const safeLines = lines.filter(l => !NOT_TOTAL_KEYWORDS.test(l));
   const allPrices = extractPrices(safeLines.join('\n'));
   if (allPrices.length === 0) return undefined;
@@ -412,9 +430,38 @@ function findRfc(rawText: string): string | undefined {
 // USO CFDI
 // ═══════════════════════════════════════════
 
+// Códigos de uso CFDI más comunes en tickets mexicanos
+const CFDI_USE_CODES = new Set([
+  'G01','G02','G03','I01','I02','I03','I04','I05','I06','I07','I08',
+  'D01','D02','D03','D04','D05','D06','D07','D08','D09','D10',
+  'P01','S01','CP01','CN01',
+]);
+
 function findUsoCfdi(rawText: string): string | undefined {
-  const match = rawText.match(/(?:uso\s*(?:de\s*)?cfdi|cfdi)[\s:=]*([A-Z]\d{2})/i);
-  return match?.[1]?.toUpperCase();
+  // Patrón 1: etiqueta explícita "USO CFDI: G03" o "CFDI: G03"
+  const labelMatch = rawText.match(/(?:uso\s*(?:de\s*)?cfdi|uso\s*cfdi)[\s:=]*([A-Z]{1,3}\d{2})/i);
+  if (labelMatch) return labelMatch[1].toUpperCase();
+
+  // Patrón 2: código solo al inicio de línea, precedido por "USO" en línea anterior
+  const lines = rawText.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (/\buso\b/i.test(lines[i]) && i + 1 < lines.length) {
+      const nextCode = lines[i + 1].trim().match(/^([A-Z]{1,3}\d{2})\b/);
+      if (nextCode && CFDI_USE_CODES.has(nextCode[1].toUpperCase())) {
+        return nextCode[1].toUpperCase();
+      }
+    }
+    // Patrón 3: código conocido en la línea directamente (ej "G03 GASTOS GENERALES")
+    const knownCode = lines[i].match(/\b([A-Z]{1,3}\d{2})\b/);
+    if (knownCode && CFDI_USE_CODES.has(knownCode[1].toUpperCase())) {
+      // Solo si está en contexto de CFDI (línea anterior o siguiente menciona CFDI)
+      const ctx = (lines[i - 1] ?? '') + lines[i] + (lines[i + 1] ?? '');
+      if (/cfdi|uso|comprobante/i.test(ctx)) {
+        return knownCode[1].toUpperCase();
+      }
+    }
+  }
+  return undefined;
 }
 
 // ═══════════════════════════════════════════
@@ -598,6 +645,38 @@ function mergeResults(ai: AIParseResult, rawText: string): ParsedReceiptData {
 }
 
 // ═══════════════════════════════════════════
+// POST-PROCESADO — valida y normaliza resultado
+// ═══════════════════════════════════════════
+
+function postProcess(result: ParsedReceiptData): ParsedReceiptData {
+  // Fecha: rechazar fechas futuras o anteriores a 2010
+  if (result.date) {
+    const d = new Date(result.date);
+    const today = new Date();
+    if (d > today || d.getFullYear() < 2010) {
+      result.date = today.toISOString().slice(0, 10);
+    }
+  }
+
+  // Monto: rechazar valores absurdos (< $1 o > $500,000)
+  if (result.amount !== undefined) {
+    if (result.amount < 1 || result.amount > 500000) {
+      result.amount = undefined;
+    }
+  }
+
+  // Merchant: capitalizar correctamente si está todo en mayúsculas
+  if (result.merchantName && result.merchantName === result.merchantName.toUpperCase()) {
+    result.merchantName = result.merchantName
+      .toLowerCase()
+      .replace(/(?:^|\s)\S/g, c => c.toUpperCase())
+      .trim();
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════
 // PRE-PROCESADO — corrige artefactos OCR
 // ═══════════════════════════════════════════
 
@@ -630,7 +709,7 @@ function preprocessOcrText(text: string): string {
 export function parseReceiptText(rawText: string, regime?: FiscalRegime): ParsedReceiptData {
   const processedText = preprocessOcrText(rawText);
   const aiResult = parseWithAI(processedText);
-  const result = mergeResults(aiResult, processedText);
+  const result = postProcess(mergeResults(aiResult, processedText));
   // Preservar el rawText original (sin pre-procesar) para almacenamiento y debug
   result.rawText = rawText;
   // Re-evaluar deducibilidad con el régimen del usuario si está disponible

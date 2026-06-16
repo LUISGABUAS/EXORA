@@ -1,6 +1,6 @@
 /**
  * Extractor de features para clasificación de líneas de tickets.
- * 20 features numéricas por línea (0-1 o binarias).
+ * 28 features numéricas por línea (0-1 o binarias).
  *
  * IMPORTANTE: Debe producir valores idénticos al mirror Python
  * en training/feature_extractor.py
@@ -9,22 +9,31 @@
 // ── Patterns ──
 
 const PRICE_PATTERN =
-  /\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\$?\s*\d+(?:\.\d{1,2})/;
+  /\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\$?\s*\d+(?:\.\d{1,2})|\$\s*\d+/;
+
+const PRICE_PATTERN_GLOBAL =
+  /\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\$?\s*\d+(?:\.\d{1,2})|\$\s*\d+/g;
 
 const DATE_PATTERN =
   /\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{2}[/-]\d{2}|\d{1,2}\s+de\s+\w+|(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)/i;
 
 const RFC_PATTERN = /[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}/i;
 
-const TOTAL_KW = /\btotal\b/i;
+const TOTAL_KW = /\btotal\b|\ba\s*cobrar\b|\bsu\s*total\b|\bimporte\s*a\s*pagar\b|\bmonto\s*a\s*pagar\b|\bcargo\s*total\b|\btotal\s*venta\b/i;
 const SUBTOTAL_KW = /\bsub\s*total\b/i;
 const TAX_KW = /\biva\b|\bi\.v\.a\b|\bimpuesto\b/i;
 const PAYMENT_KW =
-  /\befectivo\b|\btarjeta\b|\bvisa\b|\bmastercard\b|\bdebito\b|\bcredito\b|\bpago\b/i;
+  /\befectivo\b|\btarjeta\b|\bvisa\b|\bmastercard\b|\bdebito\b|\bcredito\b|\bpago\b|\btransferencia\b|\bspei\b|\bqr\b|\bcontacless\b/i;
 const CHANGE_KW = /\bcambio\b|\bvuelto\b/i;
 const ADDRESS_KW =
   /\bcalle\b|\bav\b|\bavenida\b|\bblvd\b|\bboulevard\b|\bcol\b|\bcolonia\b|\bc\.?\s*p\.?\s*\d/i;
 const DECORATION_PATTERN = /^[\s*=\-_#.]{3,}$/;
+
+const QUANTITY_PATTERN =
+  /\b\d+\s*[xX]\s*\d|\bcant\.?\b|\bpiezas?\b|\bpzas?\b|\bpcs\b|\bunidades?\b|\bund\b/i;
+
+const PRODUCT_UNIT_KW =
+  /\bkg\b|\bkilo\b|\bgramo\b|\bgr?\b|\blitro\b|\blt[s]?\b|\bml\b|\bpza\b|\bpieza\b|\bpz\b|\bunid\b/i;
 
 /**
  * Las 12 clases de línea que el modelo clasifica.
@@ -57,19 +66,35 @@ export function hasPrice(text: string): boolean {
 }
 
 /**
- * Extrae 20 features numéricas de una línea de texto.
+ * Extrae todos los precios de un texto y retorna su lista.
+ */
+function extractPriceValues(text: string): number[] {
+  const cleaned = text
+    .replace(/(\d)\s+\.(\d)/g, '$1.$2')
+    .replace(/\.\s+(\d)/g, '.$1');
+  const matches = cleaned.match(PRICE_PATTERN_GLOBAL);
+  if (!matches) return [];
+  return matches
+    .map(m => Number(m.replace(/[$\s,]/g, '')))
+    .filter(v => !Number.isNaN(v) && v > 0 && v < 1_000_000);
+}
+
+/**
+ * Extrae 28 features numéricas de una línea de texto.
  *
- * @param line - Texto de la línea
+ * @param line      - Texto de la línea
  * @param lineIndex - Índice de la línea (0-based)
  * @param totalLines - Número total de líneas
- * @param prevLine - Texto de la línea anterior (vacío para la primera)
- * @returns Array de 20 números
+ * @param prevLine  - Texto de la línea anterior (vacío para la primera)
+ * @param nextLine  - Texto de la línea siguiente (vacío para la última)
+ * @returns Array de 28 números
  */
 export function extractFeatures(
   line: string,
   lineIndex: number,
   totalLines: number,
   prevLine: string = '',
+  nextLine: string = '',
 ): number[] {
   const text = line.trim();
   const maxIdx = Math.max(totalLines - 1, 1);
@@ -105,12 +130,11 @@ export function extractFeatures(
   features.push(text.includes('$') ? 1 : 0);
 
   // 8. isAllCaps
-  const alphaChars = text.split('').filter(
-    c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'),
-  );
+  const alphaChars = text
+    .split('')
+    .filter(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
   const allCaps =
-    alphaChars.length > 0 &&
-    alphaChars.every(c => c >= 'A' && c <= 'Z');
+    alphaChars.length > 0 && alphaChars.every(c => c >= 'A' && c <= 'Z');
   features.push(allCaps ? 1 : 0);
 
   // 9. startsWithNumber
@@ -151,6 +175,33 @@ export function extractFeatures(
   // 20. prevLineHasPrice
   features.push(hasPrice(prevLine) ? 1 : 0);
 
+  // 21. priceCount (number of prices in line, normalized by 5)
+  const prices = extractPriceValues(text);
+  features.push(Math.min(prices.length / 5, 1));
+
+  // 22. maxPriceNorm (log-normalized max price value)
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+  features.push(Math.log(maxPrice + 1) / Math.log(100001));
+
+  // 23. hasQuantityPattern ("2 x", "cant.", "pzas", etc.)
+  features.push(QUANTITY_PATTERN.test(text) ? 1 : 0);
+
+  // 24. hasProductUnitKeywords ("kg", "lt", "ml", "pza", etc.)
+  features.push(PRODUCT_UNIT_KW.test(text) ? 1 : 0);
+
+  // 25. colonInLine
+  features.push(text.includes(':') ? 1 : 0);
+
+  // 26. isShortLine (< 5 chars — likely decoration or noise)
+  features.push(text.length < 5 ? 1 : 0);
+
+  // 27. nextLineHasPrice
+  features.push(hasPrice(nextLine) ? 1 : 0);
+
+  // 28. prevLineHasTotal
+  const prevHasTotal = TOTAL_KW.test(prevLine) && !SUBTOTAL_KW.test(prevLine);
+  features.push(prevHasTotal ? 1 : 0);
+
   return features;
 }
 
@@ -162,6 +213,7 @@ export function extractAllFeatures(ocrText: string): number[][] {
   const total = lines.length;
   return lines.map((line, i) => {
     const prev = i > 0 ? lines[i - 1] : '';
-    return extractFeatures(line, i, total, prev);
+    const next = i < total - 1 ? lines[i + 1] : '';
+    return extractFeatures(line, i, total, prev, next);
   });
 }
