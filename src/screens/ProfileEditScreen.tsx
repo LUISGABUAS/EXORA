@@ -31,6 +31,8 @@ export function ProfileEditScreen() {
   const storeRazonSocial = usePremiumStore(state => state.razonSocial);
   const storeConstanciaUri = usePremiumStore(state => state.constanciaUri);
   const storeConstanciaDate = usePremiumStore(state => state.constanciaUploadDate);
+  const allFiscalRegimes = usePremiumStore(state => state.allFiscalRegimes);
+  const hasConstancia = !!storeConstanciaUri;
 
   const currentName = session?.user?.user_metadata?.full_name || '';
   const userEmail = session?.user?.email || '';
@@ -184,6 +186,7 @@ export function ProfileEditScreen() {
         constanciaUploadDate: today,
         ...(parsed.razonSocial && { razonSocial: parsed.razonSocial }),
         ...(parsed.fiscalRegime && { fiscalRegime: parsed.fiscalRegime }),
+        ...(parsed.allFiscalRegimes && { allFiscalRegimes: parsed.allFiscalRegimes }),
       });
 
       const details = [
@@ -274,77 +277,94 @@ export function ProfileEditScreen() {
         </View>
       </View>
 
-      {/* Fiscal Regime — Primary */}
+      {/* Fiscal Regime */}
       <View style={s.field}>
         <Text style={s.label}>Régimen fiscal</Text>
-        <View style={s.regimeList}>
-          {PRIMARY_REGIMES.map(r => (
+
+        {hasConstancia ? (
+          /* ── Solo lectura: régimen bloqueado por la constancia ── */
+          <View style={s.constanciaRegimeBox}>
+            <View style={s.constanciaRegimeHeader}>
+              <Icon name="shield-check" size={16} color={colors.primary} />
+              <Text style={s.constanciaRegimeLabel}>Detectado en tu Constancia del SAT</Text>
+            </View>
+            {(allFiscalRegimes.length > 0 ? allFiscalRegimes : [selectedRegime]).map(r => {
+              const display = [...PRIMARY_REGIMES, ...SECONDARY_REGIMES].find(d => d.value === r);
+              return (
+                <View key={r} style={s.constanciaRegimeRow}>
+                  <Icon name={display?.icon ?? 'file-document-outline'} size={18} color={colors.primary} />
+                  <View style={s.regimeInfo}>
+                    <Text style={s.regimeTitle}>{display?.title ?? r}</Text>
+                    <Text style={s.regimeDesc}>{display?.desc ?? ''}</Text>
+                  </View>
+                </View>
+              );
+            })}
+            <Text style={s.constanciaRegimeHint}>
+              Para cambiar tu régimen, sube una nueva Constancia del SAT abajo.
+            </Text>
+          </View>
+        ) : (
+          /* ── Selector manual: sin constancia ── */
+          <>
+            <View style={s.regimeList}>
+              {PRIMARY_REGIMES.map(r => (
+                <Pressable
+                  key={r.value}
+                  style={[s.regimeCard, selectedRegime === r.value && s.regimeCardActive]}
+                  onPress={() => setSelectedRegime(r.value)}
+                >
+                  <Icon
+                    name={r.icon}
+                    size={24}
+                    color={selectedRegime === r.value ? colors.white : colors.primary}
+                  />
+                  <View style={s.regimeInfo}>
+                    <Text style={[s.regimeTitle, selectedRegime === r.value && s.regimeTitleActive]}>
+                      {r.title}
+                    </Text>
+                    <Text style={[s.regimeDesc, selectedRegime === r.value && s.regimeDescActive]}>
+                      {r.desc}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
             <Pressable
-              key={r.value}
-              style={[s.regimeCard, selectedRegime === r.value && s.regimeCardActive]}
-              onPress={() => setSelectedRegime(r.value)}
+              style={s.moreRegimesButton}
+              onPress={() => setShowMoreRegimes(v => !v)}
             >
               <Icon
-                name={r.icon}
-                size={24}
-                color={selectedRegime === r.value ? colors.white : colors.primary}
+                name={showMoreRegimes ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.primary}
               />
-              <View style={s.regimeInfo}>
-                <Text style={[s.regimeTitle, selectedRegime === r.value && s.regimeTitleActive]}>
-                  {r.title}
-                </Text>
-                <Text style={[s.regimeDesc, selectedRegime === r.value && s.regimeDescActive]}>
-                  {r.desc}
-                </Text>
-              </View>
+              <Text style={s.moreRegimesText}>
+                {showMoreRegimes ? 'Menos regímenes' : 'Más regímenes'}
+              </Text>
             </Pressable>
-          ))}
-        </View>
-
-        {/* More regimes toggle */}
-        <Pressable
-          style={s.moreRegimesButton}
-          onPress={() => setShowMoreRegimes(v => !v)}
-        >
-          <Icon
-            name={showMoreRegimes ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={colors.primary}
-          />
-          <Text style={s.moreRegimesText}>
-            {showMoreRegimes ? 'Menos regímenes' : 'Más regímenes'}
-          </Text>
-        </Pressable>
-
-        {/* Secondary regimes */}
-        {showMoreRegimes ? (
-          <View style={s.secondaryRow}>
-            {SECONDARY_REGIMES.map(r => (
-              <Pressable
-                key={r.value}
-                style={[
-                  s.secondaryChip,
-                  selectedRegime === r.value && s.secondaryChipActive,
-                ]}
-                onPress={() => setSelectedRegime(r.value)}
-              >
-                <Icon
-                  name={r.icon}
-                  size={16}
-                  color={selectedRegime === r.value ? colors.white : colors.text}
-                />
-                <Text
-                  style={[
-                    s.secondaryChipText,
-                    selectedRegime === r.value && s.secondaryChipTextActive,
-                  ]}
-                >
-                  {r.title}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
+            {showMoreRegimes ? (
+              <View style={s.secondaryRow}>
+                {SECONDARY_REGIMES.map(r => (
+                  <Pressable
+                    key={r.value}
+                    style={[s.secondaryChip, selectedRegime === r.value && s.secondaryChipActive]}
+                    onPress={() => setSelectedRegime(r.value)}
+                  >
+                    <Icon
+                      name={r.icon}
+                      size={16}
+                      color={selectedRegime === r.value ? colors.white : colors.text}
+                    />
+                    <Text style={[s.secondaryChipText, selectedRegime === r.value && s.secondaryChipTextActive]}>
+                      {r.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </>
+        )}
       </View>
 
       {/* Constancia Upload — only if regime != no_facturo */}
@@ -526,6 +546,40 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     },
     secondaryChipTextActive: {
       color: colors.white,
+    },
+    constanciaRegimeBox: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.primary + '40',
+      padding: 14,
+      gap: 10,
+    },
+    constanciaRegimeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    constanciaRegimeLabel: {
+      color: colors.primary,
+      fontSize: 12,
+      fontFamily: font.semibold,
+    },
+    constanciaRegimeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    constanciaRegimeHint: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontFamily: font.regular,
+      lineHeight: 16,
     },
     uploadCard: {
       flexDirection: 'row',
