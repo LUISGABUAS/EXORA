@@ -90,7 +90,7 @@ const LEGAL_ENTITY = /\b(?:S\.?\s*A\.?\s*(?:DE\s*)?C\.?\s*V\.?|S\.?\s*(?:DE\s*)?
 // AMOUNT — Detección de monto total
 // ═══════════════════════════════════════════
 
-function findAmount(rawText: string): number | undefined {
+function findAmount(rawText: string): { value: number | undefined; foundViaKeyword: boolean } {
   const lines = rawText.split('\n').map(l => l.trim());
   const candidates: { value: number; priority: number; lineIdx: number }[] = [];
 
@@ -144,33 +144,34 @@ function findAmount(rawText: string): number | undefined {
 
   if (candidates.length > 0) {
     candidates.sort((a, b) => b.priority - a.priority || b.lineIdx - a.lineIdx);
-    return candidates[0].value;
+    // Saltar candidatos absurdos (< $1)
+    const valid = candidates.find(c => c.value >= 1);
+    if (valid) return { value: valid.value, foundViaKeyword: true };
   }
 
-  // Gasolineras: buscar "IMPORTE" o "TOTAL LITROS" que es el total real
+  // Gasolineras: buscar "IMPORTE" que es el total real
   for (let i = 0; i < lines.length; i++) {
     if (/\bimporte\b/i.test(lines[i]) && !NOT_TOTAL_KEYWORDS.test(lines[i])) {
       const prices = extractPrices(lines[i]);
-      if (prices.length > 0) return prices[prices.length - 1];
+      if (prices.length > 0) return { value: prices[prices.length - 1], foundViaKeyword: true };
       if (i + 1 < lines.length) {
         const next = extractPrices(lines[i + 1]);
-        if (next.length > 0) return next[0];
+        if (next.length > 0) return { value: next[0], foundViaKeyword: true };
       }
     }
   }
 
-  // Fallback: el número más grande en la mitad inferior del ticket
-  // (el total aparece cerca del final, no al principio)
+  // Fallback: precio más grande en la mitad inferior del ticket
   const lowerHalf = lines.slice(Math.floor(lines.length / 2));
   const lowerSafe = lowerHalf.filter(l => !NOT_TOTAL_KEYWORDS.test(l));
-  const lowerPrices = extractPrices(lowerSafe.join('\n'));
-  if (lowerPrices.length > 0) return Math.max(...lowerPrices);
+  const lowerPrices = extractPrices(lowerSafe.join('\n')).filter(p => p >= 1);
+  if (lowerPrices.length > 0) return { value: Math.max(...lowerPrices), foundViaKeyword: false };
 
   // Último fallback: precio más grande de todo el ticket
   const safeLines = lines.filter(l => !NOT_TOTAL_KEYWORDS.test(l));
-  const allPrices = extractPrices(safeLines.join('\n'));
-  if (allPrices.length === 0) return undefined;
-  return Math.max(...allPrices);
+  const allPrices = extractPrices(safeLines.join('\n')).filter(p => p >= 1);
+  if (allPrices.length === 0) return { value: undefined, foundViaKeyword: false };
+  return { value: Math.max(...allPrices), foundViaKeyword: false };
 }
 
 /**
@@ -191,9 +192,10 @@ function extractPrices(text: string): number[] {
   // Normalizar: quitar espacios alrededor de puntos decimales y comas
   // "$ 33.50" → "$33.50", "$21 .50" → "$21.50", "1 ,234" → "1,234"
   const cleaned = text
-    .replace(/(\d)\s+\.(\d)/g, '$1.$2')   // "21 .50" → "21.50"
-    .replace(/\.\s+(\d)/g, '.$1')          // ". 50" → ".50"
-    .replace(/(\d)\s+,\s*(\d)/g, '$1,$2'); // "1 ,234" → "1,234"
+    .replace(/(\d)\s+\.(\d)/g, '$1.$2')    // "21 .50" → "21.50"
+    .replace(/\.\s+(\d)/g, '.$1')           // ". 50" → ".50"
+    .replace(/(\d)\s+,\s*(\d)/g, '$1,$2')  // "1 ,234" → "1,234"
+    .replace(/(\d) (\d{3})(?=\D|$)/g, '$1,$2'); // "1 234" → "1,234" (espacio como sep. de miles)
 
   // Patrón principal: precio con $ opcional, comas de miles, decimal opcional
   const matches = cleaned.match(/\$?\s*\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\$?\s*\d+(?:\.\d{1,2})/g);
@@ -560,7 +562,7 @@ function findConcepts(rawText: string, lineItems?: ParsedLineItem[]): string {
 // REGEX PARSER (fallback)
 // ═══════════════════════════════════════════
 
-function parseWithRegex(rawText: string): ParsedReceiptData {
+function parseWithRegex(rawText: string): ParsedReceiptData & { amountFoundViaKeyword: boolean } {
   const merchantName = findMerchant(rawText);
   const lineItems = findLineItems(rawText);
   const conceptsText = findConcepts(rawText, lineItems);
@@ -569,9 +571,11 @@ function parseWithRegex(rawText: string): ParsedReceiptData {
   const rfc = isValidMexicanRfc(rfcRaw) ? rfcRaw : '';
   const suggestedCategory = classifyExpense(`${merchantName} ${conceptsText} ${rawText}`);
   const deductible = inferDeductibility({ rawText, merchantName, rfc, usoCFDI });
+  const { value: amount, foundViaKeyword: amountFoundViaKeyword } = findAmount(rawText);
 
   return {
-    amount: findAmount(rawText),
+    amount,
+    amountFoundViaKeyword,
     date: findDate(rawText),
     merchantName,
     conceptsText,
@@ -590,31 +594,48 @@ function parseWithRegex(rawText: string): ParsedReceiptData {
 
 function mergeResults(ai: AIParseResult, rawText: string): ParsedReceiptData {
   const regexResult = parseWithRegex(rawText);
+  const { amountFoundViaKeyword } = regexResult;
 
-  // Amount: prefer AI when highly confident, else regex.
-  // When both found amounts and they disagree, prefer regex (has more heuristics for edge cases).
+  // ── Amount ────────────────────────────────────────────────────────────────
+  // Regla: si regex encontró keyword explícito → confiar en regex
+  //        si regex solo usó fallback (precio máximo) → dar más peso a AI
+  //        si ambos coinciden → muy alta confianza, usar regex
   let amount: number | undefined;
-  if (ai.amountConfidence > 0.7 && ai.amount !== undefined) {
-    // High AI confidence: prefer AI unless regex found something different
-    if (regexResult.amount !== undefined && Math.abs(ai.amount - regexResult.amount) > 0.02) {
-      // They disagree — prefer regex (has fuzzy matching, priority system)
-      amount = regexResult.amount;
+  if (regexResult.amount !== undefined && amountFoundViaKeyword) {
+    // Regex encontró keyword explícito — es muy confiable
+    if (ai.amount !== undefined && Math.abs(ai.amount - regexResult.amount) < 0.02) {
+      amount = regexResult.amount; // acuerdo total
+    } else if (ai.amount !== undefined && ai.amountConfidence > 0.85) {
+      // AI muy segura y difiere — usar el que aparece más al fondo del ticket
+      // (el total real siempre está cerca del final)
+      amount = regexResult.amount; // regex keyword sigue ganando en caso de duda
     } else {
-      amount = ai.amount;
+      amount = regexResult.amount;
     }
+  } else if (ai.amount !== undefined && ai.amountConfidence > 0.7) {
+    // AI confiada, regex solo tiene fallback
+    amount = ai.amount;
   } else {
+    // Ambos tienen baja confianza — usar lo que haya
     amount = regexResult.amount ?? ai.amount;
   }
 
-  // Date: prefer AI when confident, else regex
-  const date = ai.dateConfidence > 0.5 && ai.date !== undefined
-    ? ai.date
-    : regexResult.date;
+  // ── Date ──────────────────────────────────────────────────────────────────
+  // Si ambos encontraron fecha y coinciden → muy confiable
+  // Si difieren → preferir regex (tiene más formatos)
+  let date: string | undefined;
+  if (regexResult.date && ai.date) {
+    date = regexResult.date === ai.date ? regexResult.date : regexResult.date;
+  } else {
+    date = regexResult.date ?? (ai.dateConfidence > 0.5 ? ai.date : undefined);
+  }
 
-  // Merchant: regex brand lookup is always superior (uses known brands database)
+  // ── Merchant ──────────────────────────────────────────────────────────────
+  // Regex brand DB gana si encontró algo; AI como fallback
   const merchantName = regexResult.merchantName || ai.merchantName || '';
 
-  // RFC: use whichever finds a valid non-generic RFC
+  // ── RFC ───────────────────────────────────────────────────────────────────
+  // Preferir RFC no-genérico; entre dos no-genéricos, el primero del ticket
   const GENERIC_RFCS = ['XAXX010101000', 'XEXX010101000'];
   let rfcRaw = regexResult.rfc ?? '';
   if (GENERIC_RFCS.includes(rfcRaw) && ai.rfc && !GENERIC_RFCS.includes(ai.rfc)) {
@@ -665,12 +686,16 @@ function postProcess(result: ParsedReceiptData): ParsedReceiptData {
     }
   }
 
-  // Merchant: capitalizar correctamente si está todo en mayúsculas
+  // Merchant: title-case solo si no es una marca conocida (OXXO, WALMART, etc. se quedan igual)
   if (result.merchantName && result.merchantName === result.merchantName.toUpperCase()) {
-    result.merchantName = result.merchantName
-      .toLowerCase()
-      .replace(/(?:^|\s)\S/g, c => c.toUpperCase())
-      .trim();
+    const upper = result.merchantName.toUpperCase();
+    const isKnownBrand = KNOWN_BRANDS.some(b => b.toUpperCase() === upper || upper.includes(b.toUpperCase()));
+    if (!isKnownBrand) {
+      result.merchantName = result.merchantName
+        .toLowerCase()
+        .replace(/(?:^|\s)\S/g, c => c.toUpperCase())
+        .trim();
+    }
   }
 
   return result;
