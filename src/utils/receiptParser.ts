@@ -11,52 +11,74 @@ import { inferDeductibility, isValidMexicanRfc } from './tax';
 const GENERIC_RFCs = ['XAXX010101000', 'XEXX010101000'];
 
 // ── Marcas conocidas de comercios mexicanos ──
-// Se buscan en las primeras 10 líneas del ticket para detectar el comercio
 const KNOWN_BRANDS = [
-  // Tiendas de conveniencia
-  'OXXO', '7-ELEVEN', 'SEVEN ELEVEN', 'CIRCLE K', 'EXTRA',
+  // Conveniencia
+  'OXXO', '7-ELEVEN', 'SEVEN ELEVEN', 'CIRCLE K', 'EXTRA', 'KIOSKO',
   // Supermercados
-  'WALMART', 'WAL MART', 'WAL-MART', 'SORIANA', 'CHEDRAUI', 'HEB', 'H-E-B',
-  'LA COMER', 'CITY MARKET', 'SUPERAMA', 'BODEGA AURRERA', 'COSTCO',
-  "SAM'S CLUB", 'SAMS CLUB', "SAM'S", 'MEGA SORIANA',
+  'WALMART SUPERCENTER', 'WALMART', 'WAL MART', 'WAL-MART',
+  'MI BODEGA AURRERA', 'BODEGA AURRERA', 'AURRERA',
+  'MEGA SORIANA', 'SORIANA', 'CHEDRAUI', 'HEB', 'H-E-B',
+  'LA COMER', 'FRESKO', 'CITY MARKET', 'SUPERAMA', 'COSTCO WHOLESALE', 'COSTCO',
+  "SAM'S CLUB", 'SAMS CLUB', "SAM'S", 'LA EUROPEA',
   // Restaurantes cadena
   'STARBUCKS', 'MCDONALDS', "MCDONALD'S", 'BURGER KING', 'SUBWAY',
-  'DOMINOS', "DOMINO'S", 'LITTLE CAESARS', 'KFC', 'POLLO LOCO',
+  'DOMINOS', "DOMINO'S", 'LITTLE CAESARS', 'KFC', 'POLLO LOCO', 'EL POLLO FELIZ',
   'VIPS', 'SANBORNS', 'TOKS', 'ITALIANNIS', "APPLEBEE'S", 'APPLEBEES',
-  "CHILI'S", 'CHILIS', 'CARL\'S JR', 'CARLS JR',
-  'LA CASA DE TONO', 'EL PORTÓN', 'EL PORTON', 'EL FOGON', 'EL FOGÓN',
-  'WINGS', 'HOOTERS', 'SUSHI',
-  // Cafeterías
-  'EL PENDULO', 'EL PÉNDULO', 'CIELITO QUERIDO', 'PUNTA DEL CIELO',
-  'THE ITALIAN COFFEE', 'CAFE PUNTA',
+  "CHILI'S", 'CHILIS', "CARL'S JR", 'CARLS JR', 'BURGER INN',
+  'LA CASA DE TONO', 'EL TIZONCITO', 'EL PORTÓN', 'EL PORTON',
+  'EL FOGON', 'EL FOGÓN', 'WINGS ARMY', 'HOOTERS',
+  'POTZOLLCALLI', 'EL CARDENAL', 'CONTRAMAR',
+  // Cafés
+  'CIELITO QUERIDO', 'PUNTA DEL CIELO', 'THE ITALIAN COFFEE', 'CAFE PUNTA',
+  'EL PENDULO', 'EL PÉNDULO', 'BUNA CAFE', 'DOSIS CAFE', 'QUENTIN',
   // Farmacias
   'FARMACIA GUADALAJARA', 'FARMACIAS DEL AHORRO', 'FARMACIAS SIMILARES',
-  'FARMACIA SAN PABLO', 'BENAVIDES', 'FARMACIA',
+  'FARMACIA SAN PABLO', 'FARMACIAS CHEDRAUI', 'CRUZ VERDE',
+  'BENAVIDES', 'FARMACIA EXPRESS', 'FARMACIA',
   // Gasolineras
+  'HIDROSINA', 'PETRO 7', 'G500', 'BIOIL', 'ORSAN',
   'PEMEX', 'GASOLINERA', 'OXXO GAS', 'SHELL', 'BP', 'MOBIL', 'GULF',
   // Transporte
   'UBER', 'DIDI', 'CABIFY', 'BEAT', 'INDRIVER',
   // Entretenimiento
-  'CINEPOLIS', 'CINÉPOLIS', 'CINEMEX',
-  // Tiendas departamentales
-  'LIVERPOOL', 'PALACIO DE HIERRO', 'SEARS', 'COPPEL', 'ELEKTRA',
-  'HOME DEPOT', 'OFFICE DEPOT', 'OFFICE MAX',
+  'CINEPOLIS', 'CINÉPOLIS', 'CINEMEX', 'CINETECA',
+  // Departamentales
+  'LIVERPOOL', 'PALACIO DE HIERRO', 'SEARS', 'COPPEL', 'ELEKTRA', 'SUBURBIA',
+  // Hogar y construcción
+  'HOME DEPOT', 'SODIMAC', 'DO IT CENTER', 'CONSTRURAMA', 'TRUPER',
+  // Oficina y tech
+  'OFFICE DEPOT', 'OFFICE MAX', 'BEST BUY', 'RADIOSHACK', 'STEREN',
+  'APPLE STORE', 'ISTORE', 'MIXUP',
+  // Ropa
+  'ZARA', 'H&M', 'PULL AND BEAR', 'BERSHKA', 'STRADIVARIUS', 'C&A', 'ANDREA', 'FLEXI',
+  // Telecom y servicios
+  'TOTALPLAY', 'MEGACABLE', 'IZZI', 'TELMEX', 'TELCEL', 'MOVISTAR',
+  'CFE', 'NATURGY', 'GAS NATURAL',
+  // Bancos
+  'BBVA', 'BANAMEX', 'BANORTE', 'HSBC', 'SANTANDER', 'SCOTIABANK', 'INBURSA', 'BANCO AZTECA',
 ];
 
 // ── Keywords que indican "esta línea es el total" ──
-// Ordenados por prioridad (mayor = más confiable)
 const TOTAL_KEYWORDS: { pattern: RegExp; priority: number; isNot?: RegExp }[] = [
-  { pattern: /total\s*a\s*pagar/i, priority: 20 },
-  { pattern: /gran\s*total/i, priority: 18 },
-  { pattern: /total\s*(?:mxn|mn|pesos)?/i, priority: 15, isNot: /sub\s*total/i },
+  { pattern: /total\s*a\s*pagar/i, priority: 22 },
+  { pattern: /importe\s*a\s*pagar/i, priority: 22 },
+  { pattern: /monto\s*a\s*pagar/i, priority: 22 },
+  { pattern: /a\s*cobrar/i, priority: 20 },
+  { pattern: /gran\s*total/i, priority: 20 },
+  { pattern: /total\s*de\s*la\s*venta/i, priority: 19 },
+  { pattern: /total\s*venta/i, priority: 18 },
+  { pattern: /cargo\s*total/i, priority: 18 },
+  { pattern: /su\s*total/i, priority: 17 },
+  { pattern: /total\s*ticket/i, priority: 17 },
+  { pattern: /total\s*cuenta/i, priority: 17 },
+  { pattern: /neto\s*a?\s*pagar/i, priority: 16 },
+  { pattern: /total\s*(?:mxn|mn|pesos|usd)?/i, priority: 15, isNot: /sub\s*total/i },
   { pattern: /importe\s*(?:total)?/i, priority: 12 },
-  { pattern: /monto\s*(?:total)?/i, priority: 10 },
-  { pattern: /neto\s*a?\s*pagar/i, priority: 14 },
+  { pattern: /monto\s*(?:total|cobrado)?/i, priority: 10 },
 ];
 
 // ── Keywords para excluir al detectar montos ──
-// Estas líneas NO son el total del ticket
-const NOT_TOTAL_KEYWORDS = /cambio|vuelto|efectivo|ef\s*vo|tarjeta|visa|master|debito|credito|propina|pago\s|recibido|aprobado|tc\b|td\b/i;
+const NOT_TOTAL_KEYWORDS = /cambio|vuelto|su\s*cambio|efectivo|ef\s*vo|tarjeta|visa|master|debito|credito|propina|pago\s|recibido|aprobado|tc\b|td\b|entregado|deposito/i;
 
 // ── Líneas que NO son el nombre del comercio ──
 const MERCHANT_SKIP = /^[\s*=\-_#.]+$|^RFC\b|^R\.?F\.?C|^TEL\b|^TELEFONO|^CALLE |^AV\b|^AVE\b|^AVENIDA|^BLVD|^BOULEVARD|^COL\b|^COL\.|^COLONIA|^C\.?P\.?\s*\d|^DOMICILIO|^SUCURSAL|^SUC\b|^TDA\b|^TIENDA\s*\d|^EST\.\s*SERV|^NO\.\s*DE|^FOLIO|^TICKET|^NOTA DE|^FECHA|^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|^\d{4}[/-]\d{2}|^HORA\b|^[\d$.,\s/-]+$/i;
@@ -187,6 +209,15 @@ const MONTHS_ES: Record<string, string> = {
 };
 
 function findDate(rawText: string): string | undefined {
+  // 0) Fecha con hora pegada — extraer solo la fecha: "16/06/2024 14:32:05"
+  const dateTimeMatch = rawText.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})\s+\d{1,2}:\d{2}/);
+  if (dateTimeMatch) {
+    const [, d, m, y] = dateTimeMatch;
+    if (isValidDate(Number(y), Number(m), Number(d))) {
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+  }
+
   // 1) ISO: YYYY-MM-DD o YYYY/MM/DD (ej: "2024-03-15")
   const isoMatch = rawText.match(/(\d{4})[/-](\d{2})[/-](\d{2})/);
   if (isoMatch) {
@@ -249,6 +280,34 @@ function findDate(rawText: string): string | undefined {
     }
   }
 
+  // 5) Formato compacto sin separadores: "15JUN2024", "15JUN24", "15-JUN-24"
+  const allMonthNamesCompact = Object.keys(MONTHS_ES).join('|');
+  const compactMatch = rawText.match(
+    new RegExp(`(\\d{1,2})[\\s-]?(${allMonthNamesCompact})[\\s-]?(\\d{2,4})`, 'i'),
+  );
+  if (compactMatch) {
+    const day = compactMatch[1].padStart(2, '0');
+    const monthKey = compactMatch[2].toLowerCase();
+    const month = MONTHS_ES[monthKey];
+    const year = compactMatch[3].length === 2 ? `20${compactMatch[3]}` : compactMatch[3];
+    if (month && isValidDate(Number(year), Number(month), Number(day))) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  // 6) Etiquetas: "DIA 16 MES 06 ANO 2024" o "DIA:16 MES:06 AÑO:2024"
+  const labeledMatch = rawText.match(
+    /d[ií]a\s*[:=]?\s*(\d{1,2})\s+mes\s*[:=]?\s*(\d{1,2})\s+a[ñn]o\s*[:=]?\s*(\d{2,4})/i,
+  );
+  if (labeledMatch) {
+    const day = labeledMatch[1].padStart(2, '0');
+    const month = labeledMatch[2].padStart(2, '0');
+    const year = labeledMatch[3].length === 2 ? `20${labeledMatch[3]}` : labeledMatch[3];
+    if (isValidDate(Number(year), Number(month), Number(day))) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+
   return undefined;
 }
 
@@ -270,8 +329,8 @@ function findMerchant(rawText: string): string {
     .map(l => l.trim())
     .filter(l => l.length > 1);
 
-  // PASO 1: Buscar marca conocida en las primeras 8 líneas del header
-  const headerSlice = lines.slice(0, 8);
+  // PASO 1: Buscar marca conocida en las primeras 12 líneas del header
+  const headerSlice = lines.slice(0, 12);
 
   // Priorizar marcas más largas primero para evitar que "WALMART" gane sobre "SAM'S CLUB"
   const sortedBrands = [...KNOWN_BRANDS].sort((a, b) => b.length - a.length);
@@ -327,14 +386,24 @@ function findMerchant(rawText: string): string {
 // ═══════════════════════════════════════════
 
 function findRfc(rawText: string): string | undefined {
-  const allMatches = rawText.match(/[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}/gi);
-  if (!allMatches) return undefined;
-
-  // Filtrar genéricos del SAT
-  const filtered = allMatches.filter(
-    rfc => !GENERIC_RFCs.includes(rfc.toUpperCase()),
+  // Normalizar: juntar tokens fragmentados por OCR cerca de etiqueta RFC
+  const normalized = rawText.replace(
+    /\bRFC\s*[:=]?\s*([A-Z&Ñ0-9\s-]{10,20})/gi,
+    (_match, candidate) => `RFC:${candidate.replace(/[\s-]/g, '')}`,
   );
 
+  const allMatches = normalized.match(/[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}/gi) ?? [];
+
+  // Fallback: corregir confusiones OCR comunes en RFCs (O↔0, l/I↔1)
+  if (allMatches.length === 0) {
+    const ocrFixed = rawText
+      .replace(/RFC\s*[:=]?\s*/gi, 'RFC:')
+      .replace(/(?<=RFC:[A-Z&Ñ]{3,4}\d*)O(?=\d)/gi, '0');
+    const fixedMatches = ocrFixed.match(/[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}/gi) ?? [];
+    allMatches.push(...fixedMatches);
+  }
+
+  const filtered = allMatches.filter(rfc => !GENERIC_RFCs.includes(rfc.toUpperCase()));
   const best = filtered[0] ?? allMatches[0];
   return best?.toUpperCase();
 }
@@ -352,7 +421,7 @@ function findUsoCfdi(rawText: string): string | undefined {
 // LINE ITEMS — Productos del ticket
 // ═══════════════════════════════════════════
 
-const SKIP_ITEMS = /^(sub\s*total|total|iva|i\.v\.a\.?|impuesto|cambio|efectivo|ef\s*vo|tarjeta|visa|master|pago|vuelto|propina|descuento|tc\b|td\b|no\.\s*de|folio|caja|cajero|sucursal|tel[eé]?|rfc|domicilio|calle|col\.|c\.p\.|cp\s*\d|gracias|vuelva|aprobado|fecha|hora\b|bomba|litros|precio.l)/i;
+const SKIP_ITEMS = /^(sub\s*total|total|iva|i\.v\.a\.?|impuesto|cambio|efectivo|ef\s*vo|tarjeta|visa|master|pago|vuelto|propina|descuento|tc\b|td\b|no\.\s*de|folio|folio\s*fiscal|uuid|certificado|sello|cadena\s*orig|tipo\s*de\s*comprobante|metodo\s*de\s*pago|forma\s*de\s*pago|regimen\s*fiscal|codigo\s*postal|cp\s*emisor|no\.\s*aprobacion|referencia|num\s*emp|num\s*empleado|turno|caja\s*no|transaccion|caja|cajero|sucursal|tel[eé]?|rfc|domicilio|calle|col\.|c\.p\.|cp\s*\d|gracias|vuelva|aprobado|fecha|hora\b|bomba|litros|precio.l|entregado|recibido)/i;
 
 function findLineItems(rawText: string): ParsedLineItem[] {
   const lines = rawText
@@ -387,13 +456,38 @@ function findLineItems(rawText: string): ParsedLineItem[] {
     const match = normalized.match(
       /^(.+?)\s+\$?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*$/,
     );
-    if (!match) continue;
+    if (match) {
+      const name = match[1].replace(/[\s.]+$/, '').trim();
+      const price = Number(match[2].replace(/,/g, ''));
+      if (name.length >= 2 && !Number.isNaN(price) && price > 0) {
+        items.push({ name, price });
+        continue;
+      }
+    }
 
-    const name = match[1].replace(/[\s.]+$/, '').trim();
-    const price = Number(match[2].replace(/,/g, ''));
+    // Patrón 3: "Producto...........$12.50" (puntos de relleno en tickets impresos)
+    const dotsMatch = normalized.match(
+      /^(.+?)\.{3,}\$?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*$/,
+    );
+    if (dotsMatch) {
+      const name = dotsMatch[1].replace(/[\s.]+$/, '').trim();
+      const price = Number(dotsMatch[2].replace(/,/g, ''));
+      if (name.length >= 2 && !Number.isNaN(price) && price > 0) {
+        items.push({ name, price });
+        continue;
+      }
+    }
 
-    if (name.length >= 2 && !Number.isNaN(price) && price > 0) {
-      items.push({ name, price });
+    // Patrón 4: "$12.50  Producto" (precio al inicio)
+    const priceFirstMatch = normalized.match(
+      /^\$?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s+(.{2,50})\s*$/,
+    );
+    if (priceFirstMatch) {
+      const price = Number(priceFirstMatch[1].replace(/,/g, ''));
+      const name = priceFirstMatch[2].trim();
+      if (name.length >= 2 && !Number.isNaN(price) && price > 0 && !SKIP_ITEMS.test(name)) {
+        items.push({ name, price });
+      }
     }
   }
 
@@ -504,12 +598,41 @@ function mergeResults(ai: AIParseResult, rawText: string): ParsedReceiptData {
 }
 
 // ═══════════════════════════════════════════
+// PRE-PROCESADO — corrige artefactos OCR
+// ═══════════════════════════════════════════
+
+function preprocessOcrText(text: string): string {
+  return text
+    // Fusionar palabras partidas por OCR en keywords clave
+    .replace(/\bTOT\s+AL\b/gi, 'TOTAL')
+    .replace(/\bSUB\s+TOTAL\b/gi, 'SUBTOTAL')
+    .replace(/\bIM\s+PORTE\b/gi, 'IMPORTE')
+    .replace(/\bFE\s+CHA\b/gi, 'FECHA')
+    .replace(/\bF\s+OLIO\b/gi, 'FOLIO')
+    .replace(/\bR\s+FC\b/gi, 'RFC')
+    // O→0 y 0→O solo en contexto claramente numérico (rodeado de dígitos)
+    .replace(/(\d)[Oo](\d)/g, '$10$2')
+    // l/I→1 en contexto numérico
+    .replace(/(\d)[lI](\d)/g, '$11$2')
+    // Eliminar líneas de solo separadores
+    .replace(/^[\s*=\-_#.]{3,}$/gm, '')
+    // Normalizar múltiples espacios en una línea
+    .replace(/[ \t]{2,}/g, ' ')
+    // Quitar líneas en blanco duplicadas
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// ═══════════════════════════════════════════
 // MAIN — Función principal de parsing
 // ═══════════════════════════════════════════
 
 export function parseReceiptText(rawText: string, regime?: FiscalRegime): ParsedReceiptData {
-  const aiResult = parseWithAI(rawText);
-  const result = mergeResults(aiResult, rawText);
+  const processedText = preprocessOcrText(rawText);
+  const aiResult = parseWithAI(processedText);
+  const result = mergeResults(aiResult, processedText);
+  // Preservar el rawText original (sin pre-procesar) para almacenamiento y debug
+  result.rawText = rawText;
   // Re-evaluar deducibilidad con el régimen del usuario si está disponible
   if (regime) {
     result.deductible = inferDeductibility({
