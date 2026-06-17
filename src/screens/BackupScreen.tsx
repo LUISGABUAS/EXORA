@@ -10,7 +10,7 @@ import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatDate } from '../utils/format';
 
-const LAST_EXPORT_KEY = '@expensia_last_export';
+const LAST_EXPORT_KEY = '@exora_last_export';
 
 export function BackupScreen() {
   const { colors, isDark } = useTheme();
@@ -135,7 +135,7 @@ export function BackupScreen() {
           <Text style={s.cardTitle}>Importar backup</Text>
         </View>
         <Text style={s.cardText}>
-          Selecciona un archivo JSON previamente exportado desde Expensia para restaurar tus gastos.
+          Selecciona un archivo JSON previamente exportado desde Exora para restaurar tus gastos.
         </Text>
 
         <View style={s.warningBox}>

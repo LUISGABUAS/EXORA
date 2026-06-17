@@ -37,9 +37,9 @@ describe('featureExtractor', () => {
   // ═══════ extractFeatures ═══════
 
   describe('extractFeatures', () => {
-    it('retorna exactamente 20 features', () => {
+    it('retorna exactamente 28 features', () => {
       const features = extractFeatures('TOTAL $52.78', 5, 20);
-      expect(features).toHaveLength(20);
+      expect(features).toHaveLength(28);
     });
 
     it('todos los valores son números', () => {
@@ -223,7 +223,7 @@ describe('featureExtractor', () => {
       const text = 'Línea 1\nLínea 2\nLínea 3';
       const result = extractAllFeatures(text);
       expect(result).toHaveLength(3);
-      result.forEach(r => expect(r).toHaveLength(20));
+      result.forEach(r => expect(r).toHaveLength(28));
     });
 
     it('LINE_CLASSES tiene 12 clases', () => {

@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Linking, Platform } from 'react-native';
 
-const RATING_COUNT_KEY = '@expensia_expense_count_for_rating';
-const RATING_SHOWN_KEY = '@expensia_rating_shown';
+const RATING_COUNT_KEY = '@exora_expense_count_for_rating';
+const RATING_SHOWN_KEY = '@exora_rating_shown';
 const THRESHOLD = 7;
 
 // IDs de las tiendas (reemplazar cuando se publique la app)
@@ -26,7 +26,7 @@ async function openStore(): Promise<void> {
 
 function showRatingAlert(): void {
   Alert.alert(
-    '¿Te está siendo útil Expensia?',
+    '¿Te está siendo útil Exora?',
     'Nos ayudaría mucho si nos dejas una reseña en la tienda. ¡Solo toma un momento!',
     [
       {

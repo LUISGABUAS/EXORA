@@ -77,8 +77,8 @@ interface PremiumState {
   ) => Promise<'success' | 'already_used' | 'invalid' | 'error'>;
 }
 
-const STORAGE_KEY = '@smartexpense_premium';
-const ONBOARDING_KEY = '@expensia_onboarding_complete';
+const STORAGE_KEY = '@exora_premium';
+const ONBOARDING_KEY = '@exora_onboarding_complete';
 
 function getMonday(date: Date): string {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());

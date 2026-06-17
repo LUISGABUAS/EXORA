@@ -12,17 +12,17 @@ import { useSplitStore } from '../store/useSplitStore';
 import { useTemplateStore } from '../store/useTemplateStore';
 
 const ASYNC_STORAGE_KEYS = [
-  '@smartexpense_premium',
-  '@smartexpense_budgets',
-  '@expensia_custom_categories',
-  '@expensia_currency',
-  '@expensia_templates',
-  '@expensia_recurring',
-  '@expensia_savings_goals',
-  '@expensia_split_expenses',
-  '@expensia_recurring_income',
-  '@expensia_ai_insights_cache',
-  '@expensia_last_rating_request',
+  '@exora_premium',
+  '@exora_budgets',
+  '@exora_custom_categories',
+  '@exora_currency',
+  '@exora_templates',
+  '@exora_recurring',
+  '@exora_savings_goals',
+  '@exora_split_expenses',
+  '@exora_recurring_income',
+  '@exora_ai_insights_cache',
+  '@exora_last_rating_request',
 ];
 
 export async function clearAllUserData(): Promise<void> {
@@ -56,7 +56,7 @@ export async function clearAllUserData(): Promise<void> {
     razonSocial: null,
     constanciaUri: null,
     constanciaUploadDate: null,
-    // onboardingComplete se preserva — hydrate lo restaura desde @expensia_onboarding_complete
+    // onboardingComplete se preserva — hydrate lo restaura desde @exora_onboarding_complete
     avatarUri: null,
     biometricEnabled: false,
     isFounder: false,

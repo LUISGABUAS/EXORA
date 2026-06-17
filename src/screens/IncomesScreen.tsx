@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -13,6 +13,7 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { useDeepLinkStore } from '../store/useDeepLinkStore';
 import { useIncomeStore } from '../store/useIncomeStore';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
@@ -32,7 +33,20 @@ import { formatCurrency, localDateString } from '../utils/format';
 
 const INCOME_TYPES = Object.keys(INCOME_TYPE_LABELS) as IncomeType[];
 const PAYMENT_METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
-const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MONTHS = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+];
 
 function monthPrefix(offset = 0): string {
   const d = new Date();
@@ -63,10 +77,39 @@ export function IncomesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Income | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const amountInputRef = useRef<TextInput>(null);
+
+  const pendingAction = useDeepLinkStore(state => state.pendingAction);
+  const clearPendingAction = useDeepLinkStore(
+    state => state.clearPendingAction,
+  );
+
+  useEffect(() => {
+    if (pendingAction === 'add-income') {
+      setEditing(null);
+      setForm(EMPTY_FORM);
+      setModalVisible(true);
+      clearPendingAction();
+    }
+  }, [pendingAction, clearPendingAction]);
+
+  // Fuerza el foco cuando abre el modal (incluye desde widget)
+  useEffect(() => {
+    if (modalVisible && !editing) {
+      const timer = setTimeout(() => amountInputRef.current?.focus(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [modalVisible, editing]);
 
   const prefix = monthPrefix(monthOffset);
-  const monthDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-  const monthLabel = `${MONTHS[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
+  const monthDate = new Date(
+    now.getFullYear(),
+    now.getMonth() - monthOffset,
+    1,
+  );
+  const monthLabel = `${
+    MONTHS[monthDate.getMonth()]
+  } ${monthDate.getFullYear()}`;
   const isCurrentMonth = monthOffset === 0;
 
   const monthIncomes = useMemo(
@@ -74,9 +117,13 @@ export function IncomesScreen() {
     [incomes, prefix],
   );
 
-  const totalMonth   = monthIncomes.reduce((s, i) => s + i.amount, 0);
-  const invoicedTotal = monthIncomes.filter(i => i.invoiced).reduce((s, i) => s + i.amount, 0);
-  const recurringTotal = monthIncomes.filter(i => i.recurring).reduce((s, i) => s + i.amount, 0);
+  const totalMonth = monthIncomes.reduce((s, i) => s + i.amount, 0);
+  const invoicedTotal = monthIncomes
+    .filter(i => i.invoiced)
+    .reduce((s, i) => s + i.amount, 0);
+  const recurringTotal = monthIncomes
+    .filter(i => i.recurring)
+    .reduce((s, i) => s + i.amount, 0);
 
   const byType = useMemo(() => {
     const map: Partial<Record<IncomeType, number>> = {};
@@ -132,10 +179,16 @@ export function IncomesScreen() {
   const handleDelete = (inc: Income) => {
     Alert.alert(
       'Eliminar ingreso',
-      `¿Eliminar ${formatCurrency(inc.amount)} de ${INCOME_TYPE_LABELS[inc.type]}?`,
+      `¿Eliminar ${formatCurrency(inc.amount)} de ${
+        INCOME_TYPE_LABELS[inc.type]
+      }?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => removeIncome(inc.id) },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => removeIncome(inc.id),
+        },
       ],
     );
   };
@@ -148,7 +201,11 @@ export function IncomesScreen() {
       <ScreenContainer>
         {/* Month selector */}
         <Animated.View entering={FadeIn.duration(300)} style={s.monthRow}>
-          <Pressable onPress={() => setMonthOffset(o => o + 1)} style={s.arrowBtn} hitSlop={10}>
+          <Pressable
+            onPress={() => setMonthOffset(o => o + 1)}
+            style={s.arrowBtn}
+            hitSlop={10}
+          >
             <Icon name="chevron-left" size={24} color={colors.text} />
           </Pressable>
           <Text style={s.monthLabel}>{monthLabel}</Text>
@@ -158,12 +215,19 @@ export function IncomesScreen() {
             disabled={isCurrentMonth}
             hitSlop={10}
           >
-            <Icon name="chevron-right" size={24} color={isCurrentMonth ? colors.border : colors.text} />
+            <Icon
+              name="chevron-right"
+              size={24}
+              color={isCurrentMonth ? colors.border : colors.text}
+            />
           </Pressable>
         </Animated.View>
 
         {/* Summary */}
-        <Animated.View entering={FadeInDown.delay(60).duration(350)} style={s.summaryRow}>
+        <Animated.View
+          entering={FadeInDown.delay(60).duration(350)}
+          style={s.summaryRow}
+        >
           <View style={s.summaryCard}>
             <Icon name="cash-multiple" size={18} color={colors.success} />
             <Text style={s.summaryAmount}>{formatCurrency(totalMonth)}</Text>
@@ -176,24 +240,40 @@ export function IncomesScreen() {
           </View>
           <View style={s.summaryCard}>
             <Icon name="repeat" size={18} color="#8B5CF6" />
-            <Text style={s.summaryAmount}>{formatCurrency(recurringTotal)}</Text>
+            <Text style={s.summaryAmount}>
+              {formatCurrency(recurringTotal)}
+            </Text>
             <Text style={s.summaryLabel}>Recurrente</Text>
           </View>
         </Animated.View>
 
         {/* Breakdown */}
         {Object.entries(byType).length > 0 ? (
-          <Animated.View entering={FadeInDown.delay(100).duration(350)} style={s.card}>
+          <Animated.View
+            entering={FadeInDown.delay(100).duration(350)}
+            style={s.card}
+          >
             <Text style={s.cardTitle}>Por tipo</Text>
-            {(Object.entries(byType) as [IncomeType, number][]).map(([t, amt]) => (
-              <View key={t} style={s.breakdownRow}>
-                <View style={[s.typeIcon, { backgroundColor: INCOME_TYPE_COLORS[t] + '18' }]}>
-                  <Icon name={INCOME_TYPE_ICONS[t]} size={16} color={INCOME_TYPE_COLORS[t]} />
+            {(Object.entries(byType) as [IncomeType, number][]).map(
+              ([t, amt]) => (
+                <View key={t} style={s.breakdownRow}>
+                  <View
+                    style={[
+                      s.typeIcon,
+                      { backgroundColor: INCOME_TYPE_COLORS[t] + '18' },
+                    ]}
+                  >
+                    <Icon
+                      name={INCOME_TYPE_ICONS[t]}
+                      size={16}
+                      color={INCOME_TYPE_COLORS[t]}
+                    />
+                  </View>
+                  <Text style={s.breakdownLabel}>{INCOME_TYPE_LABELS[t]}</Text>
+                  <Text style={s.breakdownAmount}>{formatCurrency(amt)}</Text>
                 </View>
-                <Text style={s.breakdownLabel}>{INCOME_TYPE_LABELS[t]}</Text>
-                <Text style={s.breakdownAmount}>{formatCurrency(amt)}</Text>
-              </View>
-            ))}
+              ),
+            )}
           </Animated.View>
         ) : null}
 
@@ -209,44 +289,97 @@ export function IncomesScreen() {
           ) : (
             <View style={s.card}>
               {monthIncomes.map((inc, idx) => (
-                <View key={inc.id} style={[s.listRow, idx < monthIncomes.length - 1 && s.listBorder]}>
+                <View
+                  key={inc.id}
+                  style={[
+                    s.listRow,
+                    idx < monthIncomes.length - 1 && s.listBorder,
+                  ]}
+                >
                   {/* Icon */}
-                  <View style={[s.typeIcon, { backgroundColor: INCOME_TYPE_COLORS[inc.type] + '18' }]}>
-                    <Icon name={INCOME_TYPE_ICONS[inc.type]} size={18} color={INCOME_TYPE_COLORS[inc.type]} />
+                  <View
+                    style={[
+                      s.typeIcon,
+                      { backgroundColor: INCOME_TYPE_COLORS[inc.type] + '18' },
+                    ]}
+                  >
+                    <Icon
+                      name={INCOME_TYPE_ICONS[inc.type]}
+                      size={18}
+                      color={INCOME_TYPE_COLORS[inc.type]}
+                    />
                   </View>
 
                   {/* Info */}
                   <Pressable style={s.listInfo} onPress={() => openEdit(inc)}>
                     <View style={s.listInfoTop}>
-                      <Text style={s.listType}>{INCOME_TYPE_LABELS[inc.type]}</Text>
-                      <Text style={[s.listAmount, { color: INCOME_TYPE_COLORS[inc.type] }]}>
+                      <Text style={s.listType}>
+                        {INCOME_TYPE_LABELS[inc.type]}
+                      </Text>
+                      <Text
+                        style={[
+                          s.listAmount,
+                          { color: INCOME_TYPE_COLORS[inc.type] },
+                        ]}
+                      >
                         +{formatCurrency(inc.amount)}
                       </Text>
                     </View>
                     <View style={s.listBadges}>
-                      <Text style={s.listMeta}>{inc.date.slice(5).replace('-', '/')}</Text>
+                      <Text style={s.listMeta}>
+                        {inc.date.slice(5).replace('-', '/')}
+                      </Text>
                       {inc.recurring ? (
                         <View style={s.badge}>
                           <Icon name="repeat" size={10} color="#8B5CF6" />
-                          <Text style={[s.badgeText, { color: '#8B5CF6' }]}>Recurrente</Text>
+                          <Text style={[s.badgeText, { color: '#8B5CF6' }]}>
+                            Recurrente
+                          </Text>
                         </View>
                       ) : null}
                       {inc.invoiced ? (
-                        <View style={[s.badge, { backgroundColor: colors.primary + '15' }]}>
-                          <Icon name="file-sign" size={10} color={colors.primary} />
-                          <Text style={[s.badgeText, { color: colors.primary }]}>Facturado</Text>
+                        <View
+                          style={[
+                            s.badge,
+                            { backgroundColor: colors.primary + '15' },
+                          ]}
+                        >
+                          <Icon
+                            name="file-sign"
+                            size={10}
+                            color={colors.primary}
+                          />
+                          <Text
+                            style={[s.badgeText, { color: colors.primary }]}
+                          >
+                            Facturado
+                          </Text>
                         </View>
                       ) : null}
                       <View style={s.badge}>
-                        <Icon name={PAYMENT_METHOD_ICONS[inc.paymentMethod]} size={10} color={colors.textMuted} />
-                        <Text style={s.badgeText}>{PAYMENT_METHOD_LABELS[inc.paymentMethod]}</Text>
+                        <Icon
+                          name={PAYMENT_METHOD_ICONS[inc.paymentMethod]}
+                          size={10}
+                          color={colors.textMuted}
+                        />
+                        <Text style={s.badgeText}>
+                          {PAYMENT_METHOD_LABELS[inc.paymentMethod]}
+                        </Text>
                       </View>
                     </View>
                   </Pressable>
 
                   {/* Delete */}
-                  <Pressable style={s.deleteBtn} onPress={() => handleDelete(inc)} hitSlop={8}>
-                    <Icon name="trash-can-outline" size={18} color={colors.danger} />
+                  <Pressable
+                    style={s.deleteBtn}
+                    onPress={() => handleDelete(inc)}
+                    hitSlop={8}
+                  >
+                    <Icon
+                      name="trash-can-outline"
+                      size={18}
+                      color={colors.danger}
+                    />
                   </Pressable>
                 </View>
               ))}
@@ -272,17 +405,22 @@ export function IncomesScreen() {
       >
         <View style={s.modal}>
           <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>{editing ? 'Editar ingreso' : 'Nuevo ingreso'}</Text>
+            <Text style={s.modalTitle}>
+              {editing ? 'Editar ingreso' : 'Nuevo ingreso'}
+            </Text>
             <Pressable onPress={() => setModalVisible(false)} hitSlop={12}>
               <Icon name="close" size={22} color={colors.textMuted} />
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={s.modalScroll} keyboardShouldPersistTaps="handled">
-
+          <ScrollView
+            contentContainerStyle={s.modalScroll}
+            keyboardShouldPersistTaps="handled"
+          >
             {/* Amount */}
             <Text style={s.fieldLabel}>Monto (MXN)</Text>
             <TextInput
+              ref={amountInputRef}
               style={s.input}
               keyboardType="decimal-pad"
               placeholder="0.00"
@@ -310,12 +448,21 @@ export function IncomesScreen() {
                   key={t}
                   style={[
                     s.chip,
-                    form.type === t && { backgroundColor: INCOME_TYPE_COLORS[t], borderColor: INCOME_TYPE_COLORS[t] },
+                    form.type === t && {
+                      backgroundColor: INCOME_TYPE_COLORS[t],
+                      borderColor: INCOME_TYPE_COLORS[t],
+                    },
                   ]}
                   onPress={() => set('type', t)}
                 >
-                  <Icon name={INCOME_TYPE_ICONS[t]} size={14} color={form.type === t ? '#fff' : colors.text} />
-                  <Text style={[s.chipText, form.type === t && { color: '#fff' }]}>
+                  <Icon
+                    name={INCOME_TYPE_ICONS[t]}
+                    size={14}
+                    color={form.type === t ? '#fff' : colors.text}
+                  />
+                  <Text
+                    style={[s.chipText, form.type === t && { color: '#fff' }]}
+                  >
                     {INCOME_TYPE_LABELS[t]}
                   </Text>
                 </Pressable>
@@ -328,7 +475,10 @@ export function IncomesScreen() {
               {PAYMENT_METHODS.map(m => (
                 <Pressable
                   key={m}
-                  style={[s.paymentChip, form.paymentMethod === m && s.paymentChipActive]}
+                  style={[
+                    s.paymentChip,
+                    form.paymentMethod === m && s.paymentChipActive,
+                  ]}
                   onPress={() => set('paymentMethod', m)}
                 >
                   <Icon
@@ -336,7 +486,12 @@ export function IncomesScreen() {
                     size={16}
                     color={form.paymentMethod === m ? '#fff' : colors.text}
                   />
-                  <Text style={[s.paymentChipText, form.paymentMethod === m && { color: '#fff' }]}>
+                  <Text
+                    style={[
+                      s.paymentChipText,
+                      form.paymentMethod === m && { color: '#fff' },
+                    ]}
+                  >
                     {PAYMENT_METHOD_LABELS[m]}
                   </Text>
                 </Pressable>
@@ -356,8 +511,12 @@ export function IncomesScreen() {
             {/* Recurring */}
             <View style={s.switchRow}>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={s.fieldLabel}>¿Es un ingreso fijo/recurrente?</Text>
-                <Text style={s.switchDesc}>Salario mensual, renta cobrada, suscripción</Text>
+                <Text style={s.fieldLabel}>
+                  ¿Es un ingreso fijo/recurrente?
+                </Text>
+                <Text style={s.switchDesc}>
+                  Salario mensual, renta cobrada, suscripción
+                </Text>
               </View>
               <Switch
                 value={form.recurring}
@@ -380,12 +539,24 @@ export function IncomesScreen() {
             </View>
 
             <Pressable style={s.saveBtn} onPress={handleSave}>
-              <Text style={s.saveBtnText}>{editing ? 'Guardar cambios' : 'Registrar ingreso'}</Text>
+              <Text style={s.saveBtnText}>
+                {editing ? 'Guardar cambios' : 'Registrar ingreso'}
+              </Text>
             </Pressable>
 
             {editing ? (
-              <Pressable style={s.deleteFullBtn} onPress={() => { setModalVisible(false); handleDelete(editing); }}>
-                <Icon name="trash-can-outline" size={18} color={colors.danger} />
+              <Pressable
+                style={s.deleteFullBtn}
+                onPress={() => {
+                  setModalVisible(false);
+                  handleDelete(editing);
+                }}
+              >
+                <Icon
+                  name="trash-can-outline"
+                  size={18}
+                  color={colors.danger}
+                />
                 <Text style={s.deleteFullBtnText}>Eliminar ingreso</Text>
               </Pressable>
             ) : null}
@@ -416,7 +587,11 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     arrowBtn: { padding: 8 },
     arrowDisabled: { opacity: 0.3 },
-    monthLabel: { color: colors.text, fontSize: 18, fontFamily: font.extrabold },
+    monthLabel: {
+      color: colors.text,
+      fontSize: 18,
+      fontFamily: font.extrabold,
+    },
 
     summaryRow: { flexDirection: 'row', gap: 10 },
     summaryCard: {
@@ -431,8 +606,17 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       shadowRadius: 6,
       elevation: 2,
     },
-    summaryAmount: { color: colors.text, fontSize: 15, fontFamily: font.extrabold, letterSpacing: -0.3 },
-    summaryLabel: { color: colors.textMuted, fontSize: 11, fontFamily: font.medium },
+    summaryAmount: {
+      color: colors.text,
+      fontSize: 15,
+      fontFamily: font.extrabold,
+      letterSpacing: -0.3,
+    },
+    summaryLabel: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontFamily: font.medium,
+    },
 
     card: {
       backgroundColor: colors.surface,
@@ -450,13 +634,32 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     sectionTitle: { color: colors.text, fontSize: 16, fontFamily: font.bold },
 
     breakdownRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    typeIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-    breakdownLabel: { flex: 1, color: colors.text, fontSize: 13, fontFamily: font.medium },
-    breakdownAmount: { color: colors.text, fontSize: 14, fontFamily: font.bold },
+    typeIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    breakdownLabel: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 13,
+      fontFamily: font.medium,
+    },
+    breakdownAmount: {
+      color: colors.text,
+      fontSize: 14,
+      fontFamily: font.bold,
+    },
 
     empty: { alignItems: 'center', gap: 8, paddingVertical: 48 },
     emptyTitle: { color: colors.text, fontSize: 16, fontFamily: font.semibold },
-    emptyDesc: { color: colors.textMuted, fontSize: 13, fontFamily: font.regular },
+    emptyDesc: {
+      color: colors.textMuted,
+      fontSize: 13,
+      fontFamily: font.regular,
+    },
 
     listRow: {
       flexDirection: 'row',
@@ -466,11 +669,30 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     listBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
     listInfo: { flex: 1, gap: 4 },
-    listInfoTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    listType: { color: colors.text, fontSize: 14, fontFamily: font.semibold, flex: 1, marginRight: 8 },
+    listInfoTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    listType: {
+      color: colors.text,
+      fontSize: 14,
+      fontFamily: font.semibold,
+      flex: 1,
+      marginRight: 8,
+    },
     listAmount: { fontSize: 15, fontFamily: font.bold },
-    listBadges: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-    listMeta: { color: colors.textMuted, fontSize: 12, fontFamily: font.regular },
+    listBadges: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    listMeta: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.regular,
+    },
     badge: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -480,7 +702,11 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       paddingVertical: 2,
       borderRadius: 6,
     },
-    badgeText: { color: colors.textMuted, fontSize: 10, fontFamily: font.semibold },
+    badgeText: {
+      color: colors.textMuted,
+      fontSize: 10,
+      fontFamily: font.semibold,
+    },
     deleteBtn: {
       width: 36,
       height: 36,
@@ -520,7 +746,13 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     modalTitle: { color: colors.text, fontSize: 18, fontFamily: font.bold },
     modalScroll: { padding: 20, paddingBottom: 48 },
 
-    fieldLabel: { color: colors.text, fontSize: 13, fontFamily: font.semibold, marginBottom: 8, marginTop: 16 },
+    fieldLabel: {
+      color: colors.text,
+      fontSize: 13,
+      fontFamily: font.semibold,
+      marginBottom: 8,
+      marginTop: 16,
+    },
     input: {
       backgroundColor: colors.surface,
       borderRadius: 14,
@@ -559,8 +791,15 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderColor: colors.border,
       backgroundColor: colors.surfaceAlt,
     },
-    paymentChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    paymentChipText: { color: colors.text, fontSize: 13, fontFamily: font.medium },
+    paymentChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    paymentChipText: {
+      color: colors.text,
+      fontSize: 13,
+      fontFamily: font.medium,
+    },
 
     switchRow: {
       flexDirection: 'row',
@@ -568,7 +807,11 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       gap: 12,
       marginTop: 16,
     },
-    switchDesc: { color: colors.textMuted, fontSize: 12, fontFamily: font.regular },
+    switchDesc: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.regular,
+    },
 
     saveBtn: {
       backgroundColor: colors.primary,
@@ -594,5 +837,9 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderRadius: 16,
       backgroundColor: colors.danger + '12',
     },
-    deleteFullBtnText: { color: colors.danger, fontSize: 15, fontFamily: font.semibold },
+    deleteFullBtnText: {
+      color: colors.danger,
+      fontSize: 15,
+      fontFamily: font.semibold,
+    },
   });

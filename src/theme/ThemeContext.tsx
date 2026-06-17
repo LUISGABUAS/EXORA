@@ -6,7 +6,7 @@ import { darkColors } from './darkColors';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = '@smartexpense_theme';
+const STORAGE_KEY = '@exora_theme';
 
 interface ThemeContextValue {
   colors: ColorPalette;

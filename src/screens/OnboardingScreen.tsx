@@ -94,7 +94,7 @@ function getRecommendations(regime: FiscalRegime | null, ageRange: string, goals
   if (regime === 'no_facturo') base.push('Llevar control de gastos te ayuda a identificar en qué gastas más y ahorrar.');
 
   // Goal-based recommendations
-  if (goals.includes('ahorrar_mas')) base.push('Activa metas de ahorro en EXPENSIA y sigue tu progreso semana a semana.');
+  if (goals.includes('ahorrar_mas')) base.push('Activa metas de ahorro en EXORA y sigue tu progreso semana a semana.');
   if (goals.includes('maximizar_deducciones')) base.push('Escanea cada ticket. Cada comprobante cuenta para reducir lo que pagas al SAT.');
   if (goals.includes('reducir_gastos_hormiga')) base.push('Usa los presupuestos por categoría — el Asesor IA te avisa cuando te pasas.');
   if (goals.includes('pagar_menos_impuestos')) base.push('El Asesor IA calcula cuánto puedes deducir cada mes para que pagues menos.');
@@ -103,7 +103,7 @@ function getRecommendations(regime: FiscalRegime | null, ageRange: string, goals
   if (goals.includes('meta_especifica')) base.push('Las metas de ahorro te muestran el avance y te motivan a llegar al objetivo.');
 
   if (ageRange === '18 – 24') base.push('Empieza desde joven. Cada peso ahorrado ahora vale más en el futuro.');
-  if (ageRange === '25 – 34') base.push('Es el mejor momento para configurar metas de ahorro. Úsalas en EXPENSIA.');
+  if (ageRange === '25 – 34') base.push('Es el mejor momento para configurar metas de ahorro. Úsalas en EXORA.');
   if (ageRange === '35 – 44') base.push('Con ingresos más altos, las deducciones se vuelven más valiosas. No las ignores.');
   if (ageRange === '45 – 54' || ageRange === '55+') base.push('Considera registrar también seguros y planes de retiro como deducciones.');
 
@@ -305,7 +305,7 @@ function WelcomeSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onN
     <Animated.View entering={FadeIn.duration(500)} style={s.slide}>
       <View style={s.welcomeHero}>
         <Image source={require('../assets/logo_new.png')} style={s.logoImage} resizeMode="contain" />
-        <Text style={s.appName}>EXPENSIA</Text>
+        <Text style={s.appName}>EXORA</Text>
         <Text style={s.tagline}>Tu contador inteligente{'\n'}en el bolsillo</Text>
       </View>
       <View style={s.welcomeBullets}>
@@ -559,7 +559,7 @@ function RecommendationsSlide({ colors, s, regime, ageRange, goals, name, onNext
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
       <Text style={s.slideTitle}>Perfecto, {firstName} 👋</Text>
-      <Text style={s.slideSubtitle}>Basado en tu perfil, esto es lo que EXPENSIA puede hacer por ti</Text>
+      <Text style={s.slideSubtitle}>Basado en tu perfil, esto es lo que EXORA puede hacer por ti</Text>
 
       {isTaxPayer && (
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={s.savingsHero}>
@@ -609,14 +609,14 @@ function WidgetSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onNe
   const iosSteps = [
     'Mantén presionada la pantalla de inicio hasta que los íconos tiemblen',
     'Toca el botón "+" en la esquina superior izquierda',
-    'Busca "EXPENSIA" en la lista',
+    'Busca "EXORA" en la lista',
     'Elige el tamaño de widget que prefieras y toca "Agregar widget"',
   ];
 
   const androidSteps = [
     'Mantén presionada la pantalla de inicio',
     'Toca "Widgets" en el menú que aparece',
-    'Busca "EXPENSIA" en la lista de widgets',
+    'Busca "EXORA" en la lista de widgets',
     'Mantén presionado el widget y arrástralo a la pantalla de inicio',
   ];
 
@@ -635,7 +635,7 @@ function WidgetSlide({ colors, s, onNext }: { colors: ColorPalette; s: any; onNe
       {/* Widget preview mockup */}
       <View style={s.widgetPreview}>
         <View style={s.widgetHeader}>
-          <Text style={s.widgetLogo}>◆ EXPENSIA</Text>
+          <Text style={s.widgetLogo}>◆ EXORA</Text>
           <Text style={s.widgetMonth}>Junio</Text>
         </View>
         <Text style={s.widgetAmount}>$0.00</Text>
@@ -733,7 +733,7 @@ function ReadySlide({ colors, s, name, regime, onFinish }: { colors: ColorPalett
       </Animated.View>
       <Animated.View entering={FadeInDown.delay(500).duration(400)} style={{ width: '100%' }}>
         <Pressable style={s.primaryButton} onPress={onFinish}>
-          <Text style={s.primaryButtonText}>Ir a EXPENSIA</Text>
+          <Text style={s.primaryButtonText}>Ir a EXORA</Text>
           <Icon name="rocket-launch-outline" size={20} color="#fff" />
         </Pressable>
       </Animated.View>

@@ -17,13 +17,13 @@ export async function exportBackup(): Promise<void> {
     expenses,
   };
   const json = JSON.stringify(data, null, 2);
-  const path = `${RNFS.DocumentDirectoryPath}/expensia_backup_${Date.now()}.json`;
+  const path = `${RNFS.DocumentDirectoryPath}/exora_backup_${Date.now()}.json`;
   await RNFS.writeFile(path, json, 'utf8');
   await Share.open({
     url: `file://${path}`,
     type: 'application/json',
-    filename: `expensia_backup_${new Date().toISOString().slice(0, 10)}.json`,
-    title: 'Exportar backup Expensia',
+    filename: `exora_backup_${new Date().toISOString().slice(0, 10)}.json`,
+    title: 'Exportar backup Exora',
   });
 }
 
@@ -58,7 +58,7 @@ export async function importBackup(): Promise<{ imported: number; errors: number
   }
 
   if (data.version !== 1 || !Array.isArray(data.expenses)) {
-    throw new Error('El archivo no parece un backup válido de Expensia.');
+    throw new Error('El archivo no parece un backup válido de Exora.');
   }
 
   let imported = 0;

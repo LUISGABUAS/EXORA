@@ -1,15 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { PurchasesPackage } from 'react-native-purchases';
-import { getOfferings, purchasePackage, restorePurchases } from '../services/revenuecatService';
+import {
+  getOfferings,
+  purchasePackage,
+  restorePurchases,
+} from '../services/revenuecatService';
+import { track } from '../services/analyticsService';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 
-type PaywallTrigger = 'ocr_limit' | 'history' | 'fiscal_report' | 'export' | 'tax_detail';
+type PaywallTrigger =
+  | 'ocr_limit'
+  | 'history'
+  | 'fiscal_report'
+  | 'export'
+  | 'tax_detail';
 
 interface Props {
   visible: boolean;
@@ -18,12 +37,12 @@ interface Props {
 }
 
 const BENEFITS = [
-  { icon: 'camera-iris',       text: 'Escaneos de tickets ilimitados' },
-  { icon: 'bank-transfer-in',  text: 'Importar estados de cuenta' },
-  { icon: 'file-chart-outline',text: 'Reporte fiscal en PDF y CSV' },
+  { icon: 'camera-iris', text: 'Escaneos de tickets ilimitados' },
+  { icon: 'bank-transfer-in', text: 'Importar estados de cuenta' },
+  { icon: 'file-chart-outline', text: 'Reporte fiscal en PDF y CSV' },
   { icon: 'shield-check-outline', text: 'Detecta deducciones al escanear' },
   { icon: 'lightbulb-on-outline', text: 'Todos los insights personalizados' },
-  { icon: 'cloud-sync-outline',text: 'Sync en la nube ilimitado' },
+  { icon: 'cloud-sync-outline', text: 'Sync en la nube ilimitado' },
 ];
 
 interface PackageInfo {
@@ -39,14 +58,28 @@ export function PaywallModal({ visible, onClose }: Props) {
   const s = useStyles(colors, isDark);
   const setPlan = usePremiumStore(state => state.setPlan);
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
+  const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
+
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(
+        0,
+        Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000),
+      )
+    : 0;
+  const isInTrial = trialDaysLeft > 0;
 
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [packages, setPackages] = useState<PackageInfo[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>(
+    'yearly',
+  );
 
   useEffect(() => {
-    if (visible) loadOfferings();
+    if (visible) {
+      loadOfferings();
+      track('paywall_viewed');
+    }
   }, [visible]);
 
   const loadOfferings = async () => {
@@ -66,7 +99,8 @@ export function PaywallModal({ visible, onClose }: Props) {
         });
         setPackages(pkgs);
       }
-    } catch { } finally {
+    } catch {
+    } finally {
       setLoading(false);
     }
   };
@@ -75,7 +109,10 @@ export function PaywallModal({ visible, onClose }: Props) {
     const isYearly = selectedPlan === 'yearly';
     const pkg = packages.find(p => p.isAnnual === isYearly) ?? packages[0];
     if (!pkg) {
-      Alert.alert('Próximamente', 'Las suscripciones estarán disponibles pronto.');
+      Alert.alert(
+        'Próximamente',
+        'Las suscripciones estarán disponibles pronto.',
+      );
       return;
     }
     setPurchasing(true);
@@ -83,7 +120,10 @@ export function PaywallModal({ visible, onClose }: Props) {
       const success = await purchasePackage(pkg.pkg);
       if (success) {
         await syncWithRevenueCat();
-        Alert.alert('¡Bienvenido a Pro!', 'Tu suscripción se activó correctamente.');
+        Alert.alert(
+          '¡Bienvenido a Pro!',
+          'Tu suscripción se activó correctamente.',
+        );
         onClose();
       }
     } catch {
@@ -99,7 +139,10 @@ export function PaywallModal({ visible, onClose }: Props) {
       const success = await restorePurchases();
       if (success) {
         await syncWithRevenueCat();
-        Alert.alert('Compra restaurada', 'Tu suscripción Pro se restauró correctamente.');
+        Alert.alert(
+          'Compra restaurada',
+          'Tu suscripción Pro se restauró correctamente.',
+        );
         onClose();
       } else {
         Alert.alert('Sin compras', 'No se encontraron compras anteriores.');
@@ -111,9 +154,9 @@ export function PaywallModal({ visible, onClose }: Props) {
     }
   };
 
-  const yearlyPkg  = packages.find(p => p.isAnnual);
+  const yearlyPkg = packages.find(p => p.isAnnual);
   const monthlyPkg = packages.find(p => !p.isAnnual);
-  const yearlyPrice  = yearlyPkg?.price  ?? '$599 MXN';
+  const yearlyPrice = yearlyPkg?.price ?? '$599 MXN';
   const monthlyPrice = monthlyPkg?.price ?? '$79 MXN';
 
   return (
@@ -128,23 +171,53 @@ export function PaywallModal({ visible, onClose }: Props) {
           <Icon name="close" size={20} color={colors.textMuted} />
         </Pressable>
 
-        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={s.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Trial banner */}
+          {isInTrial && (
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              style={s.trialBanner}
+            >
+              <Icon name="clock-outline" size={16} color={colors.warning} />
+              <Text style={s.trialBannerText}>
+                {trialDaysLeft === 1
+                  ? 'Tu prueba gratuita termina mañana'
+                  : `Te quedan ${trialDaysLeft} días de prueba gratuita`}
+              </Text>
+            </Animated.View>
+          )}
 
           {/* Hero */}
           <Animated.View entering={FadeIn.duration(400)} style={s.hero}>
             <View style={s.heroIconWrap}>
-              <Icon name="shield-crown-outline" size={44} color={colors.primary} />
+              <Icon
+                name="shield-crown-outline"
+                size={44}
+                color={colors.primary}
+              />
             </View>
-            <Text style={s.heroTitle}>EXPENSIA Pro</Text>
+            <Text style={s.heroTitle}>EXORA Pro</Text>
             <Text style={s.heroSub}>
               Paga menos impuestos.{'\n'}Lleva tus finanzas en serio.
             </Text>
           </Animated.View>
 
           {/* Benefits */}
-          <Animated.View entering={FadeInDown.delay(100).duration(350)} style={s.benefitsCard}>
+          <Animated.View
+            entering={FadeInDown.delay(100).duration(350)}
+            style={s.benefitsCard}
+          >
             {BENEFITS.map((b, i) => (
-              <View key={b.icon} style={[s.benefitRow, i < BENEFITS.length - 1 && s.benefitBorder]}>
+              <View
+                key={b.icon}
+                style={[
+                  s.benefitRow,
+                  i < BENEFITS.length - 1 && s.benefitBorder,
+                ]}
+              >
                 <View style={s.benefitIconWrap}>
                   <Icon name={b.icon} size={18} color={colors.primary} />
                 </View>
@@ -155,17 +228,28 @@ export function PaywallModal({ visible, onClose }: Props) {
           </Animated.View>
 
           {/* Plan selector */}
-          <Animated.View entering={FadeInDown.delay(200).duration(350)} style={s.plans}>
+          <Animated.View
+            entering={FadeInDown.delay(200).duration(350)}
+            style={s.plans}
+          >
             {/* Anual */}
             <Pressable
-              style={[s.planCard, selectedPlan === 'yearly' && s.planCardSelected]}
+              style={[
+                s.planCard,
+                selectedPlan === 'yearly' && s.planCardSelected,
+              ]}
               onPress={() => setSelectedPlan('yearly')}
             >
               <View style={s.planTop}>
                 <View style={s.popularBadge}>
                   <Text style={s.popularText}>MEJOR PRECIO</Text>
                 </View>
-                <View style={[s.radio, selectedPlan === 'yearly' && s.radioSelected]}>
+                <View
+                  style={[
+                    s.radio,
+                    selectedPlan === 'yearly' && s.radioSelected,
+                  ]}
+                >
                   {selectedPlan === 'yearly' && <View style={s.radioDot} />}
                 </View>
               </View>
@@ -176,11 +260,19 @@ export function PaywallModal({ visible, onClose }: Props) {
 
             {/* Mensual */}
             <Pressable
-              style={[s.planCard, selectedPlan === 'monthly' && s.planCardSelected]}
+              style={[
+                s.planCard,
+                selectedPlan === 'monthly' && s.planCardSelected,
+              ]}
               onPress={() => setSelectedPlan('monthly')}
             >
               <View style={s.planTop}>
-                <View style={[s.radio, selectedPlan === 'monthly' && s.radioSelected]}>
+                <View
+                  style={[
+                    s.radio,
+                    selectedPlan === 'monthly' && s.radioSelected,
+                  ]}
+                >
                   {selectedPlan === 'monthly' && <View style={s.radioDot} />}
                 </View>
               </View>
@@ -201,7 +293,8 @@ export function PaywallModal({ visible, onClose }: Props) {
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={s.ctaText}>
-                  Suscribirme {selectedPlan === 'yearly' ? '· Anual' : '· Mensual'}
+                  Suscribirme{' '}
+                  {selectedPlan === 'yearly' ? '· Anual' : '· Mensual'}
                 </Text>
               )}
             </Pressable>
@@ -211,10 +304,13 @@ export function PaywallModal({ visible, onClose }: Props) {
             </Text>
           </Animated.View>
 
-          <Pressable style={s.restoreBtn} onPress={handleRestore} disabled={purchasing}>
+          <Pressable
+            style={s.restoreBtn}
+            onPress={handleRestore}
+            disabled={purchasing}
+          >
             <Text style={s.restoreText}>Restaurar compra</Text>
           </Pressable>
-
         </ScrollView>
       </View>
     </Modal>
@@ -244,6 +340,24 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       paddingTop: 56,
       paddingBottom: 48,
       gap: 20,
+    },
+
+    trialBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.warning + '18',
+      borderWidth: 1,
+      borderColor: colors.warning + '40',
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    trialBannerText: {
+      color: colors.warning,
+      fontSize: 13,
+      fontFamily: font.semibold,
+      flex: 1,
     },
 
     // Hero

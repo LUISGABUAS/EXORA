@@ -9,16 +9,34 @@ export interface CustomCategory {
 }
 
 export const DEFAULT_ICONS = [
-  'car-outline',
-  'home-outline',
-  'dumbbell',
-  'shopping-outline',
-  'airplane',
-  'gift-outline',
-  'dog',
-  'baby-carriage',
-  'tools',
-  'palette',
+  // Hogar y vida
+  'home-outline', 'sofa-outline', 'lightbulb-outline', 'water-outline', 'wifi', 'television',
+  // Transporte
+  'car-outline', 'airplane', 'bus', 'bicycle', 'motorbike', 'train',
+  // Salud y fitness
+  'dumbbell', 'heart-outline', 'pill', 'meditation', 'yoga', 'run',
+  // Comida y bebida
+  'food-fork-drink', 'coffee-outline', 'beer-outline', 'pizza', 'hamburger', 'fruit-watermelon',
+  // Entretenimiento
+  'gamepad-variant-outline', 'music-note', 'movie-open-outline', 'book-open-outline', 'controller-classic-outline', 'guitar-acoustic',
+  // Mascotas
+  'dog', 'cat', 'paw',
+  // Familia
+  'baby-carriage', 'human-male-female', 'human-child',
+  // Trabajo y educación
+  'briefcase-outline', 'school-outline', 'laptop', 'pencil-outline', 'calculator', 'chart-line',
+  // Compras
+  'shopping-outline', 'shopping-cart-outline', 'tag-outline', 'hanger',
+  // Servicios
+  'tools', 'wrench-outline', 'hammer-wrench', 'phone-outline', 'printer-outline',
+  // Arte y hobbies
+  'palette', 'camera-outline', 'flower-outline', 'cards-playing-outline', 'dice-multiple-outline',
+  // Finanzas
+  'bank-outline', 'cash-multiple', 'credit-card-outline', 'piggy-bank-outline', 'currency-usd',
+  // Viajes
+  'map-marker-outline', 'beach', 'camping', 'passport', 'suitcase-outline',
+  // Otros
+  'gift-outline', 'star-outline', 'fire', 'leaf-outline', 'recycle', 'earth',
 ];
 
 export const DEFAULT_COLORS = [
@@ -32,7 +50,7 @@ export const DEFAULT_COLORS = [
   '#F97316',
 ];
 
-const STORAGE_KEY = '@expensia_custom_categories';
+const STORAGE_KEY = '@exora_custom_categories';
 
 interface CustomCategoryState {
   categories: CustomCategory[];

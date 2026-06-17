@@ -42,7 +42,7 @@ import { ThemeMode, useTheme } from '../theme/ThemeContext';
 import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
 import { localDateString } from '../utils/format';
 
-const REMINDER_KEY = '@smartexpense_reminders';
+const REMINDER_KEY = '@exora_reminders';
 
 const themeModes: Array<{ mode: ThemeMode; label: string; icon: string }> = [
   { mode: 'light', label: 'Claro', icon: 'white-balance-sunny' },
@@ -123,7 +123,7 @@ export function SettingsScreen() {
     if (!myCode) return;
     await Share.share({
       message:
-        `¡Únete a EXPENSIA y lleva tus gastos al SAT en automático! 🇲🇽\n` +
+        `¡Únete a EXORA y lleva tus gastos al SAT en automático! 🇲🇽\n` +
         `Usa mi código *${myCode}* y ambos obtenemos 7 días gratis de Pro.\n` +
         `Descárgala en App Store y Google Play.`,
     });
@@ -202,7 +202,7 @@ export function SettingsScreen() {
       setFounderInput('');
       Alert.alert(
         '✦ Bienvenido, Fundador',
-        'Tu acceso premium permanente ha sido activado. Gracias por ser parte de Expensia desde el inicio.',
+        'Tu acceso premium permanente ha sido activado. Gracias por ser parte de Exora desde el inicio.',
       );
     } else if (result === 'already_used') {
       Alert.alert(
@@ -578,7 +578,7 @@ export function SettingsScreen() {
           <View style={s.codeInputRow}>
             <TextInput
               style={s.codeInput}
-              placeholder="EXPENSIA-FOUNDER-XXXX"
+              placeholder="EXORA-FOUNDER-XXXX"
               placeholderTextColor={colors.textMuted}
               value={founderInput}
               onChangeText={t => setFounderInput(t.toUpperCase())}
@@ -628,7 +628,7 @@ export function SettingsScreen() {
                 isFounder
                   ? Alert.alert(
                       'Membresía Fundador',
-                      'Tienes acceso permanente como Miembro Fundador de Expensia. No necesitas gestionar ninguna suscripción.',
+                      'Tienes acceso permanente como Miembro Fundador de Exora. No necesitas gestionar ninguna suscripción.',
                     )
                   : Alert.alert(
                       'Gestionar membresía',
@@ -673,7 +673,7 @@ export function SettingsScreen() {
         <Text style={s.signOutText}>Cerrar sesión</Text>
       </Pressable>
 
-      <Text style={s.version}>EXPENSIA v1.0.0</Text>
+      <Text style={s.version}>EXORA v1.0.0</Text>
 
       <PaywallModal
         visible={paywallVisible}

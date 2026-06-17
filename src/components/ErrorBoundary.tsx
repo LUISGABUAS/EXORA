@@ -1,9 +1,15 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { captureError } from '../services/crashReporting';
 
-interface Props { children: React.ReactNode }
-interface State { hasError: boolean; message: string }
+interface Props {
+  children: React.ReactNode;
+}
+interface State {
+  hasError: boolean;
+  message: string;
+}
 
 export class ErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false, message: '' };
@@ -12,8 +18,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, message: error.message };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[ErrorBoundary]', error);
+    captureError(error, { componentStack: info.componentStack ?? '' });
   }
 
   render() {
@@ -25,7 +32,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <Text style={s.desc}>
           Ocurrió un error inesperado. Tus datos están seguros.
         </Text>
-        <Pressable style={s.btn} onPress={() => this.setState({ hasError: false, message: '' })}>
+        <Pressable
+          style={s.btn}
+          onPress={() => this.setState({ hasError: false, message: '' })}
+        >
           <Text style={s.btnText}>Intentar de nuevo</Text>
         </Pressable>
       </View>
@@ -42,7 +52,12 @@ const s = StyleSheet.create({
     padding: 32,
     gap: 16,
   },
-  title: { color: '#fff', fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  title: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
   desc: { color: '#8E8E93', fontSize: 14, textAlign: 'center', lineHeight: 22 },
   btn: {
     backgroundColor: '#22C55E',

@@ -36,7 +36,7 @@ function buildHtml(expenses: Expense[], month: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reporte Expensia — ${escapeHtml(month)}</title>
+  <title>Reporte Exora — ${escapeHtml(month)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F5F7; color: #1A1A1A; }
@@ -68,7 +68,7 @@ function buildHtml(expenses: Expense[], month: string): string {
 </head>
 <body>
   <div class="header">
-    <div class="header-title">EXPENSIA</div>
+    <div class="header-title">EXORA</div>
     <div class="header-sub">Reporte mensual de gastos</div>
     <div class="header-month">${escapeHtml(month)}</div>
   </div>
@@ -113,7 +113,7 @@ function buildHtml(expenses: Expense[], month: string): string {
     }
 
     <div class="footer">
-      Generado por Expensia · ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
+      Generado por Exora · ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}
     </div>
   </div>
 </body>
@@ -133,13 +133,13 @@ export async function exportMonthlyReport(
   month: string,
 ): Promise<void> {
   const html = buildHtml(expenses, month);
-  const filename = `expensia_reporte_${month.replace(/\s/g, '_').toLowerCase()}.html`;
+  const filename = `exora_reporte_${month.replace(/\s/g, '_').toLowerCase()}.html`;
   const path = `${RNFS.DocumentDirectoryPath}/${filename}`;
   await RNFS.writeFile(path, html, 'utf8');
   await Share.open({
     url: `file://${path}`,
     type: 'text/html',
     filename,
-    title: `Reporte Expensia — ${month}`,
+    title: `Reporte Exora — ${month}`,
   });
 }

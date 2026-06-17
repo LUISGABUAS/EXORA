@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { Currency } from '../services/exchangeRateService';
 
-const STORAGE_KEY = '@expensia_currency';
+const STORAGE_KEY = '@exora_currency';
 
 interface CurrencyState {
   defaultCurrency: Currency;

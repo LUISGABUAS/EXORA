@@ -13,7 +13,7 @@ export interface Insight {
   isPremium: boolean;
 }
 
-const AI_CACHE_KEY = '@expensia_ai_insights';
+const AI_CACHE_KEY = '@exora_ai_insights';
 const AI_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
 
 function daysAgo(n: number): string {

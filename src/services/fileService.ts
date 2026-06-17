@@ -6,13 +6,17 @@ import { supabase } from '../lib/supabase';
  * Recibe el base64 directo del image picker (sin necesidad de RNFS).
  * Retorna la URL pública de la imagen.
  */
-export async function uploadAvatarToSupabase(base64: string, userId: string): Promise<string> {
+export async function uploadAvatarToSupabase(
+  base64: string,
+  userId: string,
+): Promise<string> {
   // Decodificar base64 → Uint8Array sin Buffer ni atob
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const lookup: Record<string, number> = {};
   for (let i = 0; i < chars.length; i++) lookup[chars[i]] = i;
   const clean = base64.replace(/=+$/, '');
-  const bytes = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let bi = 0;
   for (let i = 0; i < clean.length; i += 4) {
     const a = lookup[clean[i]] ?? 0;
@@ -29,7 +33,10 @@ export async function uploadAvatarToSupabase(base64: string, userId: string): Pr
 
   const { error } = await supabase.storage
     .from('avatars')
-    .upload(storagePath, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
+    .upload(storagePath, arrayBuffer, {
+      contentType: 'image/jpeg',
+      upsert: true,
+    });
 
   if (error) throw new Error(error.message);
 
@@ -71,16 +78,24 @@ export async function pickXMLFile(): Promise<FilePickerResult | null> {
       }
 
       return {
-        uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+        uri:
+          Platform.OS === 'android'
+            ? file.uri
+            : file.uri.replace('file://', ''),
         name,
         type: file.type || undefined,
       };
     }
     return null;
   } catch (error: any) {
-    if (error?.code === 'E_DOCUMENT_PICKER_CANCELLED') {
-      return null;
-    }
+    const msg: string = error?.message ?? '';
+    const isCancelled =
+      error?.code === 'E_DOCUMENT_PICKER_CANCELLED' ||
+      msg.includes('cancel') ||
+      msg.includes('Cancel') ||
+      msg.includes('3072') ||
+      msg.includes('dismissed');
+    if (isCancelled) return null;
     throw error;
   }
 }
@@ -104,7 +119,10 @@ export async function pickPdfFile(): Promise<FilePickerResult | null> {
       }
 
       return {
-        uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+        uri:
+          Platform.OS === 'android'
+            ? file.uri
+            : file.uri.replace('file://', ''),
         name,
         type: file.type || undefined,
       };

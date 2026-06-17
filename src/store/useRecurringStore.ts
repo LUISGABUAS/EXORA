@@ -25,7 +25,7 @@ interface RecurringState {
   getDueThisMonth: () => RecurringExpense[];
 }
 
-const KEY = '@expensia_recurring';
+const KEY = '@exora_recurring';
 
 function currentMonth() {
   const d = new Date();

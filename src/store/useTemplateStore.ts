@@ -23,7 +23,7 @@ const DEFAULT_TEMPLATES: Template[] = [
   { id: 'd8', name: 'Farmacia', amount: 250, category: 'Salud', merchantName: '', description: 'Farmacia', isDefault: true },
 ];
 
-const STORAGE_KEY = '@expensia_templates';
+const STORAGE_KEY = '@exora_templates';
 
 interface TemplateState {
   templates: Template[];

@@ -118,7 +118,7 @@ export function RecurringIncomeScreen() {
             <Icon name="repeat" size={52} color={colors.border} />
             <Text style={s.emptyTitle}>Sin ingresos fijos</Text>
             <Text style={s.emptyDesc}>
-              Agrega tu salario, renta cobrada u otros ingresos que recibes cada mes. EXPENSIA los registrará automáticamente.
+              Agrega tu salario, renta cobrada u otros ingresos que recibes cada mes. EXORA los registrará automáticamente.
             </Text>
             <Pressable style={s.emptyBtn} onPress={openNew}>
               <Icon name="plus" size={18} color="#fff" />
@@ -130,7 +130,7 @@ export function RecurringIncomeScreen() {
             <Animated.View entering={FadeInDown.duration(300)} style={s.infoCard}>
               <Icon name="information-outline" size={16} color={colors.primary} />
               <Text style={s.infoText}>
-                EXPENSIA registra estos ingresos automáticamente cada mes en la fecha indicada.
+                EXORA registra estos ingresos automáticamente cada mes en la fecha indicada.
               </Text>
             </Animated.View>
 

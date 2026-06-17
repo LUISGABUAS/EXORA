@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { useExpenseStore } from '../store/useExpenseStore';
 import { RecurringExpense, useRecurringStore } from '../store/useRecurringStore';
 import { ExpenseCategory } from '../types/expense';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, localDateString } from '../utils/format';
 
 const CATEGORIES: ExpenseCategory[] = [
   'Comida', 'Transporte', 'Entretenimiento', 'Salud', 'Educacion', 'Otros',
@@ -38,6 +39,8 @@ export function RecurringScreen() {
   const { colors } = useTheme();
   const s = useStyles(colors);
   const { items, add, update, remove } = useRecurringStore();
+  const addExpense = useExpenseStore(state => state.addExpense);
+  const [registering, setRegistering] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   // Form state
@@ -74,6 +77,30 @@ export function RecurringScreen() {
     await update(item.id, { active: !item.active });
   };
 
+  const handleRegisterNow = async (item: RecurringExpense) => {
+    setRegistering(item.id);
+    try {
+      await addExpense({
+        amount: item.amount,
+        date: localDateString(new Date()),
+        category: item.category,
+        description: item.description,
+        merchantName: item.merchantName,
+        conceptsText: '',
+        ocrRawText: '',
+        deductible: item.deductible,
+        rfc: '',
+        usoCFDI: '',
+        source: 'manual',
+      });
+      Alert.alert('Registrado', `${item.description} por ${formatCurrency(item.amount)} registrado hoy.`);
+    } catch {
+      Alert.alert('Error', 'No se pudo registrar el gasto.');
+    } finally {
+      setRegistering(null);
+    }
+  };
+
   const handleDelete = (item: RecurringExpense) => {
     Alert.alert(
       'Eliminar gasto recurrente',
@@ -104,6 +131,17 @@ export function RecurringScreen() {
             thumbColor={colors.white}
             style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
           />
+          <Pressable
+            onPress={() => handleRegisterNow(item)}
+            hitSlop={8}
+            disabled={registering === item.id}
+          >
+            <Icon
+              name={registering === item.id ? 'loading' : 'check-circle-outline'}
+              size={18}
+              color={colors.primary}
+            />
+          </Pressable>
           <Pressable onPress={() => handleDelete(item)} hitSlop={8}>
             <Icon name="trash-can-outline" size={18} color={colors.danger} />
           </Pressable>

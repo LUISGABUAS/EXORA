@@ -128,12 +128,12 @@ export function ReporteFiscalScreen() {
       } else {
         // Free: comparte resumen en texto
         const msg =
-          `📊 Reporte fiscal EXPENSIA — ${monthName} ${selectedYear}\n\n` +
+          `📊 Reporte fiscal EXORA — ${monthName} ${selectedYear}\n\n` +
           `Régimen: ${regimeDisplay?.title ?? fiscalRegime}\n` +
           `Total gastado: ${formatCurrency(report.totalAmount)}\n` +
           `Gastos deducibles: ${formatCurrency(report.deductibleAmount)} (${report.deductibleCount} comprobantes)\n` +
           `Ahorro fiscal estimado: ${formatCurrency(report.estimatedSaving)}\n\n` +
-          `Generado con EXPENSIA`;
+          `Generado con EXORA`;
         await Share.share({ message: msg });
       }
     } catch (err: any) {

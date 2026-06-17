@@ -9,6 +9,10 @@ export const categoryIcons: Record<ExpenseCategory, string> = {
   Otros: 'dots-horizontal-circle-outline',
 };
 
+export function getCategoryIcon(category: string): string {
+  return (categoryIcons as Record<string, string>)[category] ?? 'tag-outline';
+}
+
 export const tabIcons: Record<string, string> = {
   Inicio: 'home',
   Movimientos: 'swap-horizontal',

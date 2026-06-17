@@ -461,7 +461,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exora.finance.app;
 				PRODUCT_NAME = SmartExpenseMX2;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OBJC_BRIDGING_HEADER = "SmartExpenseMX2-Bridging-Header.h";
@@ -491,7 +491,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exora.finance.app;
 				PRODUCT_NAME = SmartExpenseMX2;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OBJC_BRIDGING_HEADER = "SmartExpenseMX2-Bridging-Header.h";
@@ -535,7 +535,7 @@
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app.ExpensiaWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exora.finance.app.ExoraWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -584,7 +584,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.expensia.finance.app.ExpensiaWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.exora.finance.app.ExoraWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;

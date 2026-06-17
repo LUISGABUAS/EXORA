@@ -1,12 +1,24 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ExpenseForm } from '../components/ExpenseForm';
 import { PaywallModal } from '../components/PaywallModal';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { recognizeReceiptDetailed, OcrResult } from '../services/ocr/ocrService';
+import {
+  recognizeReceiptDetailed,
+  OcrResult,
+} from '../services/ocr/ocrService';
 import { pickXMLFile, pickImageFromGallery } from '../services/fileService';
 import { saveReceiptImage } from '../services/receiptImageService';
 import { parseCFDIXml, readXmlFile } from '../services/xmlService';
@@ -17,6 +29,8 @@ import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { ExpenseInput, ParsedLineItem } from '../types/expense';
 import { parseReceiptText } from '../utils/receiptParser';
+import { track } from '../services/analyticsService';
+import { captureError } from '../services/crashReporting';
 
 type Mode = 'idle' | 'camera' | 'preview' | 'options';
 
@@ -48,15 +62,23 @@ export function ScanScreen() {
   const [prefill, setPrefill] = useState<Partial<ExpenseInput> | undefined>();
   const [flashActive, setFlashActive] = useState(false);
   const [lineItems, setLineItems] = useState<ParsedLineItem[]>([]);
-  const [ocrConfidence, setOcrConfidence] = useState<OcrResult['confidence'] | null>(null);
+  const [ocrConfidence, setOcrConfidence] = useState<
+    OcrResult['confidence'] | null
+  >(null);
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
 
   const openCamera = async () => {
-    if (!canScanOCR()) { setPaywallVisible(true); return; }
+    if (!canScanOCR()) {
+      setPaywallVisible(true);
+      return;
+    }
     const permission = await Camera.requestCameraPermission();
     if (permission !== 'granted') {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara para escanear tickets.');
+      Alert.alert(
+        'Permiso requerido',
+        'Necesitamos acceso a la cámara para escanear tickets.',
+      );
       return;
     }
     setMode('camera');
@@ -92,16 +114,30 @@ export function ScanScreen() {
       setOcrConfidence('high');
       setMode('preview');
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'No se pudo procesar la factura.';
-      setOcrError(msg);
-      Alert.alert('Error al importar XML', msg);
+      const msg = error instanceof Error ? error.message : '';
+      // Silently ignore user cancellation
+      const isCancelled =
+        msg.includes('cancel') ||
+        msg.includes('Cancel') ||
+        msg.includes('3072') ||
+        msg.includes('dismissed');
+      if (!isCancelled) {
+        setOcrError(msg || 'No se pudo procesar la factura.');
+        Alert.alert(
+          'Error al importar XML',
+          msg || 'No se pudo procesar la factura.',
+        );
+      }
     } finally {
       setOcrLoading(false);
     }
   };
 
   const pickPhoto = async () => {
-    if (!canScanOCR()) { setPaywallVisible(true); return; }
+    if (!canScanOCR()) {
+      setPaywallVisible(true);
+      return;
+    }
     setOcrLoading(true);
     setOcrError(null);
     try {
@@ -115,7 +151,8 @@ export function ScanScreen() {
       setMode('preview');
       await processImage(photo.uri);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'No se pudo cargar la imagen.';
+      const msg =
+        error instanceof Error ? error.message : 'No se pudo cargar la imagen.';
       setOcrError(msg);
       Alert.alert('Error al seleccionar foto', msg);
     } finally {
@@ -139,16 +176,26 @@ export function ScanScreen() {
     setOcrLoading(true);
     setOcrError(null);
     setOcrConfidence(null);
+    track('scan_started');
     try {
       const ocrResult = await recognizeReceiptDetailed(uri);
 
       if (!ocrResult.text) {
-        throw new Error('No se detectó texto en la imagen. Asegúrate de que el ticket sea legible.');
+        throw new Error(
+          'No se detectó texto en la imagen. Asegúrate de que el ticket sea legible.',
+        );
       }
 
       setOcrConfidence(ocrResult.confidence);
       const parsed = parseReceiptText(ocrResult.text, fiscalRegime);
-      setLineItems(parsed.lineItems ?? []);
+
+      // Filter out total/tax/subtotal lines misclassified as products
+      const NOISE_PATTERN =
+        /total|subtotal|iva|impuesto|importe|cambio|descuento|efectivo|tarjeta|pago|v\.?\s*a\.?/i;
+      const productItems = (parsed.lineItems ?? []).filter(
+        item => !NOISE_PATTERN.test(item.name),
+      );
+      setLineItems(productItems);
       setPrefill({
         amount: parsed.amount ?? 0,
         date: parsed.date ?? new Date().toISOString().slice(0, 10),
@@ -162,12 +209,19 @@ export function ScanScreen() {
         usoCFDI: parsed.usoCFDI ?? '',
         source: 'ocr',
       });
+      track('scan_completed', {
+        confidence: ocrResult.confidence,
+        hasAmount: !!parsed.amount,
+      });
     } catch (error) {
-      const msg = error instanceof Error
-        ? error.message
-        : 'No se pudo procesar el ticket.';
+      const msg =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo procesar el ticket.';
       setOcrError(msg);
       setOcrConfidence('low');
+      captureError(error, { context: 'processImage' });
+      track('scan_failed', { reason: msg });
     } finally {
       setOcrLoading(false);
     }
@@ -228,25 +282,37 @@ export function ScanScreen() {
       <ScreenContainer>
         <Animated.View entering={FadeInDown.duration(350)}>
           <Text style={s.title}>Agregar gasto</Text>
-          <Text style={s.subtitle}>Elige como registrar tu factura o gasto</Text>
+          <Text style={s.subtitle}>
+            Elige como registrar tu factura o gasto
+          </Text>
         </Animated.View>
 
         <View style={s.optionsContainer}>
           <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-            <Pressable style={s.optionCard} onPress={openCamera} disabled={ocrLoading}>
+            <Pressable
+              style={s.optionCard}
+              onPress={openCamera}
+              disabled={ocrLoading}
+            >
               <View style={s.optionIcon}>
                 <Icon name="camera" size={26} color={colors.primary} />
               </View>
               <View style={s.optionInfo}>
                 <Text style={s.optionTitle}>Escanear ticket</Text>
-                <Text style={s.optionDesc}>Toma una foto y extrae datos automáticamente</Text>
+                <Text style={s.optionDesc}>
+                  Toma una foto y extrae datos automáticamente
+                </Text>
               </View>
               <Icon name="chevron-right" size={20} color={colors.textMuted} />
             </Pressable>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).duration(300)}>
-            <Pressable style={s.optionCard} onPress={pickXML} disabled={ocrLoading}>
+            <Pressable
+              style={s.optionCard}
+              onPress={pickXML}
+              disabled={ocrLoading}
+            >
               <View style={s.optionIcon}>
                 {ocrLoading ? (
                   <ActivityIndicator color={colors.primary} />
@@ -261,14 +327,20 @@ export function ScanScreen() {
                     <Text style={s.freeBadgeText}>Gratis</Text>
                   </View>
                 </View>
-                <Text style={s.optionDesc}>Selecciona una factura XML del SAT</Text>
+                <Text style={s.optionDesc}>
+                  Selecciona una factura XML del SAT
+                </Text>
               </View>
               <Icon name="chevron-right" size={20} color={colors.textMuted} />
             </Pressable>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(300).duration(300)}>
-            <Pressable style={s.optionCard} onPress={pickPhoto} disabled={ocrLoading}>
+            <Pressable
+              style={s.optionCard}
+              onPress={pickPhoto}
+              disabled={ocrLoading}
+            >
               <View style={s.optionIcon}>
                 <Icon name="image" size={26} color={colors.primary} />
               </View>
@@ -294,7 +366,10 @@ export function ScanScreen() {
         ) : null}
 
         {/* Tips */}
-        <Animated.View entering={FadeInDown.delay(400).duration(300)} style={s.tipsCard}>
+        <Animated.View
+          entering={FadeInDown.delay(400).duration(300)}
+          style={s.tipsCard}
+        >
           <View style={s.tipsHeader}>
             <Icon name="lightbulb-outline" size={16} color={colors.warning} />
             <Text style={s.tipsTitle}>Consejos para mejor resultado</Text>
@@ -342,21 +417,43 @@ export function ScanScreen() {
   return (
     <ScreenContainer>
       {imageUri ? (
-        <Image source={{ uri: imageUri }} style={s.preview} resizeMode="cover" />
+        <Image
+          source={{ uri: imageUri }}
+          style={s.preview}
+          resizeMode="cover"
+        />
       ) : null}
 
       {/* Confidence badge */}
       {ocrConfidence && !ocrLoading ? (
-        <Animated.View entering={FadeInDown.duration(250)} style={s.confidenceBadge}>
+        <Animated.View
+          entering={FadeInDown.duration(250)}
+          style={s.confidenceBadge}
+        >
           <Icon
             name={CONFIDENCE_ICONS[ocrConfidence]}
             size={16}
-            color={ocrConfidence === 'high' ? colors.success : ocrConfidence === 'medium' ? colors.warning : colors.danger}
+            color={
+              ocrConfidence === 'high'
+                ? colors.success
+                : ocrConfidence === 'medium'
+                ? colors.warning
+                : colors.danger
+            }
           />
-          <Text style={[
-            s.confidenceText,
-            { color: ocrConfidence === 'high' ? colors.success : ocrConfidence === 'medium' ? colors.warning : colors.danger },
-          ]}>
+          <Text
+            style={[
+              s.confidenceText,
+              {
+                color:
+                  ocrConfidence === 'high'
+                    ? colors.success
+                    : ocrConfidence === 'medium'
+                    ? colors.warning
+                    : colors.danger,
+              },
+            ]}
+          >
             {CONFIDENCE_LABELS[ocrConfidence]}
           </Text>
         </Animated.View>
@@ -398,7 +495,7 @@ export function ScanScreen() {
           <View style={s.lineItemRow}>
             <Text style={s.lineItemsTotal}>Total</Text>
             <Text style={s.lineItemsTotal}>
-              ${lineItems.reduce((sum, i) => sum + i.price, 0).toFixed(2)}
+              ${(prefill?.amount ?? 0).toFixed(2)}
             </Text>
           </View>
         </View>
@@ -570,14 +667,27 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       alignItems: 'center',
       paddingVertical: 6,
     },
-    lineItemName: { flex: 1, fontSize: 14, color: colors.text, marginRight: 12 },
-    lineItemPrice: { fontSize: 14, fontFamily: font.semibold, color: colors.primary },
+    lineItemName: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.text,
+      marginRight: 12,
+    },
+    lineItemPrice: {
+      fontSize: 14,
+      fontFamily: font.semibold,
+      color: colors.primary,
+    },
     lineItemsDivider: {
       height: 1,
       backgroundColor: colors.border,
       marginVertical: 8,
     },
-    lineItemsTotal: { fontSize: 15, fontFamily: font.extrabold, color: colors.text },
+    lineItemsTotal: {
+      fontSize: 15,
+      fontFamily: font.extrabold,
+      color: colors.text,
+    },
     loadingContainer: {
       alignItems: 'center',
       gap: 8,
@@ -639,7 +749,11 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
     },
     cameraCancelButton: { paddingHorizontal: 24, paddingVertical: 10 },
-    cameraCancelText: { color: colors.white, fontFamily: font.bold, fontSize: 16 },
+    cameraCancelText: {
+      color: colors.white,
+      fontFamily: font.bold,
+      fontSize: 16,
+    },
     backButton: {
       flexDirection: 'row',
       borderRadius: 16,
@@ -649,7 +763,11 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
       gap: 8,
     },
-    backButtonText: { color: colors.white, fontSize: 15, fontFamily: font.bold },
+    backButtonText: {
+      color: colors.white,
+      fontSize: 15,
+      fontFamily: font.bold,
+    },
     scanCounter: {
       flexDirection: 'row',
       alignItems: 'center',

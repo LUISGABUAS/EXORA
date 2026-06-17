@@ -11,6 +11,9 @@ import { notifyBudgetAlert } from '../services/notificationService';
 import { useBudgetStore } from './useBudgetStore';
 import { Expense, ExpenseCategory, ExpenseInput } from '../types/expense';
 import { localDateString } from '../utils/format';
+import { syncWidgetData } from '../utils/widgetBridge';
+import { useIncomeStore } from './useIncomeStore';
+import { track } from '../services/analyticsService';
 
 interface ExpenseState {
   expenses: Expense[];
@@ -31,17 +34,21 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     try {
       const expenses = await getAllExpenses();
       set({ expenses });
+      syncWidgetData(expenses, useIncomeStore.getState().incomes);
     } finally {
       set({ loading: false });
     }
   },
 
-  addExpense: async (expense) => {
+  addExpense: async expense => {
     const id = await createExpense(expense);
     await addToSyncQueue('insert', id, expense as Record<string, any>);
     const expenses = await getAllExpenses();
     set({ expenses });
-    // Tracking para el rating prompt
+    track('expense_created', {
+      category: expense.category,
+      source: expense.source,
+    });
     trackExpenseForRating().catch(() => {});
     // Budget alert — check if category crossed 80% or 100%
     try {
@@ -51,7 +58,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         const now = new Date();
         const monthPrefix = localDateString(now).slice(0, 7);
         const spent = expenses
-          .filter(e => e.category === expense.category && e.date.startsWith(monthPrefix))
+          .filter(
+            e =>
+              e.category === expense.category && e.date.startsWith(monthPrefix),
+          )
           .reduce((sum, e) => sum + e.amount, 0);
         notifyBudgetAlert(expense.category, spent, limit);
       }
@@ -65,13 +75,16 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     await addToSyncQueue('update', id, expense as Record<string, any>);
     const expenses = await getAllExpenses();
     set({ expenses });
+    syncWidgetData(expenses, useIncomeStore.getState().incomes);
   },
 
-  removeExpense: async (id) => {
+  removeExpense: async id => {
     await deleteExpense(id);
     await addToSyncQueue('delete', id);
-    set((state) => ({ expenses: state.expenses.filter((e) => e.id !== id) }));
+    const expenses = get().expenses.filter(e => e.id !== id);
+    set({ expenses });
+    syncWidgetData(expenses, useIncomeStore.getState().incomes);
   },
 
-  getExpense: (id) => get().expenses.find((e) => e.id === id),
+  getExpense: id => get().expenses.find(e => e.id === id),
 }));

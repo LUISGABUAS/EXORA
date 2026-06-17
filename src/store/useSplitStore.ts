@@ -26,7 +26,7 @@ interface SplitState {
   clearAll: () => Promise<void>;
 }
 
-const KEY = '@expensia_split_expenses';
+const KEY = '@exora_split_expenses';
 
 function uuid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);

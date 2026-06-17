@@ -29,7 +29,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
 
-const CACHE_KEY = '@expensia_advisor_cache';
+const CACHE_KEY = '@exora_advisor_cache';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 const SUGGESTED_QUESTIONS = [

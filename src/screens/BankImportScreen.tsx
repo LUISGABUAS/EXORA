@@ -161,7 +161,7 @@ export function BankImportScreen() {
               </View>
               <Text style={s.heroTitle}>Importar estado de cuenta</Text>
               <Text style={s.heroText}>
-                Descarga el PDF de tu banco y súbelo aquí. Expensia detecta las transacciones
+                Descarga el PDF de tu banco y súbelo aquí. Exora detecta las transacciones
                 automáticamente y las agrega a tus gastos.
               </Text>
             </View>

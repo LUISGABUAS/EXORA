@@ -1,18 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { ExpenseCategory } from '../types/expense';
 
-export type BudgetMap = Partial<Record<ExpenseCategory, number>>;
+// BudgetMap ahora acepta cualquier string como categoría (built-in + personalizadas)
+export type BudgetMap = Record<string, number>;
 
 interface BudgetState {
   budgets: BudgetMap;
   loaded: boolean;
   hydrate: () => Promise<void>;
-  setBudget: (category: ExpenseCategory, amount: number) => Promise<void>;
-  clearBudget: (category: ExpenseCategory) => Promise<void>;
+  setBudget: (category: string, amount: number) => Promise<void>;
+  clearBudget: (category: string) => Promise<void>;
 }
 
-const STORAGE_KEY = '@smartexpense_budgets';
+const STORAGE_KEY = '@exora_budgets';
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
   budgets: {},

@@ -59,7 +59,11 @@ function softmax(scores: number[]): number[] {
  * Clasifica una línea usando el modelo.
  * score[clase] = sum(weights[clase][i] * features[i]) + bias[clase]
  */
-function classifyLine(features: number[]): { lineClass: LineClass; confidence: number; probabilities: Record<LineClass, number> } {
+function classifyLine(features: number[]): {
+  lineClass: LineClass;
+  confidence: number;
+  probabilities: Record<LineClass, number>;
+} {
   const scores: number[] = [];
 
   for (let c = 0; c < classes.length; c++) {
@@ -99,7 +103,8 @@ function classifyAllLines(ocrText: string): ClassifiedLine[] {
 
   for (let i = 0; i < total; i++) {
     const prev = i > 0 ? lines[i - 1] : '';
-    const features = extractFeatures(lines[i], i, total, prev);
+    const next = i < total - 1 ? lines[i + 1] : '';
+    const features = extractFeatures(lines[i], i, total, prev, next);
     const { lineClass, confidence, probabilities } = classifyLine(features);
 
     result.push({
@@ -121,7 +126,10 @@ function classifyAllLines(ocrText: string): ClassifiedLine[] {
  * Extrae el monto total del ticket usando las líneas clasificadas.
  * Busca la línea TOTAL con mayor confianza y extrae su precio.
  */
-function extractAmount(lines: ClassifiedLine[]): { value?: number; confidence: number } {
+function extractAmount(lines: ClassifiedLine[]): {
+  value?: number;
+  confidence: number;
+} {
   // Collect all TOTAL candidates, sorted by confidence
   const totalLines = lines
     .filter(l => l.lineClass === 'TOTAL' || l.probabilities.TOTAL > 0.3)
@@ -142,7 +150,11 @@ function extractAmount(lines: ClassifiedLine[]): { value?: number; confidence: n
     if (idx + 1 < lines.length) {
       const nextLine = lines[idx + 1];
       const nextPrices = extractPrices(nextLine.text);
-      if (nextPrices.length > 0 && nextLine.lineClass !== 'CHANGE' && nextLine.lineClass !== 'PAYMENT') {
+      if (
+        nextPrices.length > 0 &&
+        nextLine.lineClass !== 'CHANGE' &&
+        nextLine.lineClass !== 'PAYMENT'
+      ) {
         return {
           value: nextPrices[0],
           confidence: totalLine.probabilities.TOTAL * 0.9,
@@ -175,7 +187,10 @@ function extractAmount(lines: ClassifiedLine[]): { value?: number; confidence: n
  * Si ninguna línea fue clasificada como MERCHANT, busca candidatos
  * con probabilidad > 0.15 en las primeras 5 líneas no vacías.
  */
-function extractMerchant(lines: ClassifiedLine[]): { value?: string; confidence: number } {
+function extractMerchant(lines: ClassifiedLine[]): {
+  value?: string;
+  confidence: number;
+} {
   // Primary: lines classified as MERCHANT
   const merchantLines = lines
     .filter(l => l.lineClass === 'MERCHANT')
@@ -192,7 +207,12 @@ function extractMerchant(lines: ClassifiedLine[]): { value?: string; confidence:
   const nonEmpty = lines.filter(l => l.text.trim().length > 1);
   const topLines = nonEmpty.slice(0, 8);
   const candidates = topLines
-    .filter(l => l.probabilities.MERCHANT > 0.15 && l.lineClass !== 'DECORATION' && l.lineClass !== 'RFC_LINE')
+    .filter(
+      l =>
+        l.probabilities.MERCHANT > 0.15 &&
+        l.lineClass !== 'DECORATION' &&
+        l.lineClass !== 'RFC_LINE',
+    )
     .sort((a, b) => b.probabilities.MERCHANT - a.probabilities.MERCHANT);
 
   for (const c of candidates) {
@@ -209,7 +229,10 @@ function extractMerchant(lines: ClassifiedLine[]): { value?: string; confidence:
  * Extrae la fecha usando las líneas DATE.
  * Si no se encuentra en líneas DATE, busca en todas las líneas.
  */
-function extractDate(lines: ClassifiedLine[]): { value?: string; confidence: number } {
+function extractDate(lines: ClassifiedLine[]): {
+  value?: string;
+  confidence: number;
+} {
   // Primary: lines classified as DATE or with high DATE probability
   const dateLines = lines
     .filter(l => l.lineClass === 'DATE' || l.probabilities.DATE > 0.2)
@@ -238,7 +261,10 @@ function extractDate(lines: ClassifiedLine[]): { value?: string; confidence: num
  * Extrae el RFC usando las líneas RFC_LINE.
  * Prefiere RFCs no genéricos (XAXX, XEXX).
  */
-function extractRfcFromLines(lines: ClassifiedLine[]): { value?: string; confidence: number } {
+function extractRfcFromLines(lines: ClassifiedLine[]): {
+  value?: string;
+  confidence: number;
+} {
   const GENERIC_RFCS = ['XAXX010101000', 'XEXX010101000'];
   const rfcLines = lines
     .filter(l => l.lineClass === 'RFC_LINE' || l.probabilities.RFC_LINE > 0.3)

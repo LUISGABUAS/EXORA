@@ -69,7 +69,7 @@ export function LoginScreen() {
             <View style={s.logoContainer}>
               <Image source={logo} style={s.logo} resizeMode="cover" />
             </View>
-            <Text style={s.appName}>EXPENSIA</Text>
+            <Text style={s.appName}>EXORA</Text>
             <Text style={s.tagline}>
               Finanzas inteligentes para{'\n'}profesionistas en México
             </Text>

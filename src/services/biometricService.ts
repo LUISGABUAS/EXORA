@@ -23,7 +23,7 @@ export async function getAvailableBiometric(): Promise<BiometricType> {
  * Prompts the user for biometric authentication.
  * Returns true if successful.
  */
-export async function authenticateWithBiometrics(reason = 'Confirma tu identidad para acceder a Expensia'): Promise<boolean> {
+export async function authenticateWithBiometrics(reason = 'Confirma tu identidad para acceder a Exora'): Promise<boolean> {
   try {
     const { success } = await rnBiometrics.simplePrompt({ promptMessage: reason });
     return success;

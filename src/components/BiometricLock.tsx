@@ -48,7 +48,7 @@ export function BiometricLock({ biometricType, onUnlocked }: BiometricLockProps)
 
       <View style={styles.content}>
         {/* App name */}
-        <Text style={[styles.appName, { color: colors.primary }]}>EXPENSIA</Text>
+        <Text style={[styles.appName, { color: colors.primary }]}>EXORA</Text>
 
         {/* Lock icon */}
         <Pressable
@@ -72,7 +72,7 @@ export function BiometricLock({ biometricType, onUnlocked }: BiometricLockProps)
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
           {failed
             ? 'No se pudo verificar tu identidad'
-            : `Usa ${label} para acceder a Expensia`}
+            : `Usa ${label} para acceder a Exora`}
         </Text>
 
         {/* Retry button */}

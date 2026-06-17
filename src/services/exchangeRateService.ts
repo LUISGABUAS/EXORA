@@ -19,7 +19,7 @@ export const CURRENCY_NAMES: Record<Currency, string> = {
   GBP: 'Libra Esterlina',
 };
 
-const CACHE_KEY = '@expensia_exchange_rates';
+const CACHE_KEY = '@exora_exchange_rates';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 interface CachedRates {

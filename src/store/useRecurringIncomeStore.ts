@@ -25,7 +25,7 @@ interface RecurringIncomeState {
   getDueThisMonth: () => RecurringIncome[];
 }
 
-const KEY = '@expensia_recurring_income';
+const KEY = '@exora_recurring_income';
 
 function currentMonth() {
   const d = new Date();

@@ -23,7 +23,7 @@ interface SavingsState {
   update: (id: string, patch: Partial<SavingsGoal>) => Promise<void>;
 }
 
-const KEY = '@expensia_savings_goals';
+const KEY = '@exora_savings_goals';
 
 function uuid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);

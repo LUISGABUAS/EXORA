@@ -131,12 +131,12 @@ export function AppNavigator() {
 
   useEffect(() => {
     const handleUrl = (url: string) => {
-      if (url === 'expensia://add-expense') {
+      if (url === 'exora://add-expense') {
         if (navigationRef.isReady()) {
           navigationRef.navigate('Tabs', { screen: 'Inicio' });
         }
         setTimeout(() => setPendingAction('add-expense'), 150);
-      } else if (url === 'expensia://add-income') {
+      } else if (url === 'exora://add-income') {
         if (navigationRef.isReady()) {
           navigationRef.navigate('Ingresos');
         }

@@ -14,24 +14,20 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { notifyBudgetAlert } from '../services/notificationService';
 import { useBudgetStore } from '../store/useBudgetStore';
+import { useCustomCategoryStore } from '../store/useCustomCategoryStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
-import { categoryIcons } from '../theme/icons';
+import { getCategoryIcon } from '../theme/icons';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
 
-const CATEGORIES: ExpenseCategory[] = [
-  'Comida',
-  'Transporte',
-  'Entretenimiento',
-  'Salud',
-  'Educacion',
-  'Otros',
+const BUILTIN_CATEGORIES: ExpenseCategory[] = [
+  'Comida', 'Transporte', 'Entretenimiento', 'Salud', 'Educacion', 'Otros',
 ];
 
-const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
+const BUILTIN_COLORS: Record<ExpenseCategory, string> = {
   Comida: '#22C55E',
   Transporte: '#3B82F6',
   Entretenimiento: '#F59E0B',
@@ -52,56 +48,67 @@ export function PresupuestoScreen() {
   const budgets = useBudgetStore(state => state.budgets);
   const setBudget = useBudgetStore(state => state.setBudget);
   const clearBudget = useBudgetStore(state => state.clearBudget);
+  const customCategories = useCustomCategoryStore(state => state.categories);
 
   const now = new Date();
   const monthPrefix = localDateString(now).slice(0, 7);
   const monthLabel = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
-  // Local input state per category
-  const [inputs, setInputs] = useState<Partial<Record<ExpenseCategory, string>>>({});
-  const [editing, setEditing] = useState<ExpenseCategory | null>(null);
+  // Todas las categorías: built-in + personalizadas
+  const allCategories = useMemo(() => {
+    const custom = customCategories.map(c => ({
+      name: c.name,
+      color: c.color,
+      icon: c.icon,
+    }));
+    const builtin = BUILTIN_CATEGORIES.map(c => ({
+      name: c,
+      color: BUILTIN_COLORS[c],
+      icon: getCategoryIcon(c),
+    }));
+    return [...builtin, ...custom];
+  }, [customCategories]);
+
+  const [inputs, setInputs] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<string | null>(null);
 
   const spentByCategory = useMemo(() => {
-    const map: Partial<Record<ExpenseCategory, number>> = {};
-    for (const cat of CATEGORIES) {
-      map[cat] = expenses
-        .filter(e => e.date.startsWith(monthPrefix) && e.category === cat)
+    const map: Record<string, number> = {};
+    for (const cat of allCategories) {
+      map[cat.name] = expenses
+        .filter(e => e.date.startsWith(monthPrefix) && e.category === cat.name)
         .reduce((sum, e) => sum + e.amount, 0);
     }
     return map;
-  }, [expenses, monthPrefix]);
+  }, [expenses, monthPrefix, allCategories]);
 
   const totalBudget = Object.values(budgets).reduce((s, v) => s + (v ?? 0), 0);
-  const totalSpent = CATEGORIES.reduce((s, cat) => s + (spentByCategory[cat] ?? 0), 0);
-  const budgetedSpent = CATEGORIES
-    .filter(cat => (budgets[cat] ?? 0) > 0)
-    .reduce((s, cat) => s + (spentByCategory[cat] ?? 0), 0);
+  const totalSpent = allCategories.reduce((s, cat) => s + (spentByCategory[cat.name] ?? 0), 0);
+  const budgetedSpent = allCategories
+    .filter(cat => (budgets[cat.name] ?? 0) > 0)
+    .reduce((s, cat) => s + (spentByCategory[cat.name] ?? 0), 0);
 
-  const handleEdit = (cat: ExpenseCategory) => {
+  const handleEdit = (cat: string) => {
     setEditing(cat);
-    setInputs(prev => ({
-      ...prev,
-      [cat]: budgets[cat] ? String(budgets[cat]) : '',
-    }));
+    setInputs(prev => ({ ...prev, [cat]: budgets[cat] ? String(budgets[cat]) : '' }));
   };
 
-  // Alertas automáticas cuando el gasto supera 80% del presupuesto
   const alertedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    CATEGORIES.forEach(cat => {
-      const limit = budgets[cat] ?? 0;
-      const spent = spentByCategory[cat] ?? 0;
+    allCategories.forEach(cat => {
+      const limit = budgets[cat.name] ?? 0;
+      const spent = spentByCategory[cat.name] ?? 0;
       if (limit <= 0) return;
-      const key = `${monthPrefix}-${cat}`;
+      const key = `${monthPrefix}-${cat.name}`;
       const pct = spent / limit;
       if (pct >= 0.8 && !alertedRef.current.has(key)) {
         alertedRef.current.add(key);
-        notifyBudgetAlert(cat, spent, limit);
+        notifyBudgetAlert(cat.name, spent, limit);
       }
     });
-  }, [spentByCategory, budgets, monthPrefix]);
+  }, [spentByCategory, budgets, monthPrefix, allCategories]);
 
-  const handleSave = async (cat: ExpenseCategory) => {
+  const handleSave = async (cat: string) => {
     const val = parseFloat((inputs[cat] ?? '').replace(/,/g, '.'));
     if (isNaN(val) || val < 0) {
       Alert.alert('Valor inválido', 'Ingresa un monto mayor a 0.');
@@ -115,17 +122,13 @@ export function PresupuestoScreen() {
     setEditing(null);
   };
 
-  const handleClear = (cat: ExpenseCategory) => {
+  const handleClear = (cat: string) => {
     Alert.alert(
       'Eliminar presupuesto',
       `¿Quitar el presupuesto de ${cat}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => clearBudget(cat),
-        },
+        { text: 'Eliminar', style: 'destructive', onPress: () => clearBudget(cat) },
       ],
     );
   };
@@ -187,29 +190,27 @@ export function PresupuestoScreen() {
 
         {/* Category rows */}
         <View style={s.listCard}>
-          {CATEGORIES.map((cat, idx) => {
-            const catColor = CATEGORY_COLORS[cat];
-            const limit = budgets[cat] ?? 0;
-            const spent = spentByCategory[cat] ?? 0;
+          {allCategories.map((cat, idx) => {
+            const limit = budgets[cat.name] ?? 0;
+            const spent = spentByCategory[cat.name] ?? 0;
             const pct = limit > 0 ? Math.min(spent / limit, 1) : 0;
-            const fill = barColor(pct, catColor);
+            const fill = barColor(pct, cat.color);
             const isOver = pct >= 1;
             const isWarn = pct >= 0.75 && pct < 1;
-            const isActive = editing === cat;
+            const isActive = editing === cat.name;
 
             return (
               <Animated.View
-                key={cat}
+                key={cat.name}
                 entering={FadeInDown.delay(idx * 40).duration(300)}
-                style={[s.catRow, idx === CATEGORIES.length - 1 && s.catRowLast]}
+                style={[s.catRow, idx === allCategories.length - 1 && s.catRowLast]}
               >
-                {/* Icon + name */}
                 <View style={s.catHeader}>
-                  <View style={[s.catIcon, { backgroundColor: catColor + '18' }]}>
-                    <Icon name={categoryIcons[cat]} size={18} color={catColor} />
+                  <View style={[s.catIcon, { backgroundColor: cat.color + '18' }]}>
+                    <Icon name={cat.icon} size={18} color={cat.color} />
                   </View>
                   <View style={s.catInfo}>
-                    <Text style={s.catName}>{cat}</Text>
+                    <Text style={s.catName}>{cat.name}</Text>
                     {limit > 0 ? (
                       <Text style={[s.catStatus, { color: isOver ? '#EF4444' : isWarn ? '#F59E0B' : colors.textMuted }]}>
                         {isOver
@@ -219,43 +220,34 @@ export function PresupuestoScreen() {
                           : `${formatCurrency(spent)} de ${formatCurrency(limit)}`}
                       </Text>
                     ) : (
-                      <Text style={s.catStatus}>
-                        Gastado: {formatCurrency(spent)} · Sin límite
-                      </Text>
+                      <Text style={s.catStatus}>Gastado: {formatCurrency(spent)} · Sin límite</Text>
                     )}
                   </View>
                   {limit > 0 ? (
-                    <Pressable onPress={() => handleClear(cat)} hitSlop={8}>
+                    <Pressable onPress={() => handleClear(cat.name)} hitSlop={8}>
                       <Icon name="close-circle-outline" size={18} color={colors.textMuted} />
                     </Pressable>
                   ) : null}
                 </View>
 
-                {/* Progress bar (only when limit set) */}
                 {limit > 0 ? (
                   <View style={s.barTrack}>
-                    <View
-                      style={[
-                        s.barFill,
-                        { width: `${pct * 100}%`, backgroundColor: fill },
-                      ]}
-                    />
+                    <View style={[s.barFill, { width: `${pct * 100}%`, backgroundColor: fill }]} />
                   </View>
                 ) : null}
 
-                {/* Input */}
                 {isActive ? (
                   <View style={s.inputRow}>
                     <TextInput
                       style={s.input}
-                      value={inputs[cat] ?? ''}
-                      onChangeText={v => setInputs(prev => ({ ...prev, [cat]: v }))}
+                      value={inputs[cat.name] ?? ''}
+                      onChangeText={v => setInputs(prev => ({ ...prev, [cat.name]: v }))}
                       keyboardType="decimal-pad"
                       placeholder="0.00"
                       placeholderTextColor={colors.textMuted}
                       autoFocus
                     />
-                    <Pressable style={s.saveBtn} onPress={() => handleSave(cat)}>
+                    <Pressable style={s.saveBtn} onPress={() => handleSave(cat.name)}>
                       <Icon name="check" size={18} color={colors.white} />
                       <Text style={s.saveBtnText}>Guardar</Text>
                     </Pressable>
@@ -264,15 +256,9 @@ export function PresupuestoScreen() {
                     </Pressable>
                   </View>
                 ) : (
-                  <Pressable style={s.editBtn} onPress={() => handleEdit(cat)}>
-                    <Icon
-                      name={limit > 0 ? 'pencil-outline' : 'plus-circle-outline'}
-                      size={14}
-                      color={colors.primary}
-                    />
-                    <Text style={s.editBtnText}>
-                      {limit > 0 ? 'Editar límite' : 'Agregar límite'}
-                    </Text>
+                  <Pressable style={s.editBtn} onPress={() => handleEdit(cat.name)}>
+                    <Icon name={limit > 0 ? 'pencil-outline' : 'plus-circle-outline'} size={14} color={colors.primary} />
+                    <Text style={s.editBtnText}>{limit > 0 ? 'Editar límite' : 'Agregar límite'}</Text>
                   </Pressable>
                 )}
               </Animated.View>

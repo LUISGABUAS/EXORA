@@ -2,7 +2,7 @@ import PushNotification from 'react-native-push-notification';
 import { Platform } from 'react-native';
 import { FiscalRegime } from '../store/usePremiumStore';
 
-const CHANNEL_ID = 'expensia-reminders';
+const CHANNEL_ID = 'exora-reminders';
 
 export function configureNotifications() {
   try {
@@ -133,13 +133,21 @@ export function scheduleSatDeadlines(regime: FiscalRegime) {
     if (MONTHLY_PAYMENT_REGIMES.includes(regime)) {
       // Recordatorio mensual: día 15 de cada mes (2 días antes del vencimiento día 17)
       for (let monthOffset = 0; monthOffset < 12; monthOffset++) {
-        const fireDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 15, 9, 0, 0);
+        const fireDate = new Date(
+          now.getFullYear(),
+          now.getMonth() + monthOffset,
+          15,
+          9,
+          0,
+          0,
+        );
         if (fireDate <= now) continue;
         PushNotification.localNotificationSchedule({
           id: String(notifId++),
           channelId: CHANNEL_ID,
           title: '📅 Tu pago al SAT vence en 2 días',
-          message: 'El 17 vence tu pago mensual. Revisa tus deducciones en EXPENSIA antes de declarar.',
+          message:
+            'El 17 vence tu pago mensual. Revisa tus deducciones en EXORA antes de declarar.',
           date: fireDate,
           allowWhileIdle: true,
         });
@@ -149,14 +157,18 @@ export function scheduleSatDeadlines(regime: FiscalRegime) {
     if (QUARTERLY_REGIMES.includes(regime)) {
       // Recordatorio trimestral: 5 días antes del 17 de abril, julio, octubre y enero
       QUARTERLY_MONTHS.forEach(month => {
-        const year = month === 0 && now.getMonth() > 0 ? now.getFullYear() + 1 : now.getFullYear();
+        const year =
+          month === 0 && now.getMonth() > 0
+            ? now.getFullYear() + 1
+            : now.getFullYear();
         const fireDate = new Date(year, month, 12, 9, 0, 0); // día 12 = 5 días antes del 17
         if (fireDate <= now) return;
         PushNotification.localNotificationSchedule({
           id: String(notifId++),
           channelId: CHANNEL_ID,
           title: '📅 Tu declaración trimestral vence pronto',
-          message: 'El 17 vence tu declaración trimestral al SAT. Genera tu reporte fiscal en EXPENSIA.',
+          message:
+            'El 17 vence tu declaración trimestral al SAT. Genera tu reporte fiscal en EXORA.',
           date: fireDate,
           allowWhileIdle: true,
         });
@@ -170,13 +182,76 @@ export function scheduleSatDeadlines(regime: FiscalRegime) {
         id: String(notifId++),
         channelId: CHANNEL_ID,
         title: '📊 Declaración anual — último mes',
-        message: 'Tienes hasta el 30 de abril para presentar tu declaración anual. Exporta tu reporte desde EXPENSIA.',
+        message:
+          'Tienes hasta el 30 de abril para presentar tu declaración anual. Exporta tu reporte desde EXORA.',
         date: annualReminder,
         allowWhileIdle: true,
       });
     }
   } catch (e) {
     console.warn('[Notifications] No se pudo agendar recordatorios SAT:', e);
+  }
+}
+
+/**
+ * Schedules trial expiry notifications at day 5, 6 and 7.
+ * Call once when onboarding completes and trialEndsAt is set.
+ */
+export function scheduleTrialReminders(trialEndsAt: string) {
+  try {
+    PushNotification.cancelLocalNotification('50');
+    PushNotification.cancelLocalNotification('51');
+    PushNotification.cancelLocalNotification('52');
+
+    const end = new Date(trialEndsAt + 'T09:00:00');
+
+    // Day 5 → 2 days left
+    const day5 = new Date(end);
+    day5.setDate(day5.getDate() - 2);
+    if (day5 > new Date()) {
+      PushNotification.localNotificationSchedule({
+        id: '50',
+        channelId: CHANNEL_ID,
+        title: '⏳ Te quedan 2 días de Exora Pro',
+        message:
+          'Sigue escaneando tickets y generando reportes fiscales sin límite. Suscríbete antes de que termine.',
+        date: day5,
+        allowWhileIdle: true,
+      });
+    }
+
+    // Day 6 → 1 day left
+    const day6 = new Date(end);
+    day6.setDate(day6.getDate() - 1);
+    if (day6 > new Date()) {
+      PushNotification.localNotificationSchedule({
+        id: '51',
+        channelId: CHANNEL_ID,
+        title: '🔔 Mañana termina tu prueba gratuita',
+        message:
+          'Activa Pro hoy y no pierdas acceso a tus reportes fiscales, escaneos ilimitados e insights de IA.',
+        date: day6,
+        allowWhileIdle: true,
+      });
+    }
+
+    // Day 7 → trial expired
+    if (end > new Date()) {
+      PushNotification.localNotificationSchedule({
+        id: '52',
+        channelId: CHANNEL_ID,
+        title: '🎯 Tu prueba de Exora Pro terminó',
+        message:
+          'Suscríbete para seguir con escaneos ilimitados, reportes fiscales y deducciones automáticas.',
+        date: end,
+        allowWhileIdle: true,
+      });
+    }
+  } catch (e) {
+    console.warn(
+      '[Notifications] No se pudieron agendar recordatorios de trial:',
+      e,
+    );
   }
 }
 
