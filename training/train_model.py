@@ -3,10 +3,10 @@
 Entrena un modelo de regresión logística multinomial para clasificar
 líneas de tickets mexicanos.
 
-Input: training/data/receipts.json (1000 recibos generados)
+Input: training/data/receipts.json (5000 recibos generados)
 Output: src/utils/modelWeights.json (pesos del modelo)
 
-20 features × 12 clases = 240 pesos + 12 biases = 252 parámetros
+28 features × 12 clases = 336 pesos + 12 biases = 348 parámetros
 """
 
 import json
@@ -49,7 +49,8 @@ def prepare_dataset(receipts):
                 continue
 
             prev_line = lines_text[i - 1] if i > 0 else ''
-            features = extract_features(line, i, total_lines, prev_line)
+            next_line = lines_text[i + 1] if i < total_lines - 1 else ''
+            features = extract_features(line, i, total_lines, prev_line, next_line)
             X.append(features)
             y.append(LINE_CLASSES.index(label_type))
 
@@ -69,12 +70,13 @@ def train_model(X, y):
     print(f'Classes: {len(LINE_CLASSES)}')
     print()
 
-    # Train logistic regression
+    # Train logistic regression with balanced class weights
     model = LogisticRegression(
         multi_class='multinomial',
         solver='lbfgs',
-        max_iter=1000,
-        C=1.0,
+        max_iter=2000,
+        C=0.8,
+        class_weight='balanced',
         random_state=42,
     )
     model.fit(X_train, y_train)
@@ -227,18 +229,18 @@ def main():
     print('=' * 50)
     model, accuracy = train_model(X, y)
 
-    # If accuracy is too low, try with more regularization
-    if accuracy < 0.85:
-        print('\nAccuracy below target. Trying with C=0.5...')
-        model2 = LogisticRegression(
-            multi_class='multinomial', solver='lbfgs',
-            max_iter=2000, C=0.5, random_state=42,
-        )
-        X_train, X_test, y_train, y_test = train_test_split(
+    # If accuracy is too low, try with stronger regularization
+    if accuracy < 0.87:
+        print('\nAccuracy below target. Trying with C=0.3...')
+        X_train2, X_test2, y_train2, y_test2 = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y
         )
-        model2.fit(X_train, y_train)
-        acc2 = accuracy_score(y_test, model2.predict(X_test))
+        model2 = LogisticRegression(
+            multi_class='multinomial', solver='lbfgs',
+            max_iter=3000, C=0.3, class_weight='balanced', random_state=42,
+        )
+        model2.fit(X_train2, y_train2)
+        acc2 = accuracy_score(y_test2, model2.predict(X_test2))
         if acc2 > accuracy:
             model = model2
             accuracy = acc2

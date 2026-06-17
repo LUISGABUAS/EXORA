@@ -7,7 +7,7 @@ const THRESHOLD = 7;
 
 // IDs de las tiendas (reemplazar cuando se publique la app)
 const APP_STORE_ID = 'PLACEHOLDER_APP_STORE_ID';
-const PLAY_STORE_ID = 'com.smartexpensemx2';
+const PLAY_STORE_ID = 'com.exora.finance.app';
 
 function buildStoreUrl(): string {
   if (Platform.OS === 'ios') {

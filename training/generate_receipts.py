@@ -58,6 +58,20 @@ MERCHANTS = {
         {'name': 'City Market', 'rfc': 'LCO980615MN4', 'legal': 'LA COMER S.A.B. DE C.V.'},
         {'name': 'Hooters', 'rfc': 'HOO000315AB6', 'legal': 'HOOTERS DE MEXICO S.A. DE C.V.'},
         {'name': 'Bisquets Obregón', 'rfc': 'BOB780920CD9', 'legal': 'BISQUETS OBREGON S.A. DE C.V.'},
+        {'name': 'Birriería El Güero', 'rfc': 'BEG010305AB8', 'legal': 'BIRRIERIA EL GUERO S.A. DE C.V.'},
+        {'name': 'Carnitas El Michoacano', 'rfc': 'CEM950720CD3', 'legal': 'CARNITAS EL MICHOACANO'},
+        {'name': 'Pozolería Los Comales', 'rfc': 'PLC000610MN7', 'legal': 'POZOLERIA LOS COMALES S.A. DE C.V.'},
+        {'name': 'Tacos El Paisa', 'rfc': 'TEP020815GH2', 'legal': 'TACOS EL PAISA'},
+        {'name': 'Antojitos La Abuela', 'rfc': 'ALA890925QR6', 'legal': 'ANTOJITOS LA ABUELA S.A. DE C.V.'},
+        {'name': 'Lonchería La Güera', 'rfc': 'LLG010430AB9', 'legal': 'LONCHERIA LA GUERA'},
+        {'name': 'Super Guajardo', 'rfc': 'SGU780315CD4', 'legal': 'SUPERMERCADOS GUAJARDO S.A. DE C.V.'},
+        {'name': 'Mercado Roma', 'rfc': 'MRO150620MN8', 'legal': 'MERCADO ROMA S.A. DE C.V.'},
+        {'name': 'La Castellana', 'rfc': 'LCA920510GH5', 'legal': 'LA CASTELLANA PANADERIA S.A. DE C.V.'},
+        {'name': 'Panadería El Molino', 'rfc': 'PEM870325QR1', 'legal': 'PANADERIA EL MOLINO S.A. DE C.V.'},
+        {'name': 'Tortillería La Paloma', 'rfc': 'TLP930815AB6', 'legal': 'TORTILLERIA LA PALOMA'},
+        {'name': 'Frutería La Esperanza', 'rfc': 'FLE010720CD3', 'legal': 'FRUTERIA LA ESPERANZA'},
+        {'name': 'Carnicería Don Toño', 'rfc': 'CDT850610MN9', 'legal': 'CARNICERIA DON TONO'},
+        {'name': 'Cremería La Vaquita', 'rfc': 'CLV920415GH7', 'legal': 'CREMERIA LA VAQUITA'},
     ],
     'Transporte': [
         {'name': 'PEMEX', 'rfc': 'GVA980701QR5', 'legal': 'GASOLINERA DEL VALLE S.A. DE C.V.'},
@@ -773,7 +787,7 @@ def generate_receipt(idx):
 
 def main():
     receipts = []
-    for i in range(1000):
+    for i in range(5000):
         receipt = generate_receipt(i)
         receipts.append(receipt)
 
@@ -786,7 +800,7 @@ def main():
         severity_count[r['severity']] = severity_count.get(r['severity'], 0) + 1
         category_count[r['groundTruth']['category']] = category_count.get(r['groundTruth']['category'], 0) + 1
 
-    print(f'Generated {len(receipts)} receipts')
+    print(f'Generated {len(receipts)} receipts (5000)')
     print(f'\nTemplates: {json.dumps(templates_count, indent=2)}')
     print(f'\nSeverity: {json.dumps(severity_count, indent=2)}')
     print(f'\nCategories: {json.dumps(category_count, indent=2)}')

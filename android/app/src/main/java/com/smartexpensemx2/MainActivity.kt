@@ -1,4 +1,4 @@
-package com.smartexpensemx2
+package com.exora.finance.app
 
 import android.os.Bundle
 import com.facebook.react.ReactActivity
