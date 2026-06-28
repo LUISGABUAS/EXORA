@@ -58,6 +58,7 @@ function AppContent() {
   const initializeAuth = useAuthStore(state => state.initialize);
   const authLoading = useAuthStore(state => state.loading);
   const hydratePremium = usePremiumStore(state => state.hydrate);
+  const checkOnboardingForUser = usePremiumStore(state => state.checkOnboardingForUser);
   const updateStreak = usePremiumStore(state => state.updateStreak);
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
   const premiumLoaded = usePremiumStore(state => state.loaded);
@@ -86,6 +87,7 @@ function AppContent() {
     if (userId && userId !== prevSessionRef.current) {
       prevSessionRef.current = userId;
       pullFromSupabase().catch(() => {});
+      checkOnboardingForUser().catch(() => {});
     }
     if (!userId) {
       prevSessionRef.current = null;

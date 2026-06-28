@@ -57,7 +57,7 @@ serve(async req => {
       ? ((monthTotal - prevMonthTotal) / prevMonthTotal * 100).toFixed(1)
       : null;
 
-    const systemPrompt = `Eres un asesor financiero y fiscal experto para México, integrado en la app Expensia.
+    const systemPrompt = `Eres un asesor financiero y fiscal experto para México, integrado en la app EXORA.
 Tu rol es dar consejos prácticos, concisos y accionables basados en los datos reales del usuario.
 Hablas en español mexicano, de forma directa y amigable.
 Cuando hay información fiscal, consideras siempre el régimen fiscal del usuario.

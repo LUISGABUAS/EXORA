@@ -20,23 +20,14 @@ import { PaywallModal } from '../components/PaywallModal';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { exportExpensesToCsv } from '../services/exportService';
-import {
-  getAvailableBiometric,
-  getBiometricLabel,
-} from '../services/biometricService';
-import {
-  applyReferralCode,
-  getOrCreateReferralCode,
-  REFERRAL_ERROR_MESSAGES,
-} from '../services/referralService';
-import {
-  cancelAllReminders,
-  scheduleDailyReminder,
-  scheduleWeeklySummary,
-} from '../services/notificationService';
+import { getAvailableBiometric, getBiometricLabel } from '../services/biometricService';
+import { applyReferralCode, getOrCreateReferralCode, REFERRAL_ERROR_MESSAGES } from '../services/referralService';
+import { cancelAllReminders, scheduleDailyReminder, scheduleWeeklySummary } from '../services/notificationService';
 import { useAuthStore } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
+import { getPendingSyncItems } from '../database/syncQueue';
+import { flushSyncQueue } from '../services/syncService';
 import { ColorPalette } from '../theme/colors';
 import { ThemeMode, useTheme } from '../theme/ThemeContext';
 import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
@@ -44,28 +35,60 @@ import { localDateString } from '../utils/format';
 
 const REMINDER_KEY = '@exora_reminders';
 
-const themeModes: Array<{ mode: ThemeMode; label: string; icon: string }> = [
+const THEME_MODES: Array<{ mode: ThemeMode; label: string; icon: string }> = [
   { mode: 'light', label: 'Claro', icon: 'white-balance-sunny' },
   { mode: 'dark', label: 'Oscuro', icon: 'moon-waning-crescent' },
   { mode: 'system', label: 'Sistema', icon: 'cellphone' },
 ];
 
-const fiscalModes: Array<{ value: FiscalRegime; label: string; icon: string }> =
-  [
-    { value: 'resico', label: 'RESICO', icon: 'account-check' },
-    {
-      value: 'actividad_empresarial',
-      label: 'Act. Empresarial',
-      icon: 'briefcase-outline',
-    },
-    { value: 'no_facturo', label: 'No facturo', icon: 'wallet-outline' },
-  ];
+
+function SectionLabel({ label }: { label: string }) {
+  const { colors } = useTheme();
+  return <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: font.semibold, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6, marginLeft: 4 }}>{label}</Text>;
+}
+
+function NavRow({ icon, label, color, onPress, right }: {
+  icon: string; label: string; color?: string; onPress: () => void; right?: React.ReactNode;
+}) {
+  const { colors, isDark } = useTheme();
+  const c = color ?? colors.primary;
+  return (
+    <Pressable
+      style={({ pressed }) => [navRowStyle(colors, isDark), pressed && { opacity: 0.6 }]}
+      onPress={onPress}
+    >
+      <View style={[iconWrap(c), { marginRight: 12 }]}>
+        <Icon name={icon} size={18} color={c} />
+      </View>
+      <Text style={{ color: colors.text, fontSize: 15, fontFamily: font.medium, flex: 1 }}>{label}</Text>
+      {right ?? <Icon name="chevron-right" size={18} color={colors.textMuted} />}
+    </Pressable>
+  );
+}
+
+const navRowStyle = (colors: ColorPalette, isDark: boolean) => ({
+  flexDirection: 'row' as const,
+  alignItems: 'center' as const,
+  paddingVertical: 13,
+  paddingHorizontal: 16,
+  backgroundColor: isDark ? '#111111' : colors.surface,
+  borderBottomWidth: StyleSheet.hairlineWidth,
+  borderBottomColor: isDark ? '#1E1E1E' : colors.border,
+});
+
+const iconWrap = (color: string) => ({
+  width: 32,
+  height: 32,
+  borderRadius: 8,
+  backgroundColor: color + '18',
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+});
 
 export function SettingsScreen() {
   const { colors, isDark, mode, setMode } = useTheme();
   const s = useStyles(colors, isDark);
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const expenses = useExpenseStore(state => state.expenses);
   const session = useAuthStore(state => state.session);
   const signOut = useAuthStore(state => state.signOut);
@@ -75,47 +98,39 @@ export function SettingsScreen() {
   const redeemFounderCode = usePremiumStore(state => state.redeemFounderCode);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
-  const setFiscalRegime = usePremiumStore(state => state.setFiscalRegime);
   const constanciaUri = usePremiumStore(state => state.constanciaUri);
   const biometricEnabled = usePremiumStore(state => state.biometricEnabled);
-  const setBiometricEnabled = usePremiumStore(
-    state => state.setBiometricEnabled,
-  );
+  const setBiometricEnabled = usePremiumStore(state => state.setBiometricEnabled);
   const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
   const extendTrial = usePremiumStore(state => state.extendTrial);
+
   const [remindersOn, setRemindersOn] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [biometricType, setBiometricTypeLocal] = useState<string>('none');
-  const [referralCode, setReferralCode] = useState('');
   const [myCode, setMyCode] = useState('');
   const [referralInput, setReferralInput] = useState('');
   const [referralLoading, setReferralLoading] = useState(false);
   const [founderInput, setFounderInput] = useState('');
   const [founderLoading, setFounderLoading] = useState(false);
+  const [showFounderInput, setShowFounderInput] = useState(false);
 
   const trialDaysLeft = trialEndsAt
-    ? Math.max(
-        0,
-        Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000),
-      )
+    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
     : 0;
   const trialActive = trialDaysLeft > 0 && !isPremium;
 
+  const userEmail = session?.user?.email || '';
+  const isRelayEmail = userEmail.endsWith('@privaterelay.appleid.com');
   const userName =
     session?.user?.user_metadata?.full_name ||
-    session?.user?.email?.split('@')[0] ||
+    (!isRelayEmail && userEmail.split('@')[0]) ||
     'Usuario';
-  const userEmail = session?.user?.email || '';
 
   useEffect(() => {
-    AsyncStorage.getItem(REMINDER_KEY).then(val => {
-      if (val === 'true') setRemindersOn(true);
-    });
+    AsyncStorage.getItem(REMINDER_KEY).then(val => { if (val === 'true') setRemindersOn(true); });
     getAvailableBiometric().then(t => setBiometricTypeLocal(t));
     if (session?.user?.id) {
-      getOrCreateReferralCode(session.user.id)
-        .then(setMyCode)
-        .catch(() => {});
+      getOrCreateReferralCode(session.user.id).then(setMyCode).catch(() => {});
     }
   }, [session?.user?.id]);
 
@@ -136,16 +151,10 @@ export function SettingsScreen() {
       const result = await applyReferralCode(referralInput.trim());
       if (result.ok) {
         await extendTrial(7);
-        Alert.alert(
-          '¡Código aplicado!',
-          '7 días de Pro agregados a tu cuenta.',
-        );
+        Alert.alert('¡Código aplicado!', '7 días de Pro agregados a tu cuenta.');
         setReferralInput('');
       } else {
-        Alert.alert(
-          'Código inválido',
-          REFERRAL_ERROR_MESSAGES[result.error] ?? 'Error desconocido.',
-        );
+        Alert.alert('Código inválido', REFERRAL_ERROR_MESSAGES[result.error] ?? 'Error desconocido.');
       }
     } catch {
       Alert.alert('Error', 'No se pudo aplicar el código. Intenta de nuevo.');
@@ -157,12 +166,8 @@ export function SettingsScreen() {
   const toggleReminders = async (value: boolean) => {
     setRemindersOn(value);
     await AsyncStorage.setItem(REMINDER_KEY, String(value));
-    if (value) {
-      scheduleDailyReminder();
-      scheduleWeeklySummary();
-    } else {
-      cancelAllReminders();
-    }
+    if (value) { scheduleDailyReminder(); scheduleWeeklySummary(); }
+    else { cancelAllReminders(); }
   };
 
   const exportCsv = async () => {
@@ -170,28 +175,14 @@ export function SettingsScreen() {
       let data = expenses;
       if (!hasFullAccess()) {
         const n = new Date();
-        const cutoff = localDateString(
-          new Date(n.getFullYear(), n.getMonth(), n.getDate() - 30),
-        );
+        const cutoff = localDateString(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 30));
         data = expenses.filter(e => e.date >= cutoff);
       }
       await exportExpensesToCsv(data);
     } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'No se pudo exportar.',
-      );
+      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo exportar.');
     }
   };
-
-  const planLabel =
-    plan === 'founder'
-      ? 'Fundador ✦'
-      : plan === 'monthly'
-      ? 'Mensual'
-      : plan === 'yearly'
-      ? 'Anual'
-      : 'Gratuito';
 
   const handleRedeemFounderCode = async () => {
     if (!founderInput.trim()) return;
@@ -200,474 +191,265 @@ export function SettingsScreen() {
     setFounderLoading(false);
     if (result === 'success') {
       setFounderInput('');
-      Alert.alert(
-        '✦ Bienvenido, Fundador',
-        'Tu acceso premium permanente ha sido activado. Gracias por ser parte de Exora desde el inicio.',
-      );
+      setShowFounderInput(false);
+      Alert.alert('✦ Bienvenido, Fundador', 'Tu acceso premium permanente ha sido activado.');
     } else if (result === 'already_used') {
-      Alert.alert(
-        'Código ya canjeado',
-        'Este código ya fue utilizado por otro usuario.',
-      );
+      Alert.alert('Código ya canjeado', 'Este código ya fue utilizado por otro usuario.');
     } else if (result === 'invalid') {
       Alert.alert('Código inválido', 'El código que ingresaste no existe.');
     } else {
-      Alert.alert(
-        'Error',
-        'No se pudo canjear el código. Verifica tu conexión e intenta de nuevo.',
-      );
+      Alert.alert('Error', 'No se pudo canjear el código. Verifica tu conexión.');
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const pending = await getPendingSyncItems();
+    if (pending.length > 0) {
+      Alert.alert(
+        'Datos sin sincronizar',
+        `Tienes ${pending.length} movimiento${pending.length > 1 ? 's' : ''} sin guardar en la nube.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Sincronizar y salir', onPress: async () => { try { await flushSyncQueue(); } catch {} signOut(); } },
+          { text: 'Salir sin sincronizar', style: 'destructive', onPress: () => signOut() },
+        ],
+      );
+      return;
+    }
     Alert.alert('Cerrar sesión', '¿Seguro que deseas cerrar tu sesión?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cerrar sesión', style: 'destructive', onPress: () => signOut() },
     ]);
   };
 
+  const planLabel = plan === 'founder' ? 'Fundador ✦' : plan === 'monthly' ? 'Pro Mensual' : plan === 'yearly' ? 'Pro Anual' : 'Gratuito';
+
   return (
     <ScreenContainer>
-      {/* Profile Header */}
-      <Pressable
-        style={s.profileHeader}
-        onPress={() => navigation.navigate('ProfileEdit')}
-      >
-        <Avatar size={72} name={userName} />
-        <Text style={s.userName}>{userName}</Text>
-        {userEmail ? <Text style={s.userEmail}>{userEmail}</Text> : null}
-        {constanciaUri ? (
-          <View style={s.constanciaBadge}>
-            <Icon name="check-decagram" size={14} color={colors.primary} />
-            <Text style={s.constanciaBadgeText}>Constancia verificada</Text>
+      {/* Profile */}
+      <Pressable style={s.profileHeader} onPress={() => navigation.navigate('ProfileEdit')}>
+        <Avatar size={68} name={userName} />
+        <View style={s.profileInfo}>
+          <Text style={s.userName}>{userName}</Text>
+          {userEmail && !isRelayEmail ? <Text style={s.userEmail}>{userEmail}</Text> : null}
+          <View style={s.profileMeta}>
+            {constanciaUri && (
+              <View style={s.verifiedBadge}>
+                <Icon name="check-decagram" size={12} color={colors.primary} />
+                <Text style={s.verifiedText}>Constancia verificada</Text>
+              </View>
+            )}
+            <Text style={s.editHint}>Editar perfil →</Text>
           </View>
-        ) : null}
-        <Text style={s.editHint}>Toca para editar</Text>
+        </View>
       </Pressable>
 
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="theme-light-dark" size={22} color={colors.text} />
-          <Text style={s.cardTitle}>Apariencia</Text>
-        </View>
-        <Text style={s.cardText}>Selecciona el tema de la aplicación.</Text>
-        <View style={s.themeRow}>
-          {themeModes.map(item => (
-            <Pressable
-              key={item.mode}
-              style={[s.themeChip, mode === item.mode && s.themeChipActive]}
-              onPress={() => setMode(item.mode)}
-            >
-              <Icon
-                name={item.icon}
-                size={16}
-                color={mode === item.mode ? colors.white : colors.text}
-              />
-              <Text
-                style={[
-                  s.themeChipText,
-                  mode === item.mode && s.themeChipTextActive,
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="file-document-outline" size={22} color={colors.text} />
-          <Text style={s.cardTitle}>Régimen fiscal</Text>
-        </View>
-        <Text style={s.cardText}>
-          Selecciona cómo facturas para calcular tu ahorro fiscal.
-        </Text>
-        <View style={s.fiscalRow}>
-          {fiscalModes.map(item => (
-            <Pressable
-              key={item.value}
-              style={[
-                s.fiscalChip,
-                fiscalRegime === item.value && s.themeChipActive,
-              ]}
-              onPress={() => setFiscalRegime(item.value)}
-            >
-              <Icon
-                name={item.icon}
-                size={16}
-                color={fiscalRegime === item.value ? colors.white : colors.text}
-              />
-              <Text
-                style={[
-                  s.themeChipText,
-                  fiscalRegime === item.value && s.themeChipTextActive,
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        {!fiscalModes.some(fm => fm.value === fiscalRegime) ? (
-          <View style={s.currentRegimeRow}>
-            <Text style={s.currentRegimeLabel}>
-              Régimen actual:{' '}
-              {FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime)
-                ?.title || fiscalRegime}
-            </Text>
-            <Text style={s.currentRegimeHint}>(cambiar en editar perfil)</Text>
-          </View>
-        ) : null}
-
-        {/* Conoce tu régimen fiscal */}
+      {/* Plan badge */}
+      {(isPremium || isFounder || trialActive) && (
         <Pressable
-          style={s.learnRegimeBtn}
-          onPress={() => Linking.openURL('https://www.sat.gob.mx/personas/declaraciones')}
+          style={[s.planBadge, isFounder && s.planBadgeFounder]}
+          onPress={() => !isFounder && setPaywallVisible(true)}
         >
-          <View style={s.learnRegimeLeft}>
-            <Icon name="school-outline" size={18} color={colors.primary} />
-            <View>
-              <Text style={s.learnRegimeTitle}>Conoce tu régimen fiscal</Text>
-              <Text style={s.learnRegimeSubtitle}>Portal oficial del SAT con guías y calculadoras</Text>
-            </View>
-          </View>
-          <Icon name="open-in-new" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('Ingresos')}
-        >
-          <Icon name="cash-plus" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Mis ingresos</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('IngresosRecurrentes')}
-        >
-          <Icon name="repeat" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>
-            Ingresos fijos (salario, renta...)
-          </Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={[s.reportButton, { backgroundColor: colors.primary + '12', borderRadius: 12 }]}
-          onPress={() => navigation.navigate('MisFacturas')}
-        >
-          <Icon name="file-check-outline" size={18} color={colors.primary} />
-          <Text style={[s.reportButtonText, { fontWeight: '700' }]}>Revisar mis facturas</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('ReporteFiscal')}
-        >
-          <Icon name="chart-bar" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Ver Reporte Fiscal</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('Presupuesto')}
-        >
-          <Icon name="gauge" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Presupuestos mensuales</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('Recurrentes')}
-        >
-          <Icon name="repeat" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Gastos recurrentes</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('Ahorros')}
-        >
-          <Icon name="piggy-bank-outline" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Metas de ahorro</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('ResicoCalculator')}
-        >
-          <Icon name="calculator-variant" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Calculadora RESICO</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-      </View>
-
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="account-group-outline" size={22} color={colors.text} />
-          <Text style={s.cardTitle}>Herramientas</Text>
-        </View>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('Split')}
-        >
-          <Icon name="call-split" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Dividir gastos</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('CustomCategories')}
-        >
-          <Icon name="tag-plus" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Categorías personalizadas</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('Backup')}
-        >
-          <Icon name="database-export" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Backup y restauración</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('CurrencySettings')}
-        >
-          <Icon name="currency-usd" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Moneda y tipo de cambio</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          style={s.reportButton}
-          onPress={() => navigation.navigate('BankImport')}
-        >
-          <Icon name="bank-transfer-in" size={18} color={colors.primary} />
-          <Text style={s.reportButtonText}>Importar estado de cuenta</Text>
-          <Icon name="chevron-right" size={18} color={colors.primary} />
-        </Pressable>
-      </View>
-
-      {/* Security Card */}
-      {biometricType !== 'none' ? (
-        <View style={s.card}>
-          <View style={s.cardHeader}>
-            <Icon name="shield-lock-outline" size={22} color={colors.text} />
-            <Text style={s.cardTitle}>Seguridad</Text>
-          </View>
-          <View style={s.switchRow}>
-            <View style={s.switchInfo}>
-              <Text style={s.switchLabel}>
-                Bloquear con {getBiometricLabel(biometricType as any)}
-              </Text>
-              <Text style={s.switchDesc}>
-                Se pedirá autenticación al abrir la app
-              </Text>
-            </View>
-            <Switch
-              value={biometricEnabled}
-              onValueChange={setBiometricEnabled}
-              trackColor={{ true: colors.primary }}
-            />
-          </View>
-        </View>
-      ) : null}
-
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="bell-ring-outline" size={22} color={colors.text} />
-          <Text style={s.cardTitle}>Recordatorios</Text>
-        </View>
-        <Text style={s.cardText}>
-          Diario a las 20:00 y resumen semanal los domingos a las 10:00.
-        </Text>
-        <View style={s.switchRow}>
-          <Text style={s.switchLabel}>Activar recordatorios</Text>
-          <Switch
-            value={remindersOn}
-            onValueChange={toggleReminders}
-            trackColor={{ true: colors.primary }}
+          <Icon
+            name={isFounder ? 'star-four-points' : trialActive ? 'clock-fast' : 'shield-crown-outline'}
+            size={16}
+            color={isFounder ? colors.warning : colors.primary}
           />
-        </View>
-      </View>
-
-      {/* Trial banner — solo para usuarios en trial sin premium */}
-      {trialActive && !isPremium ? (
-        <View style={s.trialBanner}>
-          <Icon name="clock-fast" size={20} color={colors.warning} />
-          <View style={s.trialText}>
-            <Text style={s.trialTitle}>
-              Prueba gratis activa — {trialDaysLeft} día
-              {trialDaysLeft !== 1 ? 's' : ''} restante
-              {trialDaysLeft !== 1 ? 's' : ''}
-            </Text>
-            <Text style={s.trialSub}>
-              Suscríbete antes de que termine para no perder el acceso.
-            </Text>
-          </View>
-          <Pressable style={s.trialBtn} onPress={() => setPaywallVisible(true)}>
-            <Text style={s.trialBtnText}>Ver planes</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {/* Referidos y código fundador — solo para usuarios SIN premium ni fundador */}
-      {!isPremium && !isFounder && (
-        <View style={s.card}>
-          <View style={s.cardHeader}>
-            <Icon name="gift-outline" size={22} color={colors.secondary} />
-            <Text style={s.cardTitle}>Invita y gana Pro</Text>
-          </View>
-          <Text style={s.cardText}>
-            Comparte tu código. Cuando alguien lo use, ambos obtienen{' '}
-            <Text style={{ color: colors.primary, fontFamily: font.bold }}>
-              7 días gratis de Pro
-            </Text>
-            .
+          <Text style={[s.planBadgeText, isFounder && { color: colors.warning }]}>
+            {isFounder ? 'Miembro Fundador — Acceso permanente' :
+             trialActive ? `Prueba gratis — ${trialDaysLeft} día${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''}` :
+             planLabel}
           </Text>
-
-          {myCode ? (
-            <Pressable style={s.codeBox} onPress={handleShareReferral}>
-              <Text style={s.codeText}>{myCode}</Text>
-              <View style={s.shareChip}>
-                <Icon name="share-variant" size={14} color={colors.white} />
-                <Text style={s.shareChipText}>Compartir</Text>
-              </View>
-            </Pressable>
-          ) : null}
-
-          <View style={s.codeInputRow}>
-            <TextInput
-              style={s.codeInput}
-              placeholder="Ingresa un código (EXP-XXXXXX)"
-              placeholderTextColor={colors.textMuted}
-              value={referralInput}
-              onChangeText={t => setReferralInput(t.toUpperCase())}
-              autoCapitalize="characters"
-              maxLength={12}
-            />
-            <Pressable
-              style={[
-                s.applyBtn,
-                (!referralInput.trim() || referralLoading) && s.applyBtnDisabled,
-              ]}
-              onPress={handleApplyCode}
-              disabled={!referralInput.trim() || referralLoading}
-            >
-              <Text style={s.applyBtnText}>
-                {referralLoading ? '…' : 'Aplicar'}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
+          {!isFounder && <Icon name="chevron-right" size={14} color={colors.textMuted} />}
+        </Pressable>
       )}
 
-      {!isPremium && !isFounder && (
-        <View style={s.card}>
-          <View style={s.cardHeader}>
-            <Icon name="star-four-points" size={20} color={colors.warning} />
-            <Text style={s.cardTitle}>Código fundador</Text>
-          </View>
-          <Text style={s.cardText}>
-            ¿Tienes un código exclusivo de fundador? Canjéalo para obtener
-            acceso premium permanente.
-          </Text>
-          <View style={s.codeInputRow}>
-            <TextInput
-              style={s.codeInput}
-              placeholder="EXORA-FOUNDER-XXXX"
-              placeholderTextColor={colors.textMuted}
-              value={founderInput}
-              onChangeText={t => setFounderInput(t.toUpperCase())}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={24}
-            />
-            <Pressable
-              style={[
-                s.applyBtn,
-                (!founderInput.trim() || founderLoading) && s.applyBtnDisabled,
-              ]}
-              onPress={handleRedeemFounderCode}
-              disabled={!founderInput.trim() || founderLoading}
-            >
-              <Text style={s.applyBtnText}>
-                {founderLoading ? '…' : 'Canjear'}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
-      {/* Membresía */}
+      {/* Ajustes */}
+      <SectionLabel label="Ajustes" />
       <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="shield-crown-outline" size={22} color={isFounder ? colors.warning : colors.primary} />
-          <Text style={s.cardTitle}>Membresía</Text>
+        {/* Apariencia */}
+        <View style={s.settingRow}>
+          <View style={[iconWrap(colors.textMuted), { marginRight: 12 }]}>
+            <Icon name="theme-light-dark" size={18} color={colors.textMuted} />
+          </View>
+          <Text style={s.settingLabel}>Apariencia</Text>
+          <View style={s.chipRow}>
+            {THEME_MODES.map(item => (
+              <Pressable
+                key={item.mode}
+                style={[s.chip, mode === item.mode && s.chipActive]}
+                onPress={() => setMode(item.mode)}
+              >
+                <Icon name={item.icon} size={13} color={mode === item.mode ? '#fff' : colors.textMuted} />
+                <Text style={[s.chipText, mode === item.mode && s.chipTextActive]}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
-        {isPremium || isFounder ? (
+
+        <View style={s.divider} />
+
+        {/* Régimen fiscal */}
+        <Pressable style={s.settingRow} onPress={() => navigation.navigate('ProfileEdit')}>
+          <View style={[iconWrap('#8B5CF6'), { marginRight: 12 }]}>
+            <Icon name="file-document-outline" size={18} color="#8B5CF6" />
+          </View>
+          <Text style={[s.settingLabel, { flex: 1 }]}>Régimen fiscal</Text>
+          <Text style={s.regimeValue}>
+            {FISCAL_REGIME_DISPLAY.find(r => r.value === fiscalRegime)?.title || fiscalRegime}
+          </Text>
+          <Icon name="chevron-right" size={16} color={colors.textMuted} style={{ marginLeft: 4 }} />
+        </Pressable>
+
+        <View style={s.divider} />
+
+        {/* Recordatorios */}
+        <View style={s.settingRow}>
+          <View style={[iconWrap('#F59E0B'), { marginRight: 12 }]}>
+            <Icon name="bell-outline" size={18} color="#F59E0B" />
+          </View>
+          <Text style={[s.settingLabel, { flex: 1 }]}>Recordatorios</Text>
+          <Switch value={remindersOn} onValueChange={toggleReminders} trackColor={{ true: colors.primary }} />
+        </View>
+
+        {/* Biométrico */}
+        {biometricType !== 'none' && (
           <>
-            {isFounder ? (
-              <View style={s.founderBanner}>
-                <View style={s.founderBannerTop}>
-                  <Icon name="star-four-points" size={20} color={colors.warning} />
-                  <Text style={s.founderBannerTitle}>Miembro Fundador</Text>
-                  <Icon name="star-four-points" size={20} color={colors.warning} />
-                </View>
-                <Text style={s.founderBannerSub}>Acceso permanente a todas las funciones</Text>
+            <View style={s.divider} />
+            <View style={s.settingRow}>
+              <View style={[iconWrap('#06B6D4'), { marginRight: 12 }]}>
+                <Icon name="fingerprint" size={18} color="#06B6D4" />
               </View>
-            ) : (
-              <Text style={s.cardText}>Plan activo: {planLabel}</Text>
-            )}
-            <Pressable
-              style={s.buttonOutline}
-              onPress={() =>
-                isFounder
-                  ? Alert.alert(
-                      'Membresía Fundador',
-                      'Tienes acceso permanente como Miembro Fundador de Exora. No necesitas gestionar ninguna suscripción.',
-                    )
-                  : Alert.alert(
-                      'Gestionar membresía',
-                      'Ve a Configuración → App Store → Suscripciones para gestionar tu plan.',
-                    )
-              }
-            >
-              <Text style={s.buttonOutlineText}>Gestionar membresía</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <Text style={s.cardText}>
-              Plan gratuito — funcionalidades limitadas
-            </Text>
-            <Pressable style={s.button} onPress={() => setPaywallVisible(true)}>
-              <Icon name="arrow-up-bold" size={18} color={colors.white} />
-              <Text style={s.buttonText}>Actualizar a Premium</Text>
-            </Pressable>
+              <Text style={[s.settingLabel, { flex: 1 }]}>{getBiometricLabel(biometricType as any)}</Text>
+              <Switch value={biometricEnabled} onValueChange={setBiometricEnabled} trackColor={{ true: colors.primary }} />
+            </View>
           </>
         )}
       </View>
 
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Icon name="file-export-outline" size={22} color={colors.text} />
-          <Text style={s.cardTitle}>Exportar datos</Text>
-        </View>
-        <Text style={s.cardText}>
-          {hasFullAccess()
-            ? 'Comparte tus gastos en formato CSV para análisis o respaldo.'
-            : 'Exporta los últimos 30 días en CSV. Actualiza a Premium para exportar todo.'}
-        </Text>
-        <Pressable style={s.button} onPress={exportCsv}>
-          <Icon name="download" size={18} color={colors.white} />
-          <Text style={s.buttonText}>Exportar CSV</Text>
-        </Pressable>
+      {/* Finanzas */}
+      <SectionLabel label="Finanzas" />
+      <View style={s.listCard}>
+        <NavRow icon="cash-plus" label="Ingresos del mes" color={colors.success} onPress={() => navigation.navigate('Ingresos')} />
+        <NavRow icon="repeat" label="Ingresos fijos" color={colors.success} onPress={() => navigation.navigate('IngresosRecurrentes')} />
+        <NavRow icon="gauge" label="Presupuestos" color="#F59E0B" onPress={() => navigation.navigate('Presupuesto')} />
+        <NavRow icon="piggy-bank-outline" label="Metas de ahorro" color="#8B5CF6" onPress={() => navigation.navigate('Ahorros')} />
+        <NavRow icon="repeat-variant" label="Gastos recurrentes" color="#3B82F6" onPress={() => navigation.navigate('Recurrentes')} />
+        <NavRow icon="calculator-variant" label="Calculadora RESICO" color="#06B6D4" onPress={() => navigation.navigate('ResicoCalculator')} />
+        <NavRow icon="school-outline" label="Portal SAT" color={colors.textMuted} onPress={() => Linking.openURL('https://www.sat.gob.mx/personas/declaraciones')} right={<Icon name="open-in-new" size={16} color={colors.textMuted} />} />
       </View>
 
+      {/* Herramientas */}
+      <SectionLabel label="Herramientas" />
+      <View style={s.listCard}>
+        <NavRow icon="file-check-outline" label="Mis Facturas" color="#3B82F6" onPress={() => navigation.navigate('MisFacturas')} />
+        <NavRow icon="chart-bar" label="Reporte Fiscal" color="#8B5CF6" onPress={() => navigation.navigate('ReporteFiscal')} />
+        <NavRow icon="call-split" label="Dividir gastos" color="#F59E0B" onPress={() => navigation.navigate('Split')} />
+        <NavRow icon="bank-transfer-in" label="Importar estado de cuenta" color="#06B6D4" onPress={() => navigation.navigate('BankImport')} />
+        <NavRow icon="tag-plus" label="Categorías personalizadas" color={colors.primary} onPress={() => navigation.navigate('CustomCategories')} />
+        <NavRow icon="currency-usd" label="Moneda y tipo de cambio" color={colors.primary} onPress={() => navigation.navigate('CurrencySettings')} />
+        <NavRow icon="download" label="Exportar CSV" color={colors.primary} onPress={exportCsv} right={hasFullAccess() ? <Icon name="chevron-right" size={18} color={colors.textMuted} /> : <View style={s.proBadge}><Text style={s.proBadgeText}>30d</Text></View>} />
+        <NavRow icon="database-export" label="Backup y restauración" color={colors.textMuted} onPress={() => navigation.navigate('Backup')} />
+      </View>
+
+      {/* Cuenta */}
+      <SectionLabel label="Cuenta" />
+      <View style={s.listCard}>
+        {/* Membresía */}
+        {!isPremium && !isFounder ? (
+          <NavRow
+            icon="shield-crown-outline"
+            label="Actualizar a Premium"
+            color={colors.primary}
+            onPress={() => setPaywallVisible(true)}
+            right={<View style={s.upgradeBadge}><Text style={s.upgradeBadgeText}>Pro</Text></View>}
+          />
+        ) : (
+          <NavRow
+            icon="shield-crown-outline"
+            label={`Plan: ${planLabel}`}
+            color={isFounder ? colors.warning : colors.primary}
+            onPress={() => isFounder
+              ? Alert.alert('Membresía Fundador', 'Tienes acceso permanente. No necesitas gestionar ninguna suscripción.')
+              : Alert.alert('Gestionar membresía', 'Ve a Configuración → App Store → Suscripciones.')
+            }
+          />
+        )}
+
+        {/* Referidos */}
+        {!isPremium && !isFounder && myCode ? (
+          <>
+            <View style={s.divider} />
+            <Pressable style={s.referralRow} onPress={handleShareReferral}>
+              <View style={[iconWrap(colors.primary), { marginRight: 12 }]}>
+                <Icon name="gift-outline" size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.settingLabel}>Invita y gana 7 días Pro</Text>
+                <Text style={[s.settingLabel, { fontSize: 16, color: colors.primary, fontFamily: font.black, letterSpacing: 2, marginTop: 2 }]}>{myCode}</Text>
+              </View>
+              <Icon name="share-variant" size={18} color={colors.primary} />
+            </Pressable>
+            <View style={s.divider} />
+            <View style={s.codeInputRow}>
+              <TextInput
+                style={s.codeInput}
+                placeholder="Código de un amigo"
+                placeholderTextColor={colors.textMuted}
+                value={referralInput}
+                onChangeText={t => setReferralInput(t.toUpperCase())}
+                autoCapitalize="characters"
+                maxLength={12}
+              />
+              <Pressable
+                style={[s.applyBtn, (!referralInput.trim() || referralLoading) && { opacity: 0.4 }]}
+                onPress={handleApplyCode}
+                disabled={!referralInput.trim() || referralLoading}
+              >
+                <Text style={s.applyBtnText}>{referralLoading ? '…' : 'Aplicar'}</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : null}
+
+        {/* Código fundador */}
+        {!isPremium && !isFounder && (
+          <>
+            <View style={s.divider} />
+            {showFounderInput ? (
+              <View style={[s.codeInputRow, { padding: 12 }]}>
+                <TextInput
+                  style={s.codeInput}
+                  placeholder="EXORA-FOUNDER-XXXX"
+                  placeholderTextColor={colors.textMuted}
+                  value={founderInput}
+                  onChangeText={t => setFounderInput(t.toUpperCase())}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={24}
+                  autoFocus
+                />
+                <Pressable
+                  style={[s.applyBtn, (!founderInput.trim() || founderLoading) && { opacity: 0.4 }]}
+                  onPress={handleRedeemFounderCode}
+                  disabled={!founderInput.trim() || founderLoading}
+                >
+                  <Text style={s.applyBtnText}>{founderLoading ? '…' : 'Canjear'}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <NavRow
+                icon="star-four-points"
+                label="Código fundador"
+                color={colors.warning}
+                onPress={() => setShowFounderInput(true)}
+              />
+            )}
+          </>
+        )}
+      </View>
+
+      {/* Cerrar sesión */}
       <Pressable style={s.signOutButton} onPress={handleSignOut}>
         <Icon name="logout" size={18} color={colors.danger} />
         <Text style={s.signOutText}>Cerrar sesión</Text>
@@ -675,135 +457,116 @@ export function SettingsScreen() {
 
       <Text style={s.version}>EXORA v1.0.0</Text>
 
-      <PaywallModal
-        visible={paywallVisible}
-        onClose={() => setPaywallVisible(false)}
-        trigger="export"
-      />
+      <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} trigger="export" />
     </ScreenContainer>
   );
 }
 
-const useStyles = (colors: ColorPalette, _isDark: boolean) =>
+const useStyles = (colors: ColorPalette, isDark: boolean) =>
   StyleSheet.create({
+    // Profile
     profileHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 8,
+    },
+    profileInfo: { flex: 1, gap: 3 },
+    userName: { color: colors.text, fontSize: 20, fontFamily: font.extrabold },
+    userEmail: { color: colors.textMuted, fontSize: 13 },
+    profileMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+    verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    verifiedText: { color: colors.primary, fontSize: 11, fontFamily: font.semibold },
+    editHint: { color: colors.primary, fontSize: 12, fontFamily: font.semibold },
+
+    // Plan badge
+    planBadge: {
+      flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      paddingVertical: 24,
-    },
-    userName: {
-      color: colors.text,
-      fontSize: 22,
-      fontFamily: font.extrabold,
-    },
-    userEmail: {
-      color: colors.textMuted,
-      fontSize: 14,
-    },
-    editHint: {
-      color: colors.primary,
-      fontSize: 12,
-      fontFamily: font.semibold,
-      marginTop: 2,
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: 12,
-    },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { color: colors.text, fontSize: 18, fontFamily: font.bold },
-    cardText: { color: colors.textMuted, lineHeight: 22 },
-    themeRow: { flexDirection: 'row', gap: 8 },
-    themeChip: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6,
-      paddingVertical: 12,
-      borderRadius: 14,
-      backgroundColor: colors.surfaceAlt,
-    },
-    fiscalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    fiscalChip: {
-      width: '47%',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6,
-      paddingVertical: 12,
-      paddingHorizontal: 10,
-      borderRadius: 14,
-      backgroundColor: colors.surfaceAlt,
-    },
-    themeChipActive: { backgroundColor: colors.primary },
-    themeChipText: {
-      color: colors.text,
-      fontFamily: font.semibold,
-      fontSize: 13,
-    },
-    themeChipTextActive: { color: colors.white },
-    switchRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    switchInfo: { flex: 1, gap: 2 },
-    trialBanner: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      backgroundColor: colors.warning + '15',
-      borderWidth: 1,
-      borderColor: colors.warning + '40',
-      borderRadius: 16,
-      padding: 14,
-    },
-    trialText: { flex: 1, gap: 2 },
-    trialTitle: { color: colors.text, fontSize: 13, fontFamily: font.bold },
-    trialSub: { color: colors.textMuted, fontSize: 11 },
-    trialBtn: {
-      backgroundColor: colors.warning,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 10,
-    },
-    trialBtnText: { color: '#fff', fontSize: 12, fontFamily: font.extrabold },
-    codeBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
       backgroundColor: colors.primary + '12',
       borderWidth: 1,
       borderColor: colors.primary + '30',
       borderRadius: 14,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
     },
-    codeText: {
+    planBadgeFounder: {
+      backgroundColor: colors.warning + '12',
+      borderColor: colors.warning + '30',
+    },
+    planBadgeText: {
       color: colors.primary,
-      fontSize: 20,
-      fontFamily: font.black,
-      letterSpacing: 2,
+      fontSize: 13,
+      fontFamily: font.semibold,
+      flex: 1,
     },
-    shareChip: {
+
+    // Cards
+    card: {
+      backgroundColor: isDark ? '#111111' : colors.surface,
+      borderRadius: 18,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.05,
+      shadowRadius: 6,
+      elevation: 2,
+      padding: 16,
+      gap: 12,
+    },
+    listCard: {
+      backgroundColor: isDark ? '#111111' : colors.surface,
+      borderRadius: 18,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.2 : 0.05,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: isDark ? '#1E1E1E' : colors.border,
+    },
+
+    // Settings rows
+    settingRow: { flexDirection: 'row', alignItems: 'center' },
+    settingCol: { gap: 10 },
+    settingLabel: { color: colors.text, fontSize: 15, fontFamily: font.medium },
+    regimeValue: { color: colors.textMuted, fontSize: 13, fontFamily: font.medium },
+
+    // Chips
+    chipRow: { flexDirection: 'row', gap: 6, flex: 1, justifyContent: 'flex-end' },
+    chip: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: colors.primary,
       paddingHorizontal: 10,
       paddingVertical: 6,
       borderRadius: 10,
+      backgroundColor: isDark ? '#1E1E1E' : colors.background,
     },
-    shareChipText: { color: '#fff', fontSize: 12, fontFamily: font.bold },
-    codeInputRow: { flexDirection: 'row', gap: 8 },
+    chipActive: { backgroundColor: colors.primary },
+    chipText: { color: colors.textMuted, fontSize: 12, fontFamily: font.medium },
+    chipTextActive: { color: '#fff', fontFamily: font.semibold },
+
+    // Referral
+    referralRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+    },
+    codeInputRow: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
     codeInput: {
       flex: 1,
-      backgroundColor: colors.surfaceAlt,
+      backgroundColor: isDark ? '#1E1E1E' : colors.background,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
@@ -821,57 +584,25 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    applyBtnDisabled: { opacity: 0.4 },
     applyBtnText: { color: '#fff', fontFamily: font.bold, fontSize: 14 },
-    switchLabel: { color: colors.text, fontFamily: font.semibold },
-    switchDesc: { color: colors.textMuted, fontSize: 12 },
-    button: {
-      flexDirection: 'row',
-      gap: 8,
+
+    // Badges
+    proBadge: {
+      backgroundColor: colors.textMuted + '20',
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    proBadgeText: { color: colors.textMuted, fontSize: 11, fontFamily: font.bold },
+    upgradeBadge: {
       backgroundColor: colors.primary,
-      paddingVertical: 14,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
     },
-    buttonText: { color: colors.white, fontFamily: font.bold },
-    founderBanner: {
-      backgroundColor: colors.warning + '14',
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.warning + '40',
-      padding: 16,
-      alignItems: 'center',
-      gap: 6,
-      marginBottom: 12,
-    },
-    founderBannerTop: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    founderBannerTitle: {
-      color: colors.warning,
-      fontSize: 17,
-      fontFamily: font.extrabold,
-      letterSpacing: 0.5,
-    },
-    founderBannerSub: {
-      color: colors.textMuted,
-      fontSize: 13,
-      textAlign: 'center',
-    },
-    buttonOutline: {
-      flexDirection: 'row',
-      gap: 8,
-      borderWidth: 1,
-      borderColor: colors.primary,
-      paddingVertical: 14,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    buttonOutlineText: { color: colors.primary, fontFamily: font.bold },
+    upgradeBadgeText: { color: '#fff', fontSize: 11, fontFamily: font.bold },
+
+    // Sign out
     signOutButton: {
       flexDirection: 'row',
       gap: 8,
@@ -882,70 +613,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       justifyContent: 'center',
     },
     signOutText: { color: colors.danger, fontFamily: font.bold, fontSize: 15 },
-    constanciaBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      marginTop: 2,
-    },
-    constanciaBadgeText: {
-      color: colors.primary,
-      fontSize: 12,
-      fontFamily: font.semibold,
-    },
-    currentRegimeRow: {
-      paddingTop: 4,
-    },
-    currentRegimeLabel: {
-      color: colors.text,
-      fontSize: 13,
-      fontFamily: font.semibold,
-    },
-    currentRegimeHint: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    reportButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: colors.primary + '12',
-      paddingVertical: 12,
-      paddingHorizontal: 14,
-      borderRadius: 14,
-    },
-    reportButtonText: {
-      color: colors.primary,
-      fontFamily: font.bold,
-      fontSize: 14,
-      flex: 1,
-    },
-    learnRegimeBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.primary + '30',
-      borderRadius: 14,
-      paddingVertical: 12,
-      paddingHorizontal: 14,
-    },
-    learnRegimeLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      flex: 1,
-    },
-    learnRegimeTitle: {
-      color: colors.primary,
-      fontFamily: font.bold,
-      fontSize: 14,
-    },
-    learnRegimeSubtitle: {
-      color: colors.textMuted,
-      fontSize: 11,
-      marginTop: 1,
-    },
+
     version: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
   });

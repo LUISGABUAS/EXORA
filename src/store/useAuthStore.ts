@@ -34,16 +34,39 @@ export const useAuthStore = create<AuthState>((set) => ({
       forceCodeForRefreshToken: true,
     });
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      set({ session, loading: false });
-    } catch {
-      set({ session: null, loading: false });
-    }
-
+    // Registrar listener SIEMPRE antes de cualquier return temprano
     supabase.auth.onAuthStateChange((_event, newSession) => {
       set({ session: newSession });
     });
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // refreshSession hace una llamada real al servidor — falla si el usuario fue borrado
+        const { data: refreshed, error } = await supabase.auth.refreshSession();
+        if (error || !refreshed.session) {
+          await supabase.auth.signOut();
+          set({ session: null, loading: false });
+          return;
+        }
+        // Segunda capa: verificar que el perfil existe en la DB
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', refreshed.session.user.id)
+          .single();
+        if (profileError) {
+          await supabase.auth.signOut();
+          set({ session: null, loading: false });
+          return;
+        }
+        set({ session: refreshed.session, loading: false });
+      } else {
+        set({ session: null, loading: false });
+      }
+    } catch {
+      set({ session: null, loading: false });
+    }
   },
 
   signInWithGoogle: async () => {
@@ -78,15 +101,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     const appleAuth = getAppleAuth();
     if (!appleAuth) return 'Apple Sign-In solo está disponible en iOS.';
     try {
+      const rawNonce = Array.from({length: 32}, () =>
+        Math.floor(Math.random() * 36).toString(36)).join('');
       const appleAuthRequest = await appleAuth.performRequest({
         requestedOperation: appleAuth.Operation.LOGIN,
         requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+        nonce: rawNonce,
       });
       const { identityToken } = appleAuthRequest;
       if (!identityToken) return 'No se obtuvo el token de Apple.';
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: identityToken,
+        nonce: rawNonce,
       });
       return error ? error.message : null;
     } catch (err: any) {

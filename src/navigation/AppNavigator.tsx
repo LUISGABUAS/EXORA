@@ -92,6 +92,7 @@ function Tabs() {
 
   return (
     <Tab.Navigator
+      initialRouteName="Inicio"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -116,8 +117,8 @@ function Tabs() {
         ),
       })}
     >
-      <Tab.Screen name="Inicio" component={DashboardScreen} />
       <Tab.Screen name="Movimientos" component={HistoryScreen} />
+      <Tab.Screen name="Inicio" component={DashboardScreen} />
       <Tab.Screen name="Perfil" component={SettingsScreen} />
     </Tab.Navigator>
   );

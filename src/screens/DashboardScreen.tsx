@@ -1,18 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Keyboard,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Avatar } from '../components/Avatar';
 import { DashboardSkeleton } from '../components/DashboardSkeleton';
 import { EmptyState } from '../components/EmptyState';
 import { InsightCard } from '../components/InsightCard';
-import { LineChart } from '../components/LineChart';
 import { NewExpenseModal } from '../components/NewExpenseModal';
 import { PaywallModal } from '../components/PaywallModal';
 import { SmartInputBar } from '../components/SmartInputBar';
@@ -23,37 +28,26 @@ import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
 import { useAuthStore } from '../store/useAuthStore';
 import { useDeepLinkStore } from '../store/useDeepLinkStore';
 import { useExpenseStore } from '../store/useExpenseStore';
+import { useIncomeStore } from '../store/useIncomeStore';
 import { usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
 import { useTheme } from '../theme/ThemeContext';
-import {
-  generateAIInsights,
-  generateLocalInsights,
-  Insight,
-} from '../services/insightService';
+import { generateAIInsights, generateLocalInsights, Insight } from '../services/insightService';
 import { font } from '../theme/typography';
-import { useIncomeStore } from '../store/useIncomeStore';
 import { ExpenseCategory } from '../types/expense';
+import {
+  INCOME_TYPE_ICONS,
+  INCOME_TYPE_LABELS,
+  IncomeType,
+} from '../types/income';
 import { formatCurrency, localDateString } from '../utils/format';
 import { estimateTaxSavings } from '../utils/taxCalculator';
 
 const MONTHS = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre',
 ];
-
-const DAY_LABELS = ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'];
 
 const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   Comida: '#22C55E',
@@ -64,11 +58,16 @@ const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   Otros: '#8E8E93',
 };
 
+const INCOME_TYPES: IncomeType[] = [
+  'honorarios','nomina','plataformas','arrendamiento','rendimientos','otros',
+];
+
 function getFirstName(session: any): string {
   if (!session?.user) return '';
   const meta = session.user.user_metadata;
   if (meta?.full_name) return meta.full_name.split(' ')[0];
-  if (session.user.email) return session.user.email.split('@')[0];
+  const email = session.user.email ?? '';
+  if (!email.endsWith('@privaterelay.appleid.com')) return email.split('@')[0];
   return '';
 }
 
@@ -78,7 +77,6 @@ function formatTime(createdAt: string): string {
   const yesterdayStr = localDateString(
     new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
   );
-
   const dateStr = createdAt.slice(0, 10);
   const timePart = createdAt.slice(11, 16);
   const [hStr, mStr] = timePart.split(':');
@@ -86,22 +84,21 @@ function formatTime(createdAt: string): string {
   const m = mStr || '00';
   const ampm = h >= 12 ? 'PM' : 'AM';
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-
   if (dateStr === todayStr) return `Hoy ${h12}:${m} ${ampm}`;
   if (dateStr === yesterdayStr) return `Ayer`;
-  return `${dateStr.slice(5).replace('-', '/')}`;
+  return dateStr.slice(5).replace('-', '/');
 }
 
 export function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const expenses = useExpenseStore(state => state.expenses);
   const loading = useExpenseStore(state => state.loading);
   const session = useAuthStore(state => state.session);
-
   const incomes = useIncomeStore(state => state.incomes);
+  const addIncome = useIncomeStore(state => state.addIncome);
   const streak = usePremiumStore(state => state.streak);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
@@ -110,11 +107,18 @@ export function DashboardScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalQuickMode, setModalQuickMode] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [incomeModalVisible, setIncomeModalVisible] = useState(false);
+  const [incomeAmount, setIncomeAmount] = useState('');
+  const [incomeType, setIncomeType] = useState<IncomeType>('honorarios');
+  const [incomeSaving, setIncomeSaving] = useState(false);
+  const incomeInputRef = useRef<TextInput>(null);
+
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [lastSavedId, setLastSavedId] = useState<number | null>(null);
 
   const pendingAction = useDeepLinkStore(state => state.pendingAction);
-  const clearPendingAction = useDeepLinkStore(
-    state => state.clearPendingAction,
-  );
+  const clearPendingAction = useDeepLinkStore(state => state.clearPendingAction);
 
   useEffect(() => {
     if (pendingAction === 'add-expense') {
@@ -123,9 +127,6 @@ export function DashboardScreen() {
       clearPendingAction();
     }
   }, [pendingAction, clearPendingAction]);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [lastSavedId, setLastSavedId] = useState<number | null>(null);
 
   const now = new Date();
   const todayStr = localDateString(now);
@@ -144,35 +145,28 @@ export function DashboardScreen() {
   );
 
   const monthlyExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
+  const monthly = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
   const monthlyIncome = incomes
     .filter(i => i.date.startsWith(monthPrefix))
     .reduce((sum, i) => sum + i.amount, 0);
-
-  const monthly = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
-
-  const deductibleTotal = monthlyExpenses
-    .filter(e => e.deductible)
-    .reduce((sum, e) => sum + e.amount, 0);
-
+  const deductibleTotal = monthlyExpenses.filter(e => e.deductible).reduce((sum, e) => sum + e.amount, 0);
   const taxSavingsEstimate = estimateTaxSavings(deductibleTotal, fiscalRegime);
-  const showConversionBanner =
-    !hasFullAccess() && deductibleTotal >= 500 && fiscalRegime !== 'no_facturo';
+  const showConversionBanner = !hasFullAccess() && deductibleTotal >= 500 && fiscalRegime !== 'no_facturo';
 
   const thisWeek = expenses
     .filter(e => e.date >= weekStart && e.date <= todayStr)
     .reduce((sum, e) => sum + e.amount, 0);
-
   const prevWeek = expenses
     .filter(e => e.date >= prevWeekStart && e.date <= prevWeekEnd)
     .reduce((sum, e) => sum + e.amount, 0);
-
   const weekDiff = thisWeek - prevWeek;
   const weekPct = prevWeek > 0 ? Math.abs(weekDiff / prevWeek) * 100 : 0;
   const weekUp = weekDiff >= 0;
 
-  const recentExpenses = useMemo(() => expenses.slice(0, 5), [expenses]);
+  const netFlow = monthlyIncome - monthly;
 
-  // Insights
+  const recentExpenses = useMemo(() => expenses.slice(0, 4), [expenses]);
+
   const localInsights: Insight[] = useMemo(() => {
     if (expenses.length === 0) return [];
     return generateLocalInsights(expenses, fiscalRegime, hasFullAccess());
@@ -188,30 +182,10 @@ export function DashboardScreen() {
       .catch(() => {});
   }, [expenses, fiscalRegime, hasFullAccess, session]);
 
-  const insights: Insight[] = useMemo(
-    () => [...localInsights, ...aiInsights],
+  const topInsight: Insight | undefined = useMemo(
+    () => [...localInsights, ...aiInsights][0],
     [localInsights, aiInsights],
   );
-
-  // Weekly chart data (last 7 days)
-  const chartData = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() - (6 - i),
-      );
-      const dateStr = localDateString(d);
-      const dayIdx = (d.getDay() + 6) % 7;
-      return {
-        label: DAY_LABELS[dayIdx],
-        value: expenses
-          .filter(e => e.date.startsWith(dateStr))
-          .reduce((sum, e) => sum + e.amount, 0),
-      };
-    });
-  }, [expenses]);
 
   const firstName = getFirstName(session);
 
@@ -234,8 +208,36 @@ export function DashboardScreen() {
     }
   };
 
-  const navigateToScan = () => navigation.navigate('Scan');
+  const handleSaveIncome = async () => {
+    const amount = parseFloat(incomeAmount.replace(/,/g, ''));
+    if (!amount || amount <= 0) {
+      Alert.alert('Monto inválido', 'Ingresa un monto mayor a cero.');
+      return;
+    }
+    setIncomeSaving(true);
+    try {
+      await addIncome({
+        amount,
+        date: todayStr,
+        type: incomeType,
+        description: INCOME_TYPE_LABELS[incomeType],
+        invoiced: false,
+        recurring: false,
+        paymentMethod: 'transferencia',
+      });
+      setIncomeAmount('');
+      setIncomeType('honorarios');
+      setIncomeModalVisible(false);
+      setToastMessage('Ingreso guardado');
+      setToastVisible(true);
+    } catch {
+      Alert.alert('Error', 'No se pudo guardar el ingreso.');
+    } finally {
+      setIncomeSaving(false);
+    }
+  };
 
+  const navigateToScan = () => navigation.navigate('Scan');
   const isLoading = !premiumLoaded || loading;
 
   return (
@@ -245,7 +247,7 @@ export function DashboardScreen() {
           <DashboardSkeleton />
         ) : (
           <>
-            {/* ── Header ── */}
+            {/* Header */}
             <Animated.View entering={FadeIn.duration(300)} style={s.header}>
               <Pressable
                 onPress={() => navigation.navigate('ProfileEdit')}
@@ -254,17 +256,15 @@ export function DashboardScreen() {
                 <Avatar size={40} name={firstName} />
                 <View>
                   <Text style={s.headerGreeting}>
-                    {firstName ? `Hola, ${firstName}` : 'Hola'}
+                    {firstName || 'Inicio'}
                   </Text>
-                  <Text style={s.headerSub}>
-                    {currentMonth} {currentYear}
-                  </Text>
+                  <Text style={s.headerSub}>{currentMonth} {currentYear}</Text>
                 </View>
               </Pressable>
               <StreakBadge streak={streak} />
             </Animated.View>
 
-            {/* ── Smart Input ── */}
+            {/* Smart Input */}
             <Animated.View entering={FadeInDown.delay(60).duration(350)}>
               <SmartInputBar
                 onSave={handleInlineSave}
@@ -272,19 +272,6 @@ export function DashboardScreen() {
                 onExpandPress={() => setModalVisible(true)}
               />
             </Animated.View>
-
-            {/* ── Búsqueda rápida ── */}
-            {expenses.length > 0 && (
-              <Animated.View entering={FadeInDown.delay(75).duration(350)}>
-                <Pressable
-                  style={s.searchBar}
-                  onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' })}
-                >
-                  <Icon name="magnify" size={18} color={colors.textMuted} />
-                  <Text style={s.searchPlaceholder}>Buscar en tus gastos...</Text>
-                </Pressable>
-              </Animated.View>
-            )}
 
             {expenses.length === 0 ? (
               <Animated.View entering={FadeInDown.delay(100).duration(350)}>
@@ -299,428 +286,179 @@ export function DashboardScreen() {
               </Animated.View>
             ) : (
               <>
-                {/* ── Hero Card ── */}
+                {/* Hero Card */}
                 <Animated.View entering={FadeInDown.delay(100).duration(400)}>
                   <View style={s.heroCard}>
-                    {/* Decorative circle */}
                     <View style={s.heroCircle} />
-                    <View style={s.heroContent}>
-                      <Text style={s.heroLabel}>Gastos del mes</Text>
-                      <Text style={s.heroAmount}>
-                        {formatCurrency(monthly)}
-                      </Text>
-                      <View style={s.heroMeta}>
-                        <View
-                          style={[
-                            s.heroDot,
-                            {
-                              backgroundColor: weekUp
-                                ? colors.danger
-                                : colors.success,
-                            },
-                          ]}
-                        />
-                        <Text style={s.heroMetaText}>
-                          {weekUp ? '+' : '-'}
-                          {formatCurrency(Math.abs(weekDiff))} vs semana pasada
-                        </Text>
-                      </View>
-                    </View>
-                    <Pressable style={s.heroScanBtn} onPress={navigateToScan}>
-                      <Icon
-                        name="scan-helper"
-                        size={18}
-                        color={colors.primary}
-                      />
-                      <Text style={s.heroScanText}>Escanear</Text>
-                    </Pressable>
-                  </View>
-                </Animated.View>
-
-                {/* ── Stats Grid 2×2 ── */}
-                <Animated.View entering={FadeInDown.delay(150).duration(380)}>
-                  <View style={s.grid}>
-                    {/* Semana */}
-                    <Pressable
-                      style={s.gridCard}
-                      onPress={() =>
-                        navigation.navigate('Tabs', { screen: 'Movimientos' })
-                      }
-                    >
-                      <Icon
-                        name="calendar-week"
-                        size={18}
-                        color={colors.primary}
-                        style={s.gridIcon}
-                      />
-                      <Text style={s.gridValue}>
-                        {formatCurrency(thisWeek)}
-                      </Text>
-                      <Text style={s.gridLabel}>Esta semana</Text>
-                      {weekPct > 0 ? (
-                        <View
-                          style={[
-                            s.gridBadge,
-                            {
-                              backgroundColor: weekUp
-                                ? '#EF444418'
-                                : '#22C55E18',
-                            },
-                          ]}
-                        >
-                          <Icon
-                            name={weekUp ? 'trending-up' : 'trending-down'}
-                            size={11}
-                            color={weekUp ? colors.danger : colors.success}
-                          />
-                          <Text
-                            style={[
-                              s.gridBadgeText,
-                              {
-                                color: weekUp ? colors.danger : colors.success,
-                              },
-                            ]}
-                          >
-                            {weekPct.toFixed(0)}%
-                          </Text>
-                        </View>
-                      ) : null}
-                    </Pressable>
-
-                    {/* Ahorro fiscal */}
-                    <Pressable
-                      style={s.gridCard}
-                      onPress={() => navigation.navigate('ReporteFiscal')}
-                    >
-                      <Icon
-                        name="shield-check-outline"
-                        size={18}
-                        color="#8B5CF6"
-                        style={s.gridIcon}
-                      />
-                      {taxSavingsEstimate > 0 ? (
-                        <>
-                          <Text style={s.gridValue}>
-                            {formatCurrency(taxSavingsEstimate)}
-                          </Text>
-                          <Text style={s.gridLabel}>Ahorro fiscal</Text>
-                          <View
-                            style={[
-                              s.gridBadge,
-                              { backgroundColor: '#8B5CF618' },
-                            ]}
-                          >
-                            <Text
-                              style={[s.gridBadgeText, { color: '#8B5CF6' }]}
-                            >
-                              estimado
-                            </Text>
-                          </View>
-                        </>
-                      ) : (
-                        <>
-                          <Text style={s.gridValue}>
-                            {formatCurrency(deductibleTotal)}
-                          </Text>
-                          <Text style={s.gridLabel}>Deducibles</Text>
-                          <View
-                            style={[
-                              s.gridBadge,
-                              { backgroundColor: '#8B5CF618' },
-                            ]}
-                          >
-                            <Text
-                              style={[s.gridBadgeText, { color: '#8B5CF6' }]}
-                            >
-                              este mes
-                            </Text>
-                          </View>
-                        </>
-                      )}
-                    </Pressable>
-
-                    {/* Flujo neto o racha */}
-                    {monthlyIncome > 0 ? (
-                      <Pressable
-                        style={s.gridCard}
-                        onPress={() => navigation.navigate('Ingresos')}
-                      >
-                        <Icon
-                          name="swap-vertical"
-                          size={18}
-                          color="#06B6D4"
-                          style={s.gridIcon}
-                        />
-                        <Text
-                          style={[
-                            s.gridValue,
-                            {
-                              color:
-                                monthlyIncome >= monthly
-                                  ? colors.success
-                                  : colors.danger,
-                            },
-                          ]}
-                        >
-                          {monthlyIncome >= monthly ? '+' : ''}
-                          {formatCurrency(monthlyIncome - monthly)}
-                        </Text>
-                        <Text style={s.gridLabel}>Flujo neto</Text>
-                        <View
-                          style={[
-                            s.gridBadge,
-                            { backgroundColor: '#06B6D418' },
-                          ]}
-                        >
-                          <Text style={[s.gridBadgeText, { color: '#06B6D4' }]}>
-                            este mes
-                          </Text>
-                        </View>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        style={s.gridCard}
-                        onPress={() => navigation.navigate('Ingresos')}
-                      >
-                        <Icon
-                          name="cash-plus"
-                          size={18}
-                          color="#F59E0B"
-                          style={s.gridIcon}
-                        />
-                        <Text style={s.gridValue}>+</Text>
-                        <Text style={s.gridLabel}>Ingresos</Text>
-                        <View
-                          style={[
-                            s.gridBadge,
-                            { backgroundColor: '#F59E0B18' },
-                          ]}
-                        >
-                          <Text style={[s.gridBadgeText, { color: '#F59E0B' }]}>
-                            registrar
-                          </Text>
-                        </View>
-                      </Pressable>
-                    )}
 
                     {/* Gastos */}
-                    <Pressable
-                      style={s.gridCard}
-                      onPress={() =>
-                        navigation.navigate('Tabs', { screen: 'Movimientos' })
-                      }
-                    >
-                      <Icon
-                        name="receipt"
-                        size={18}
-                        color="#3B82F6"
-                        style={s.gridIcon}
-                      />
-                      <Text style={s.gridValue}>{monthlyExpenses.length}</Text>
-                      <Text style={s.gridLabel}>Gastos</Text>
-                      <View
-                        style={[s.gridBadge, { backgroundColor: '#3B82F618' }]}
-                      >
-                        <Text style={[s.gridBadgeText, { color: '#3B82F6' }]}>
-                          este mes
+                    <View style={s.heroSection}>
+                      <Text style={s.heroLabel}>Gastos del mes</Text>
+                      <Text style={s.heroAmount}>{formatCurrency(monthly)}</Text>
+                      {weekPct > 0 && (
+                        <View style={s.heroMeta}>
+                          <View style={[s.heroDot, { backgroundColor: weekUp ? colors.danger : colors.success }]} />
+                          <Text style={s.heroMetaText}>
+                            {weekUp ? '+' : '-'}{formatCurrency(Math.abs(weekDiff))} vs semana pasada
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={s.heroDivider} />
+
+                    {/* Ingresos */}
+                    <View style={s.heroIncomeRow}>
+                      <View>
+                        <Text style={s.heroLabel}>Ingresos del mes</Text>
+                        <Text style={[s.heroIncomeAmount, { color: monthlyIncome > 0 ? colors.success : colors.textMuted }]}>
+                          {monthlyIncome > 0 ? formatCurrency(monthlyIncome) : '—'}
                         </Text>
                       </View>
-                    </Pressable>
+                      <Pressable style={s.heroIncomeBtn} onPress={() => {
+                        setIncomeModalVisible(true);
+                        setTimeout(() => incomeInputRef.current?.focus(), 200);
+                      }}>
+                        <Icon name="plus" size={14} color="#fff" />
+                        <Text style={s.heroIncomeBtnText}>Ingreso</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 </Animated.View>
 
-                {/* ── Recent Transactions ── */}
+                {/* Stats Row */}
+                <Animated.View entering={FadeInDown.delay(150).duration(380)}>
+                  <View style={s.statsRow}>
+                    {/* Deducibles / Ahorro fiscal */}
+                    <Pressable style={s.statCard} onPress={() => navigation.navigate('ReporteFiscal')}>
+                      <Icon name="shield-check-outline" size={16} color="#8B5CF6" />
+                      <Text style={s.statValue}>
+                        {taxSavingsEstimate > 0 ? formatCurrency(taxSavingsEstimate) : formatCurrency(deductibleTotal)}
+                      </Text>
+                      <Text style={s.statLabel}>
+                        {taxSavingsEstimate > 0 ? 'Ahorro fiscal' : 'Deducibles'}
+                      </Text>
+                    </Pressable>
+
+                    {/* Flujo neto o esta semana */}
+                    {monthlyIncome > 0 ? (
+                      <Pressable style={s.statCard} onPress={() => navigation.navigate('Ingresos')}>
+                        <Icon name="swap-vertical" size={16} color="#06B6D4" />
+                        <Text style={[s.statValue, { color: netFlow >= 0 ? colors.success : colors.danger }]}>
+                          {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
+                        </Text>
+                        <Text style={s.statLabel}>Flujo neto</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable style={s.statCard} onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' } as any)}>
+                        <Icon name="calendar-week" size={16} color={colors.primary} />
+                        <Text style={s.statValue}>{formatCurrency(thisWeek)}</Text>
+                        <Text style={s.statLabel}>
+                          Esta semana{weekPct > 0 ? ` · ${weekUp ? '+' : '-'}${weekPct.toFixed(0)}%` : ''}
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </Animated.View>
+
+                {/* Recent Transactions */}
                 <Animated.View entering={FadeInDown.delay(200).duration(350)}>
                   <View style={s.sectionRow}>
                     <Text style={s.sectionTitle}>Últimos movimientos</Text>
-                    <Pressable
-                      onPress={() =>
-                        navigation.navigate('Tabs', { screen: 'Movimientos' })
-                      }
-                      hitSlop={8}
-                    >
+                    <Pressable onPress={() => navigation.navigate('Tabs', { screen: 'Movimientos' } as any)} hitSlop={8}>
                       <Text style={s.sectionLink}>Ver todos →</Text>
                     </Pressable>
                   </View>
                   <View style={s.txList}>
                     {recentExpenses.map((exp, idx) => {
-                      const catColor =
-                        CATEGORY_COLORS[exp.category as ExpenseCategory] ||
-                        colors.textMuted;
+                      const catColor = CATEGORY_COLORS[exp.category as ExpenseCategory] || colors.textMuted;
                       return (
                         <Pressable
                           key={exp.id}
-                          style={[
-                            s.txItem,
-                            idx === recentExpenses.length - 1 && s.txItemLast,
-                          ]}
-                          onPress={() =>
-                            navigation.navigate('ExpenseDetail', {
-                              expenseId: exp.id,
-                            })
-                          }
+                          style={[s.txItem, idx === recentExpenses.length - 1 && s.txItemLast]}
+                          onPress={() => navigation.navigate('ExpenseDetail', { expenseId: exp.id })}
                         >
-                          <View
-                            style={[
-                              s.txIconWrap,
-                              { backgroundColor: catColor + '18' },
-                            ]}
-                          >
+                          <View style={[s.txIconWrap, { backgroundColor: catColor + '18' }]}>
                             <Icon
-                              name={
-                                categoryIcons[
-                                  exp.category as ExpenseCategory
-                                ] || 'dots-horizontal-circle-outline'
-                              }
+                              name={categoryIcons[exp.category as ExpenseCategory] || 'dots-horizontal-circle-outline'}
                               size={18}
                               color={catColor}
                             />
                           </View>
                           <View style={s.txInfo}>
                             <Text style={s.txName} numberOfLines={1}>
-                              {exp.merchantName ||
-                                exp.description ||
-                                exp.category}
+                              {exp.merchantName || exp.description || exp.category}
                             </Text>
-                            <Text style={s.txMeta}>
-                              {exp.category} · {formatTime(exp.createdAt)}
-                            </Text>
+                            <Text style={s.txMeta}>{exp.category} · {formatTime(exp.createdAt)}</Text>
                           </View>
-                          <Text style={s.txAmount}>
-                            -{formatCurrency(exp.amount)}
-                          </Text>
+                          <Text style={s.txAmount}>-{formatCurrency(exp.amount)}</Text>
                         </Pressable>
                       );
                     })}
                   </View>
                 </Animated.View>
 
-                {/* ── Banner de conversión ── */}
-                {showConversionBanner ? (
+                {/* Top Insight */}
+                {topInsight && (
                   <Animated.View entering={FadeInDown.delay(220).duration(350)}>
-                    <Pressable
-                      style={s.conversionBanner}
-                      onPress={() => setPaywallVisible(true)}
-                    >
-                      <View style={s.conversionLeft}>
-                        <Icon
-                          name="file-chart-outline"
-                          size={22}
-                          color={colors.primary}
-                        />
-                        <View style={s.conversionText}>
-                          <Text style={s.conversionTitle}>
-                            Tienes {formatCurrency(deductibleTotal)} en
-                            deducciones
-                          </Text>
-                          <Text style={s.conversionSub}>
-                            Exporta tu reporte fiscal al SAT con Pro →
-                          </Text>
-                        </View>
+                    <Text style={[s.sectionTitle, { marginBottom: 8 }]}>Insight</Text>
+                    <InsightCard
+                      insight={topInsight}
+                      index={0}
+                      onPremiumPress={topInsight.isPremium && !hasFullAccess() ? () => setPaywallVisible(true) : undefined}
+                    />
+                  </Animated.View>
+                )}
+
+                {/* Conversion Banner */}
+                {showConversionBanner && (
+                  <Animated.View entering={FadeInDown.delay(230).duration(350)}>
+                    <Pressable style={s.conversionBanner} onPress={() => setPaywallVisible(true)}>
+                      <Icon name="file-chart-outline" size={20} color={colors.primary} />
+                      <View style={s.conversionText}>
+                        <Text style={s.conversionTitle}>
+                          Tienes {formatCurrency(deductibleTotal)} en deducciones
+                        </Text>
+                        <Text style={s.conversionSub}>Exporta tu reporte fiscal al SAT con Pro →</Text>
                       </View>
                       <View style={s.conversionBadge}>
                         <Text style={s.conversionBadgeText}>Pro</Text>
                       </View>
                     </Pressable>
                   </Animated.View>
-                ) : null}
+                )}
 
-                {/* ── Insights ── */}
-                {insights.length > 0 ? (
-                  <Animated.View
-                    entering={FadeInDown.delay(230).duration(350)}
-                    style={s.insightsWrap}
-                  >
-                    <Text style={s.sectionTitle}>Insights</Text>
-                    <View style={s.insightsList}>
-                      {(hasFullAccess() ? insights : insights.slice(0, 1)).map(
-                        (ins, idx) => (
-                          <InsightCard
-                            key={ins.id}
-                            insight={ins}
-                            index={idx}
-                            onPremiumPress={
-                              ins.isPremium && !hasFullAccess()
-                                ? () => setPaywallVisible(true)
-                                : undefined
-                            }
-                          />
-                        ),
-                      )}
-                      {!hasFullAccess() && insights.length > 1 ? (
-                        <Pressable
-                          onPress={() => setPaywallVisible(true)}
-                          style={s.insightsLocked}
-                        >
-                          <Icon
-                            name="lock-outline"
-                            size={16}
-                            color={colors.textMuted}
-                          />
-                          <Text style={s.insightsLockedText}>
-                            +{insights.length - 1} insights con Pro
-                          </Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  </Animated.View>
-                ) : null}
+                {/* Quick Actions */}
+                <Animated.View entering={FadeInDown.delay(240).duration(350)}>
+                  <View style={s.quickRow}>
+                    <Pressable style={s.quickCard} onPress={() => navigation.navigate('Asesor')}>
+                      <View style={[s.quickIcon, { backgroundColor: colors.primary + '18' }]}>
+                        <Icon name="brain" size={20} color={colors.primary} />
+                      </View>
+                      <Text style={s.quickLabel}>Asesor IA</Text>
+                    </Pressable>
 
-                {/* ── Mis Facturas — acceso rápido ── */}
-                <Animated.View entering={FadeInDown.delay(245).duration(350)}>
-                  <Pressable
-                    style={s.facturasCard}
-                    onPress={() => navigation.navigate('MisFacturas')}
-                  >
-                    <View style={s.asesorLeft}>
-                      <View style={[s.asesorIconWrap, { backgroundColor: '#3B82F620' }]}>
-                        <Icon name="file-check-outline" size={22} color="#3B82F6" />
+                    <Pressable style={s.quickCard} onPress={() => navigation.navigate('MisFacturas')}>
+                      <View style={[s.quickIcon, { backgroundColor: '#3B82F620' }]}>
+                        <Icon name="file-check-outline" size={20} color="#3B82F6" />
                       </View>
-                      <View style={s.asesorText}>
-                        <Text style={s.asesorTitle}>Mis Facturas</Text>
-                        <Text style={s.asesorSub}>Sube una factura y la revisamos por ti</Text>
-                      </View>
-                    </View>
-                    <View style={s.facturasAddBtn}>
-                      <Icon name="plus" size={16} color="#fff" />
-                      <Text style={s.facturasAddText}>Agregar</Text>
-                    </View>
-                  </Pressable>
-                </Animated.View>
+                      <Text style={s.quickLabel}>Facturas</Text>
+                    </Pressable>
 
-                {/* ── Asesor Financiero IA ── */}
-                <Animated.View entering={FadeInDown.delay(250).duration(350)}>
-                  <Pressable
-                    style={s.asesorCard}
-                    onPress={() => navigation.navigate('Asesor')}
-                  >
-                    <View style={s.asesorLeft}>
-                      <View style={s.asesorIconWrap}>
-                        <Icon name="brain" size={22} color={colors.primary} />
+                    <Pressable style={s.quickCard} onPress={() => navigation.navigate('ReporteFiscal')}>
+                      <View style={[s.quickIcon, { backgroundColor: '#8B5CF620' }]}>
+                        <Icon name="chart-bar" size={20} color="#8B5CF6" />
                       </View>
-                      <View style={s.asesorText}>
-                        <Text style={s.asesorTitle}>Asesor Financiero IA</Text>
-                        <Text style={s.asesorSub}>
-                          {hasFullAccess()
-                            ? '¿En qué gastas más? ¿Qué puedes mejorar?'
-                            : 'Análisis estratégico de tus finanzas'}
-                        </Text>
-                      </View>
-                    </View>
-                    {hasFullAccess() ? (
-                      <Icon name="chevron-right" size={20} color={colors.textMuted} />
-                    ) : (
-                      <View style={s.asesorProBadge}>
-                        <Icon name="lock-outline" size={12} color={colors.primary} />
-                        <Text style={s.asesorProText}>Pro</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                </Animated.View>
+                      <Text style={s.quickLabel}>Reporte</Text>
+                    </Pressable>
 
-                {/* ── Weekly Chart ── */}
-                <Animated.View entering={FadeInDown.delay(260).duration(350)}>
-                  <LineChart data={chartData} title="Últimos 7 días" />
+                    <Pressable style={s.quickCard} onPress={navigateToScan}>
+                      <View style={[s.quickIcon, { backgroundColor: '#F59E0B20' }]}>
+                        <Icon name="scan-helper" size={20} color="#F59E0B" />
+                      </View>
+                      <Text style={s.quickLabel}>Escanear</Text>
+                    </Pressable>
+                  </View>
                 </Animated.View>
               </>
             )}
@@ -730,6 +468,7 @@ export function DashboardScreen() {
         )}
       </ScreenContainer>
 
+      {/* Modals */}
       <NewExpenseModal
         visible={modalVisible}
         onClose={() => { setModalVisible(false); setModalQuickMode(false); }}
@@ -750,6 +489,71 @@ export function DashboardScreen() {
         onUndo={handleUndo}
         onDismiss={() => setToastVisible(false)}
       />
+
+      {/* Income Quick-Add Modal */}
+      <Modal
+        visible={incomeModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIncomeModalVisible(false)}
+      >
+        <Pressable style={s.modalOverlay} onPress={() => { Keyboard.dismiss(); setIncomeModalVisible(false); }}>
+          <Pressable style={s.incomeSheet} onPress={e => e.stopPropagation()}>
+            {/* Handle */}
+            <View style={s.sheetHandle} />
+
+            <Text style={s.sheetTitle}>Registrar ingreso</Text>
+
+            {/* Amount input */}
+            <View style={s.amountRow}>
+              <Text style={s.currencySign}>$</Text>
+              <TextInput
+                ref={incomeInputRef}
+                style={s.amountInput}
+                value={incomeAmount}
+                onChangeText={setIncomeAmount}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+            </View>
+
+            {/* Type selector */}
+            <Text style={s.typeLabel}>Tipo de ingreso</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.typePills} contentContainerStyle={{ gap: 8 }}>
+              {INCOME_TYPES.map(type => (
+                <Pressable
+                  key={type}
+                  style={[s.typePill, incomeType === type && s.typePillActive]}
+                  onPress={() => setIncomeType(type)}
+                >
+                  <Icon
+                    name={INCOME_TYPE_ICONS[type]}
+                    size={14}
+                    color={incomeType === type ? '#fff' : colors.textMuted}
+                  />
+                  <Text style={[s.typePillText, incomeType === type && s.typePillTextActive]}>
+                    {INCOME_TYPE_LABELS[type]}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            {/* Save button */}
+            <Pressable
+              style={[s.saveIncomeBtn, incomeSaving && { opacity: 0.6 }]}
+              onPress={handleSaveIncome}
+              disabled={incomeSaving}
+            >
+              <Text style={s.saveIncomeBtnText}>
+                {incomeSaving ? 'Guardando...' : 'Guardar ingreso'}
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -759,35 +563,16 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     flex: { flex: 1 },
 
     // Header
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      flex: 1,
-    },
-    headerGreeting: {
-      color: colors.text,
-      fontSize: 18,
-      fontFamily: font.extrabold,
-      letterSpacing: -0.3,
-    },
-    headerSub: {
-      color: colors.textMuted,
-      fontSize: 12,
-      fontFamily: font.medium,
-      marginTop: 1,
-    },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+    headerGreeting: { color: colors.text, fontSize: 18, fontFamily: font.extrabold, letterSpacing: -0.3 },
+    headerSub: { color: colors.textMuted, fontSize: 12, fontFamily: font.medium, marginTop: 1 },
 
     // Hero card
     heroCard: {
       backgroundColor: isDark ? '#111111' : colors.surface,
       borderRadius: 24,
-      padding: 24,
+      padding: 22,
       overflow: 'hidden',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
@@ -797,16 +582,14 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     heroCircle: {
       position: 'absolute',
-      width: 220,
-      height: 220,
-      borderRadius: 110,
+      width: 200,
+      height: 200,
+      borderRadius: 100,
       backgroundColor: colors.primary + '08',
       top: -60,
-      right: -60,
+      right: -50,
     },
-    heroContent: {
-      gap: 4,
-    },
+    heroSection: { gap: 4 },
     heroLabel: {
       color: colors.textMuted,
       fontSize: 11,
@@ -816,51 +599,36 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     heroAmount: {
       color: colors.text,
-      fontSize: 44,
+      fontSize: 42,
       fontFamily: font.black,
       letterSpacing: -2,
-      marginTop: 4,
+      marginTop: 2,
     },
-    heroMeta: {
+    heroMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    heroDot: { width: 6, height: 6, borderRadius: 3 },
+    heroMetaText: { color: colors.textMuted, fontSize: 13 },
+    heroDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: isDark ? '#2A2A2A' : colors.border,
+      marginVertical: 16,
+    },
+    heroIncomeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    heroIncomeAmount: { fontSize: 22, fontFamily: font.extrabold, marginTop: 2 },
+    heroIncomeBtn: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      marginTop: 6,
-    },
-    heroDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-    },
-    heroMetaText: {
-      color: colors.textMuted,
-      fontSize: 13,
-    },
-    heroScanBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      alignSelf: 'flex-start',
-      marginTop: 20,
-      backgroundColor: colors.primary + '15',
+      gap: 5,
+      backgroundColor: colors.success,
       paddingHorizontal: 14,
       paddingVertical: 9,
       borderRadius: 12,
     },
-    heroScanText: {
-      color: colors.primary,
-      fontSize: 13,
-      fontWeight: '700',
-    },
+    heroIncomeBtnText: { color: '#fff', fontSize: 13, fontFamily: font.bold },
 
-    // 2×2 Grid
-    grid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-    },
-    gridCard: {
-      width: '48%',
+    // Stats Row
+    statsRow: { flexDirection: 'row', gap: 10 },
+    statCard: {
+      flex: 1,
       backgroundColor: isDark ? '#111111' : colors.surface,
       borderRadius: 20,
       padding: 16,
@@ -871,53 +639,13 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       shadowRadius: 8,
       elevation: 2,
     },
-    gridIcon: {
-      marginBottom: 6,
-    },
-    gridValue: {
-      color: colors.text,
-      fontSize: 22,
-      fontFamily: font.extrabold,
-      letterSpacing: -0.5,
-    },
-    gridLabel: {
-      color: colors.textMuted,
-      fontSize: 12,
-      fontFamily: font.medium,
-    },
-    gridBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 3,
-      alignSelf: 'flex-start',
-      paddingHorizontal: 7,
-      paddingVertical: 3,
-      borderRadius: 8,
-      marginTop: 4,
-    },
-    gridBadgeText: {
-      fontSize: 11,
-      fontWeight: '600',
-    },
+    statValue: { color: colors.text, fontSize: 20, fontFamily: font.extrabold, letterSpacing: -0.5, marginTop: 6 },
+    statLabel: { color: colors.textMuted, fontSize: 12, fontFamily: font.medium },
 
-    // Sections
-    sectionRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    sectionTitle: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '700',
-      letterSpacing: -0.2,
-    },
-    sectionLink: {
-      color: colors.primary,
-      fontSize: 13,
-      fontWeight: '600',
-    },
+    // Section header
+    sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
+    sectionLink: { color: colors.primary, fontSize: 13, fontWeight: '600' },
 
     // Transactions
     txList: {
@@ -939,174 +667,90 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: isDark ? '#1E1E1E' : colors.border,
     },
-    txItemLast: {
-      borderBottomWidth: 0,
-    },
-    txIconWrap: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    txInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    txName: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    txMeta: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    txAmount: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: '700',
-    },
+    txItemLast: { borderBottomWidth: 0 },
+    txIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    txInfo: { flex: 1, gap: 2 },
+    txName: { color: colors.text, fontSize: 14, fontWeight: '600' },
+    txMeta: { color: colors.textMuted, fontSize: 12 },
+    txAmount: { color: colors.text, fontSize: 14, fontWeight: '700' },
 
-    // Insights
-    insightsWrap: {
-      gap: 10,
-    },
-    insightsList: {
-      gap: 8,
-    },
+    // Conversion banner
     conversionBanner: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      gap: 10,
       backgroundColor: colors.primary + '12',
       borderWidth: 1,
       borderColor: colors.primary + '30',
       borderRadius: 16,
       padding: 14,
-      gap: 10,
     },
-    conversionLeft: {
+    conversionText: { flex: 1, gap: 2 },
+    conversionTitle: { color: colors.text, fontSize: 13, fontWeight: '700' },
+    conversionSub: { color: colors.primary, fontSize: 12, fontWeight: '500' },
+    conversionBadge: { backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    conversionBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+
+    // Quick actions
+    quickRow: { flexDirection: 'row', gap: 10 },
+    quickCard: { flex: 1, alignItems: 'center', gap: 8 },
+    quickIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    quickLabel: { color: colors.textMuted, fontSize: 11, fontFamily: font.medium, textAlign: 'center' },
+
+    // Income modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    incomeSheet: {
+      backgroundColor: isDark ? '#141414' : '#fff',
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      padding: 24,
+      paddingBottom: 40,
+      gap: 16,
+    },
+    sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 4 },
+    sheetTitle: { color: colors.text, fontSize: 20, fontFamily: font.extrabold, letterSpacing: -0.5 },
+    amountRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      flex: 1,
-    },
-    conversionText: {
-      flex: 1,
-      gap: 2,
-    },
-    conversionTitle: {
-      color: colors.text,
-      fontSize: 13,
-      fontWeight: '700',
-    },
-    conversionSub: {
-      color: colors.primary,
-      fontSize: 12,
-      fontWeight: '500',
-    },
-    conversionBadge: {
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    conversionBadgeText: {
-      color: '#fff',
-      fontSize: 11,
-      fontWeight: '800',
-    },
-    searchBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      backgroundColor: isDark ? '#111111' : colors.surface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-    },
-    searchPlaceholder: {
-      color: colors.textMuted,
-      fontSize: 14,
-      flex: 1,
-    },
-    facturasCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: isDark ? '#0D1526' : '#EFF6FF',
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: '#3B82F630',
-      padding: 14,
-      marginBottom: 8,
-    },
-    facturasAddBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: '#3B82F6',
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-    },
-    facturasAddText: {
-      color: '#fff',
-      fontSize: 13,
-      fontFamily: font.bold,
-    },
-    asesorCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: isDark ? '#0F1A12' : colors.primary + '08',
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: colors.primary + '30',
-      padding: 14,
-      marginBottom: 8,
-    },
-    asesorLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-    asesorIconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: colors.primary + '18',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    asesorText: { flex: 1 },
-    asesorTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
-    asesorSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-    asesorProBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: colors.primary + '15',
-      borderRadius: 8,
-      paddingHorizontal: 8,
+      backgroundColor: isDark ? '#1E1E1E' : colors.background,
+      borderRadius: 16,
+      paddingHorizontal: 16,
       paddingVertical: 4,
+      borderWidth: 1.5,
+      borderColor: colors.primary + '40',
     },
-    asesorProText: { color: colors.primary, fontSize: 11, fontWeight: '800' },
-    insightsLocked: {
+    currencySign: { color: colors.textMuted, fontSize: 24, fontFamily: font.bold, marginRight: 4 },
+    amountInput: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 32,
+      fontFamily: font.extrabold,
+      paddingVertical: 12,
+      letterSpacing: -1,
+    },
+    typeLabel: { color: colors.textMuted, fontSize: 12, fontFamily: font.semibold, letterSpacing: 0.5, textTransform: 'uppercase' },
+    typePills: { flexGrow: 0 },
+    typePill: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      paddingVertical: 10,
-      paddingHorizontal: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderRadius: 12,
+      backgroundColor: isDark ? '#1E1E1E' : colors.background,
       borderWidth: 1,
-      borderStyle: 'dashed',
       borderColor: colors.border,
     },
-    insightsLockedText: {
-      color: colors.textMuted,
-      fontSize: 13,
-      fontWeight: '500',
+    typePillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    typePillText: { color: colors.textMuted, fontSize: 13, fontFamily: font.medium },
+    typePillTextActive: { color: '#fff', fontFamily: font.semibold },
+    saveIncomeBtn: {
+      backgroundColor: colors.success,
+      borderRadius: 16,
+      paddingVertical: 17,
+      alignItems: 'center',
     },
+    saveIncomeBtnText: { color: '#fff', fontSize: 16, fontFamily: font.bold },
 
     spacer: { height: 24 },
   });

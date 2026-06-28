@@ -5,8 +5,8 @@ import Purchases, {
 } from 'react-native-purchases';
 
 // Replace these with your actual RevenueCat API keys
-const REVENUECAT_API_KEY_IOS = 'test_KZkVMhwbGZXyYdsjZtQUQfEwfvR';
-const REVENUECAT_API_KEY_ANDROID = 'test_KZkVMhwbGZXyYdsjZtQUQfEwfvR';
+const REVENUECAT_API_KEY_IOS = 'appl_xaCrFqkSEJyIDUKcqDBacBRgsav';
+const REVENUECAT_API_KEY_ANDROID = 'goog_PENDING';
 
 let configured = false;
 

@@ -195,15 +195,12 @@ export async function pullFromSupabase(): Promise<void> {
 
   try {
     // Avatar — siempre jalar al login, independiente de datos locales
-    supabase
-      .from('profiles')
-      .select('avatar_url')
-      .eq('id', userId)
-      .single()
-      .then(({ data }) => {
+    void (async () => {
+      try {
+        const { data } = await supabase.from('profiles').select('avatar_url').eq('id', userId).single();
         if (data?.avatar_url) usePremiumStore.getState().setAvatarUri(data.avatar_url);
-      })
-      .catch(() => {});
+      } catch {}
+    })();
 
     const db = await getDatabase();
 

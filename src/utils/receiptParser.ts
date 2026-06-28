@@ -412,7 +412,7 @@ function findRfc(rawText: string): string | undefined {
     (_match, candidate) => `RFC:${candidate.replace(/[\s-]/g, '')}`,
   );
 
-  const allMatches = normalized.match(/[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}/gi) ?? [];
+  const allMatches: string[] = normalized.match(/[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}/gi) ?? [];
 
   // Fallback: corregir confusiones OCR comunes en RFCs (O↔0, l/I↔1)
   if (allMatches.length === 0) {

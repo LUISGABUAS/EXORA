@@ -50,7 +50,7 @@ export async function clearAllUserData(): Promise<void> {
     weeklyScans: 0,
     weekStartDate: '',
     streak: 0,
-    lastActiveDate: null,
+    lastActiveDate: '',
     fiscalRegime: 'resico',
     allFiscalRegimes: [],
     razonSocial: null,

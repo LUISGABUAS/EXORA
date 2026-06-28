@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { checkPremiumStatus } from '../services/revenuecatService';
 import { redeemFounderCodeInSupabase } from '../services/founderService';
 import { track } from '../services/analyticsService';
+import { supabase } from '../lib/supabase';
 
 export type PremiumPlan = 'free' | 'monthly' | 'yearly' | 'founder';
 
@@ -72,6 +73,7 @@ interface PremiumState {
   setBiometricEnabled: (enabled: boolean) => Promise<void>;
   extendTrial: (days: number) => Promise<void>;
   syncWithRevenueCat: () => Promise<void>;
+  checkOnboardingForUser: () => Promise<void>;
   redeemFounderCode: (
     code: string,
   ) => Promise<'success' | 'already_used' | 'invalid' | 'error'>;
@@ -171,8 +173,24 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
         AsyncStorage.getItem(ONBOARDING_KEY),
       ]);
       const parsed = raw ? JSON.parse(raw) : {};
-      // onboardingComplete sobrevive sign-out — se guarda en clave separada
       if (onboardingFlag === 'true') parsed.onboardingComplete = true;
+
+      // Onboarding per-user: Supabase es fuente de verdad
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const supabaseOnboarding = user.user_metadata?.onboarding_complete;
+          if (supabaseOnboarding === true) {
+            parsed.onboardingComplete = true;
+          } else {
+            // Usuario nuevo o cuenta sin onboarding completado — ignorar AsyncStorage local
+            parsed.onboardingComplete = false;
+          }
+        }
+      } catch {
+        // Sin red — usa valor local como fallback
+      }
+
       set({ ...defaults, ...parsed, loaded: true });
 
       // Siempre verifica fundador en Supabase — garantiza sync tras reinstalar o limpiar datos
@@ -275,6 +293,7 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
     set({ onboardingComplete: true, trialEndsAt });
     await persist(getData(get()));
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    supabase.auth.updateUser({ data: { onboarding_complete: true } }).catch(() => {});
     if (trialEndsAt) {
       const { scheduleTrialReminders } = await import(
         '../services/notificationService'
@@ -329,6 +348,15 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
     } catch {
       // Silently fail — keep local state
     }
+  },
+
+  checkOnboardingForUser: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const onboarded = user.user_metadata?.onboarding_complete === true;
+      set({ onboardingComplete: onboarded });
+    } catch {}
   },
 
   redeemFounderCode: async (code: string) => {

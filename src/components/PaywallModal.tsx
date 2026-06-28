@@ -42,7 +42,7 @@ const BENEFITS = [
   { icon: 'file-chart-outline', text: 'Reporte fiscal en PDF y CSV' },
   { icon: 'shield-check-outline', text: 'Detecta deducciones al escanear' },
   { icon: 'lightbulb-on-outline', text: 'Todos los insights personalizados' },
-  { icon: 'cloud-sync-outline', text: 'Sync en la nube ilimitado' },
+  { icon: 'headset', text: 'Soporte prioritario por email' },
 ];
 
 interface PackageInfo {

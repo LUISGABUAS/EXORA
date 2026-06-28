@@ -136,11 +136,11 @@ export function LoginScreen() {
           <Animated.View entering={FadeIn.delay(500).duration(400)} style={s.footer}>
             <Text style={s.terms}>Al continuar aceptas nuestros</Text>
             <View style={s.termsRow}>
-              <Pressable onPress={() => Linking.openURL('https://expensia-waitlist.vercel.app/terminos')}>
+              <Pressable onPress={() => Linking.openURL('https://exora-waitlist.vercel.app/terminos')}>
                 <Text style={s.termsLink}>Términos de uso</Text>
               </Pressable>
               <Text style={s.terms}> y </Text>
-              <Pressable onPress={() => Linking.openURL('https://expensia-waitlist.vercel.app/privacidad')}>
+              <Pressable onPress={() => Linking.openURL('https://exora-waitlist.vercel.app/privacidad')}>
                 <Text style={s.termsLink}>Política de privacidad</Text>
               </Pressable>
             </View>
