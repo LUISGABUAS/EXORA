@@ -115,7 +115,7 @@ function lastWeekday(now: Date, targetDay: number): Date {
 }
 
 function extractAmount(text: string): { amount: number | null; remaining: string } {
-  const match = text.match(/(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/);
+  const match = text.match(/(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/);
   if (!match) return { amount: null, remaining: text };
 
   const raw = match[1].replace(/,/g, '');

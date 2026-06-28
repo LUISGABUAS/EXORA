@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActionSheetIOS,
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -33,61 +42,56 @@ export function ProfileEditScreen() {
   const storeConstanciaDate = usePremiumStore(state => state.constanciaUploadDate);
   const allFiscalRegimes = usePremiumStore(state => state.allFiscalRegimes);
   const actividadEconomica = usePremiumStore(state => state.actividadEconomica);
-  const hasConstancia = !!storeConstanciaUri;
+  const setAvatarUri = usePremiumStore(state => state.setAvatarUri);
 
+  const hasConstancia = !!storeConstanciaUri;
   const currentName = session?.user?.user_metadata?.full_name || '';
   const userEmail = session?.user?.email || '';
+  const isRelayEmail = userEmail.endsWith('@privaterelay.appleid.com');
 
   const [name, setName] = useState(currentName);
   const [selectedRegime, setSelectedRegime] = useState<FiscalRegime>(fiscalRegime);
   const [rfc, setRfc] = useState(session?.user?.user_metadata?.rfc || '');
-  const [razonSocial, setRazonSocial] = useState(storeRazonSocial || '');
+  const [razonSocial] = useState(storeRazonSocial || '');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showMoreRegimes, setShowMoreRegimes] = useState(
     () => !PRIMARY_REGIMES.some(r => r.value === fiscalRegime),
   );
-  const [uploading, setUploading] = useState(false);
-  const setAvatarUri = usePremiumStore(state => state.setAvatarUri);
 
-  // Solo carga desde Supabase si no hay avatar guardado localmente
   React.useEffect(() => {
     const userId = session?.user?.id;
     if (!userId) return;
     const localUri = usePremiumStore.getState().avatarUri;
-    if (localUri) return; // Ya tenemos foto local, no sobreescribir
+    if (localUri) return;
     supabase
       .from('profiles')
       .select('avatar_url')
       .eq('id', userId)
       .single()
-      .then(({ data }) => {
-        if (data?.avatar_url) setAvatarUri(data.avatar_url);
-      });
+      .then(({ data }) => { if (data?.avatar_url) setAvatarUri(data.avatar_url); });
   }, [session?.user?.id]);
 
   const handleAvatarPress = () => {
-    const options = ['Tomar foto', 'Elegir de galeria', 'Cancelar'];
-    const cancelIndex = 2;
-
+    const options = ['Tomar foto', 'Elegir de galería', 'Cancelar'];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: cancelIndex },
+        { options, cancelButtonIndex: 2 },
         async idx => {
           if (idx === 0) await handleTakePhoto();
           else if (idx === 1) await handlePickPhoto();
         },
       );
     } else {
-      Alert.alert('Foto de perfil', 'Elige una opcion', [
+      Alert.alert('Foto de perfil', 'Elige una opción', [
         { text: 'Tomar foto', onPress: handleTakePhoto },
-        { text: 'Elegir de galeria', onPress: handlePickPhoto },
+        { text: 'Elegir de galería', onPress: handlePickPhoto },
         { text: 'Cancelar', style: 'cancel' },
       ]);
     }
   };
 
   const saveAvatar = async (result: { uri: string; base64?: string }) => {
-    // 1. Copiar a path permanente en Documents para que persista tras reinicios
     let permanentUri = result.uri;
     try {
       const RNFS = require('react-native-fs').default;
@@ -95,24 +99,15 @@ export function ProfileEditScreen() {
       const srcPath = result.uri.startsWith('file://') ? result.uri.slice(7) : result.uri;
       await RNFS.copyFile(srcPath, destPath);
       permanentUri = `file://${destPath}`;
-    } catch {
-      // Si falla la copia, usar el URI original
-    }
-
-    // 2. Guardar permanentemente en local (AsyncStorage) de inmediato
+    } catch {}
     await setAvatarUri(permanentUri);
-
-    // 3. Intentar subir a Supabase en background (opcional — no bloquea)
     const userId = session?.user?.id;
     if (!userId || !result.base64) return;
     try {
       const publicUrl = await uploadAvatarToSupabase(result.base64, userId);
       await setAvatarUri(publicUrl);
       await supabase.from('profiles').upsert({ id: userId, avatar_url: publicUrl });
-    } catch (e) {
-      if (__DEV__) console.warn('Avatar upload error (kept local):', e);
-      // Se queda con el archivo local — está bien
-    }
+    } catch {}
   };
 
   const handleTakePhoto = async () => {
@@ -137,48 +132,31 @@ export function ProfileEditScreen() {
     setUploading(true);
     try {
       const file = await pickPdfFile();
-      if (!file) {
-        setUploading(false);
-        return;
-      }
+      if (!file) { setUploading(false); return; }
 
       const text = await readPdfText(file.uri);
       if (!text) {
-        Alert.alert(
-          'No se pudo leer',
-          'No se pudo extraer texto del PDF. Ingresa los datos manualmente.',
-        );
+        Alert.alert('No se pudo leer', 'No se pudo extraer texto del PDF.');
         setUploading(false);
         return;
       }
-
       if (!validateIsConstancia(text)) {
-        Alert.alert(
-          'Documento no válido',
-          'El archivo no parece ser una Constancia de Situación Fiscal del SAT.',
-        );
+        Alert.alert('Documento no válido', 'El archivo no parece ser una Constancia de Situación Fiscal del SAT.');
         setUploading(false);
         return;
       }
 
       const parsed = parseConstanciaText(text);
       if (!parsed.success) {
-        Alert.alert(
-          'Error al procesar',
-          parsed.error || 'No se pudieron extraer los datos. Ingresa los datos manualmente.',
-        );
+        Alert.alert('Error al procesar', parsed.error || 'No se pudieron extraer los datos.');
         setUploading(false);
         return;
       }
 
-      // Pre-fill fields
       if (parsed.rfc) setRfc(parsed.rfc);
-      if (parsed.razonSocial) setRazonSocial(parsed.razonSocial);
       if (parsed.fiscalRegime) {
         setSelectedRegime(parsed.fiscalRegime);
-        if (!PRIMARY_REGIMES.some(r => r.value === parsed.fiscalRegime)) {
-          setShowMoreRegimes(true);
-        }
+        if (!PRIMARY_REGIMES.some(r => r.value === parsed.fiscalRegime)) setShowMoreRegimes(true);
       }
 
       const today = new Date().toISOString().slice(0, 10);
@@ -191,14 +169,14 @@ export function ProfileEditScreen() {
         ...(parsed.actividadEconomica && { actividadEconomica: parsed.actividadEconomica }),
       });
 
-      const details = [
-        parsed.rfc && `RFC: ${parsed.rfc}`,
-        parsed.razonSocial && `Nombre: ${parsed.razonSocial}`,
-        parsed.regimeLabel && `Régimen: ${parsed.regimeLabel}`,
-        parsed.actividadEconomica && `Actividad: ${parsed.actividadEconomica}`,
-      ].filter(Boolean).join('\n');
-
-      Alert.alert('Constancia procesada', details || 'Datos extraídos correctamente.');
+      Alert.alert(
+        '✓ Constancia procesada',
+        [
+          parsed.rfc && `RFC: ${parsed.rfc}`,
+          parsed.razonSocial && `Nombre: ${parsed.razonSocial}`,
+          parsed.regimeLabel && `Régimen: ${parsed.regimeLabel}`,
+        ].filter(Boolean).join('\n') || 'Datos extraídos correctamente.',
+      );
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Error al procesar el archivo.');
     } finally {
@@ -207,16 +185,9 @@ export function ProfileEditScreen() {
   };
 
   const handleClearConstancia = () => {
-    Alert.alert('Eliminar constancia', '¿Deseas eliminar la constancia cargada?', [
+    Alert.alert('Eliminar constancia', '¿Deseas eliminar la constancia y los datos fiscales detectados?', [
       { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          await clearConstancia();
-          setRazonSocial('');
-        },
-      },
+      { text: 'Eliminar', style: 'destructive', onPress: async () => { await clearConstancia(); } },
     ]);
   };
 
@@ -231,7 +202,6 @@ export function ProfileEditScreen() {
       const { error } = await supabase.auth.updateUser({ data: updateData });
       if (error) { Alert.alert('Error', error.message); return; }
 
-      // Sincronizar perfil extendido en tabla profiles
       if (userId) {
         await updateProfile(userId, {
           full_name: name.trim(),
@@ -242,7 +212,7 @@ export function ProfileEditScreen() {
       }
 
       await setFiscalRegime(selectedRegime);
-      Alert.alert('Listo', 'Tu perfil se actualizó correctamente.', [
+      Alert.alert('Listo', 'Perfil actualizado.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch {
@@ -252,418 +222,339 @@ export function ProfileEditScreen() {
     }
   };
 
+  const needsFiscalData = selectedRegime !== 'no_facturo';
+  const displayRegimes = allFiscalRegimes.length > 0 ? allFiscalRegimes : [selectedRegime];
+
   return (
     <ScreenContainer>
-      {/* Avatar */}
-      <View style={s.avatarRow}>
-        <Avatar size={72} name={name} showEdit onPress={handleAvatarPress} />
-      </View>
-
-      {/* Name */}
-      <View style={s.field}>
-        <Text style={s.label}>Nombre</Text>
-        <TextInput
-          style={s.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Tu nombre"
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="words"
-        />
-      </View>
-
-      {/* Email (readonly) */}
-      <View style={s.field}>
-        <Text style={s.label}>Email</Text>
-        <View style={s.readonlyField}>
-          <Text style={s.readonlyText}>{userEmail}</Text>
+      {/* Avatar + nombre */}
+      <View style={s.topRow}>
+        <Avatar size={64} name={name} showEdit onPress={handleAvatarPress} />
+        <View style={s.topFields}>
+          <TextInput
+            style={s.nameInput}
+            value={name}
+            onChangeText={setName}
+            placeholder="Tu nombre"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="words"
+          />
+          {!isRelayEmail && (
+            <Text style={s.emailText} numberOfLines={1}>{userEmail}</Text>
+          )}
         </View>
       </View>
 
-      {/* Fiscal Regime */}
-      <View style={s.field}>
-        <Text style={s.label}>Régimen fiscal</Text>
+      {/* Datos fiscales */}
+      <View style={s.section}>
+        <Text style={s.sectionTitle}>Datos fiscales</Text>
 
         {hasConstancia ? (
-          /* ── Solo lectura: régimen bloqueado por la constancia ── */
-          <View style={s.constanciaRegimeBox}>
-            <View style={s.constanciaRegimeHeader}>
-              <Icon name="shield-check" size={16} color={colors.primary} />
-              <Text style={s.constanciaRegimeLabel}>Detectado en tu Constancia del SAT</Text>
-            </View>
-            {(allFiscalRegimes.length > 0 ? allFiscalRegimes : [selectedRegime]).map(r => {
-              const display = [...PRIMARY_REGIMES, ...SECONDARY_REGIMES].find(d => d.value === r);
-              return (
-                <View key={r} style={s.constanciaRegimeRow}>
-                  <Icon name={display?.icon ?? 'file-document-outline'} size={18} color={colors.primary} />
-                  <View style={s.regimeInfo}>
-                    <Text style={s.regimeTitle}>{display?.title ?? r}</Text>
-                    <Text style={s.regimeDesc}>{display?.desc ?? ''}</Text>
-                  </View>
-                </View>
-              );
-            })}
-            {actividadEconomica ? (
-              <View style={s.actividadRow}>
-                <Icon name="briefcase-outline" size={14} color={colors.textMuted} />
-                <Text style={s.actividadText}>{actividadEconomica}</Text>
+          /* ── Constancia cargada: mostrar datos detectados ── */
+          <View style={s.constanciaBox}>
+            <View style={s.constanciaHeader}>
+              <View style={s.constanciaHeaderLeft}>
+                <Icon name="check-circle" size={18} color={colors.primary} />
+                <Text style={s.constanciaHeaderTitle}>Constancia del SAT verificada</Text>
               </View>
-            ) : null}
-            <Text style={s.constanciaRegimeHint}>
-              Para cambiar tu régimen, sube una nueva Constancia del SAT abajo.
-            </Text>
+              <Pressable onPress={handleClearConstancia} hitSlop={10}>
+                <Icon name="close-circle-outline" size={20} color={colors.textMuted} />
+              </Pressable>
+            </View>
+
+            {storeConstanciaDate && (
+              <Text style={s.constanciaDate}>Subida el {storeConstanciaDate}</Text>
+            )}
+
+            {/* Regímenes detectados */}
+            <View style={s.detectedRegimes}>
+              {displayRegimes.map(r => {
+                const d = [...PRIMARY_REGIMES, ...SECONDARY_REGIMES].find(x => x.value === r);
+                return (
+                  <View key={r} style={s.detectedRegimeRow}>
+                    <Icon name={d?.icon ?? 'file-document-outline'} size={16} color={colors.primary} />
+                    <Text style={s.detectedRegimeText}>{d?.title ?? r}</Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* RFC y Razón Social */}
+            {(rfc || razonSocial || actividadEconomica) && (
+              <View style={s.fiscalDataRow}>
+                {rfc ? (
+                  <View style={s.fiscalDataItem}>
+                    <Text style={s.fiscalDataLabel}>RFC</Text>
+                    <Text style={s.fiscalDataValue}>{rfc}</Text>
+                  </View>
+                ) : null}
+                {razonSocial ? (
+                  <View style={s.fiscalDataItem}>
+                    <Text style={s.fiscalDataLabel}>Razón social</Text>
+                    <Text style={s.fiscalDataValue}>{razonSocial}</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
+
+            <Pressable style={s.changeConstanciaBtn} onPress={handleUploadConstancia} disabled={uploading}>
+              <Icon name="file-replace-outline" size={16} color={colors.primary} />
+              <Text style={s.changeConstanciaText}>{uploading ? 'Procesando...' : 'Subir nueva constancia'}</Text>
+            </Pressable>
           </View>
         ) : (
-          /* ── Selector manual: sin constancia ── */
+          /* ── Sin constancia: CSF primero, régimen manual secundario ── */
           <>
-            <View style={s.regimeList}>
+            {/* CSF Upload — acción principal */}
+            <Pressable
+              style={[s.uploadCard, uploading && { opacity: 0.6 }]}
+              onPress={handleUploadConstancia}
+              disabled={uploading}
+            >
+              <View style={s.uploadIconWrap}>
+                <Icon name="file-pdf-box" size={28} color={colors.primary} />
+              </View>
+              <View style={s.uploadInfo}>
+                <Text style={s.uploadTitle}>
+                  {uploading ? 'Procesando...' : 'Subir Constancia del SAT'}
+                </Text>
+                <Text style={s.uploadHint}>Detecta RFC y régimen automáticamente</Text>
+              </View>
+              <Icon name="chevron-right" size={18} color={colors.primary} />
+            </Pressable>
+
+            {/* Separador */}
+            <View style={s.orRow}>
+              <View style={s.orLine} />
+              <Text style={s.orText}>o selecciona manualmente</Text>
+              <View style={s.orLine} />
+            </View>
+
+            {/* Selector de régimen — compacto */}
+            <View style={s.regimeGrid}>
               {PRIMARY_REGIMES.map(r => (
                 <Pressable
                   key={r.value}
-                  style={[s.regimeCard, selectedRegime === r.value && s.regimeCardActive]}
+                  style={[s.regimeChip, selectedRegime === r.value && s.regimeChipActive]}
                   onPress={() => setSelectedRegime(r.value)}
                 >
-                  <Icon
-                    name={r.icon}
-                    size={24}
-                    color={selectedRegime === r.value ? colors.white : colors.primary}
-                  />
-                  <View style={s.regimeInfo}>
-                    <Text style={[s.regimeTitle, selectedRegime === r.value && s.regimeTitleActive]}>
+                  <Icon name={r.icon} size={16} color={selectedRegime === r.value ? '#fff' : colors.primary} />
+                  <View>
+                    <Text style={[s.regimeChipTitle, selectedRegime === r.value && s.regimeChipTitleActive]}>
                       {r.title}
                     </Text>
-                    <Text style={[s.regimeDesc, selectedRegime === r.value && s.regimeDescActive]}>
+                    <Text style={[s.regimeChipDesc, selectedRegime === r.value && s.regimeChipDescActive]}>
                       {r.desc}
                     </Text>
                   </View>
                 </Pressable>
               ))}
             </View>
-            <Pressable
-              style={s.moreRegimesButton}
-              onPress={() => setShowMoreRegimes(v => !v)}
-            >
-              <Icon
-                name={showMoreRegimes ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={colors.primary}
-              />
-              <Text style={s.moreRegimesText}>
-                {showMoreRegimes ? 'Menos regímenes' : 'Más regímenes'}
-              </Text>
+
+            {/* Más regímenes */}
+            <Pressable style={s.moreBtn} onPress={() => setShowMoreRegimes(v => !v)}>
+              <Icon name={showMoreRegimes ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
+              <Text style={s.moreBtnText}>{showMoreRegimes ? 'Menos regímenes' : 'Más regímenes'}</Text>
             </Pressable>
-            {showMoreRegimes ? (
-              <View style={s.secondaryRow}>
+
+            {showMoreRegimes && (
+              <View style={s.secondaryChips}>
                 {SECONDARY_REGIMES.map(r => (
                   <Pressable
                     key={r.value}
                     style={[s.secondaryChip, selectedRegime === r.value && s.secondaryChipActive]}
                     onPress={() => setSelectedRegime(r.value)}
                   >
-                    <Icon
-                      name={r.icon}
-                      size={16}
-                      color={selectedRegime === r.value ? colors.white : colors.text}
-                    />
+                    <Icon name={r.icon} size={14} color={selectedRegime === r.value ? '#fff' : colors.textMuted} />
                     <Text style={[s.secondaryChipText, selectedRegime === r.value && s.secondaryChipTextActive]}>
                       {r.title}
                     </Text>
                   </Pressable>
                 ))}
               </View>
-            ) : null}
+            )}
+
+            {/* RFC — solo si el régimen lo requiere */}
+            {needsFiscalData && (
+              <View style={s.rfcRow}>
+                <View style={s.rfcInputWrap}>
+                  <Text style={s.rfcLabel}>RFC</Text>
+                  <TextInput
+                    style={s.rfcInput}
+                    value={rfc}
+                    onChangeText={setRfc}
+                    placeholder="XAXX010101000"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="characters"
+                    maxLength={13}
+                  />
+                </View>
+              </View>
+            )}
           </>
         )}
       </View>
 
-      {/* Constancia Upload — only if regime != no_facturo */}
-      {selectedRegime !== 'no_facturo' ? (
-        <View style={s.field}>
-          <Text style={s.label}>Constancia de Situación Fiscal</Text>
-          {storeConstanciaUri ? (
-            <View style={s.constanciaCard}>
-              <Icon name="check-circle" size={24} color={colors.primary} />
-              <View style={s.constanciaInfo}>
-                <Text style={s.constanciaTitle}>Constancia cargada</Text>
-                {storeConstanciaDate ? (
-                  <Text style={s.constanciaDate}>Subida el {storeConstanciaDate}</Text>
-                ) : null}
-              </View>
-              <Pressable onPress={handleClearConstancia} hitSlop={8}>
-                <Icon name="close-circle" size={22} color={colors.textMuted} />
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              style={[s.uploadCard, uploading && s.uploadCardDisabled]}
-              onPress={handleUploadConstancia}
-              disabled={uploading}
-            >
-              <Icon name="file-pdf-box" size={32} color={colors.primary} />
-              <View style={s.uploadInfo}>
-                <Text style={s.uploadTitle}>
-                  {uploading ? 'Procesando...' : 'Subir PDF del SAT'}
-                </Text>
-                <Text style={s.uploadHint}>
-                  Extrae automáticamente tu RFC y régimen fiscal
-                </Text>
-              </View>
-            </Pressable>
-          )}
-        </View>
-      ) : null}
-
-      {/* Razón Social (readonly if from constancia) */}
-      {razonSocial ? (
-        <View style={s.field}>
-          <Text style={s.label}>Razón Social</Text>
-          <View style={s.readonlyField}>
-            <Text style={s.readonlyText}>{razonSocial}</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {/* RFC — only if regime != no_facturo */}
-      {selectedRegime !== 'no_facturo' ? (
-        <View style={s.field}>
-          <Text style={s.label}>RFC</Text>
-          <TextInput
-            style={s.input}
-            value={rfc}
-            onChangeText={setRfc}
-            placeholder="Ej: XAXX010101000"
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="characters"
-            maxLength={13}
-          />
-        </View>
-      ) : null}
-
-      {/* Save Button */}
-      <Pressable style={[s.saveButton, saving && s.saveButtonDisabled]} onPress={handleSave} disabled={saving}>
-        <Text style={s.saveButtonText}>{saving ? 'Guardando...' : 'Guardar'}</Text>
+      {/* Guardar */}
+      <Pressable
+        style={[s.saveBtn, saving && { opacity: 0.6 }]}
+        onPress={handleSave}
+        disabled={saving}
+      >
+        <Text style={s.saveBtnText}>{saving ? 'Guardando...' : 'Guardar'}</Text>
       </Pressable>
     </ScreenContainer>
   );
 }
 
-const useStyles = (colors: ColorPalette, _isDark: boolean) =>
+const useStyles = (colors: ColorPalette, isDark: boolean) =>
   StyleSheet.create({
-    avatarRow: {
-      alignItems: 'center',
-      paddingVertical: 8,
-    },
-    field: {
-      gap: 6,
-    },
-    label: {
-      color: colors.textMuted,
-      fontSize: 13,
-      fontFamily: font.semibold,
-      marginLeft: 4,
-    },
-    input: {
-      backgroundColor: colors.surface,
+    // Top
+    topRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 4 },
+    topFields: { flex: 1, gap: 6 },
+    nameInput: {
+      backgroundColor: isDark ? '#1A1A1A' : colors.surface,
       borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
       fontSize: 16,
+      fontFamily: font.semibold,
       color: colors.text,
     },
-    readonlyField: {
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 14,
-    },
-    readonlyText: {
-      color: colors.textMuted,
-      fontSize: 16,
-    },
-    regimeList: {
-      gap: 10,
-    },
-    regimeCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-      backgroundColor: colors.surface,
+    emailText: { color: colors.textMuted, fontSize: 13, marginLeft: 4 },
+
+    // Section
+    section: { gap: 12 },
+    sectionTitle: { color: colors.text, fontSize: 16, fontFamily: font.bold, letterSpacing: -0.2 },
+
+    // Constancia loaded
+    constanciaBox: {
+      backgroundColor: isDark ? '#0F1A12' : colors.primary + '08',
       borderRadius: 18,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: colors.primary + '30',
       padding: 16,
-    },
-    regimeCardActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    regimeInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    regimeTitle: {
-      color: colors.text,
-      fontSize: 16,
-      fontFamily: font.bold,
-    },
-    regimeTitleActive: {
-      color: colors.white,
-    },
-    regimeDesc: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    regimeDescActive: {
-      color: colors.white,
-      opacity: 0.8,
-    },
-    moreRegimesButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6,
-      paddingVertical: 8,
-    },
-    moreRegimesText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontFamily: font.semibold,
-    },
-    secondaryRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    secondaryChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 14,
-    },
-    secondaryChipActive: {
-      backgroundColor: colors.primary,
-    },
-    secondaryChipText: {
-      color: colors.text,
-      fontSize: 13,
-      fontFamily: font.semibold,
-    },
-    secondaryChipTextActive: {
-      color: colors.white,
-    },
-    constanciaRegimeBox: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.primary + '40',
-      padding: 14,
-      gap: 10,
-    },
-    constanciaRegimeHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    constanciaRegimeLabel: {
-      color: colors.primary,
-      fontSize: 12,
-      fontFamily: font.semibold,
-    },
-    constanciaRegimeRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
       gap: 12,
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
     },
-    constanciaRegimeHint: {
-      color: colors.textMuted,
-      fontSize: 11,
-      fontFamily: font.regular,
-      lineHeight: 16,
+    constanciaHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    constanciaHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    constanciaHeaderTitle: { color: colors.primary, fontSize: 14, fontFamily: font.bold },
+    constanciaDate: { color: colors.textMuted, fontSize: 12 },
+    detectedRegimes: { gap: 6 },
+    detectedRegimeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.primary + '10',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
     },
-    actividadRow: {
+    detectedRegimeText: { color: colors.text, fontSize: 14, fontFamily: font.semibold },
+    fiscalDataRow: { gap: 8 },
+    fiscalDataItem: { gap: 2 },
+    fiscalDataLabel: { color: colors.textMuted, fontSize: 11, fontFamily: font.semibold, textTransform: 'uppercase', letterSpacing: 0.5 },
+    fiscalDataValue: { color: colors.text, fontSize: 15, fontFamily: font.semibold },
+    changeConstanciaBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      paddingTop: 2,
+      alignSelf: 'flex-start',
+      paddingVertical: 6,
     },
-    actividadText: {
-      color: colors.textMuted,
-      fontSize: 12,
-      fontFamily: font.medium,
-      flex: 1,
-    },
+    changeConstanciaText: { color: colors.primary, fontSize: 13, fontFamily: font.semibold },
+
+    // Upload
     uploadCard: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 14,
-      backgroundColor: colors.surface,
-      borderRadius: 18,
+      backgroundColor: isDark ? '#111111' : colors.surface,
+      borderRadius: 16,
       borderWidth: 1.5,
       borderColor: colors.primary + '40',
       borderStyle: 'dashed',
       padding: 16,
     },
-    uploadCardDisabled: {
-      opacity: 0.6,
+    uploadIconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: colors.primary + '14',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    uploadInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    uploadTitle: {
-      color: colors.text,
-      fontSize: 15,
-      fontFamily: font.bold,
-    },
-    uploadHint: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    constanciaCard: {
+    uploadInfo: { flex: 1, gap: 3 },
+    uploadTitle: { color: colors.text, fontSize: 15, fontFamily: font.bold },
+    uploadHint: { color: colors.textMuted, fontSize: 12 },
+
+    // Or separator
+    orRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+    orText: { color: colors.textMuted, fontSize: 12, fontFamily: font.medium },
+
+    // Regime grid
+    regimeGrid: { gap: 8 },
+    regimeChip: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: colors.primary + '14',
-      borderRadius: 18,
+      backgroundColor: isDark ? '#111111' : colors.surface,
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: colors.primary + '30',
-      padding: 16,
+      borderColor: colors.border,
+      padding: 14,
     },
-    constanciaInfo: {
-      flex: 1,
-      gap: 2,
+    regimeChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    regimeChipTitle: { color: colors.text, fontSize: 14, fontFamily: font.bold },
+    regimeChipTitleActive: { color: '#fff' },
+    regimeChipDesc: { color: colors.textMuted, fontSize: 12, marginTop: 1 },
+    regimeChipDescActive: { color: 'rgba(255,255,255,0.75)' },
+
+    // More button
+    moreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 4 },
+    moreBtnText: { color: colors.primary, fontSize: 13, fontFamily: font.semibold },
+
+    // Secondary chips
+    secondaryChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    secondaryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: isDark ? '#1A1A1A' : colors.surfaceAlt,
+      borderRadius: 10,
+      paddingVertical: 9,
+      paddingHorizontal: 12,
     },
-    constanciaTitle: {
-      color: colors.primary,
-      fontSize: 15,
-      fontFamily: font.bold,
+    secondaryChipActive: { backgroundColor: colors.primary },
+    secondaryChipText: { color: colors.textMuted, fontSize: 13, fontFamily: font.medium },
+    secondaryChipTextActive: { color: '#fff', fontFamily: font.semibold },
+
+    // RFC
+    rfcRow: { marginTop: 4 },
+    rfcInputWrap: { gap: 6 },
+    rfcLabel: { color: colors.textMuted, fontSize: 12, fontFamily: font.semibold, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 4 },
+    rfcInput: {
+      backgroundColor: isDark ? '#111111' : colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      fontSize: 16,
+      fontFamily: font.semibold,
+      color: colors.text,
+      letterSpacing: 1,
     },
-    constanciaDate: {
-      color: colors.textMuted,
-      fontSize: 12,
-    },
-    saveButton: {
+
+    // Save
+    saveBtn: {
       backgroundColor: colors.primary,
       paddingVertical: 16,
       borderRadius: 16,
       alignItems: 'center',
     },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      color: colors.white,
-      fontSize: 16,
-      fontFamily: font.extrabold,
-    },
+    saveBtnText: { color: '#fff', fontSize: 16, fontFamily: font.extrabold },
   });

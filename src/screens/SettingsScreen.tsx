@@ -268,12 +268,14 @@ export function SettingsScreen() {
       <SectionLabel label="Ajustes" />
       <View style={s.card}>
         {/* Apariencia */}
-        <View style={s.settingRow}>
-          <View style={[iconWrap(colors.textMuted), { marginRight: 12 }]}>
-            <Icon name="theme-light-dark" size={18} color={colors.textMuted} />
+        <View style={s.settingCol}>
+          <View style={s.settingRow}>
+            <View style={[iconWrap(colors.textMuted), { marginRight: 12 }]}>
+              <Icon name="theme-light-dark" size={18} color={colors.textMuted} />
+            </View>
+            <Text style={s.settingLabel}>Apariencia</Text>
           </View>
-          <Text style={s.settingLabel}>Apariencia</Text>
-          <View style={s.chipRow}>
+          <View style={[s.chipRow, { justifyContent: 'flex-start', marginLeft: 44 }]}>
             {THEME_MODES.map(item => (
               <Pressable
                 key={item.mode}
@@ -457,6 +459,51 @@ export function SettingsScreen() {
 
       <Text style={s.version}>EXORA v1.0.0</Text>
 
+      {__DEV__ && (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            style={[s.devSeedBtn, { flex: 1 }]}
+            onPress={async () => {
+              try {
+                const { seedDemoData } = require('../utils/seedDemoData');
+                const { useExpenseStore } = require('../store/useExpenseStore');
+                const { useIncomeStore } = require('../store/useIncomeStore');
+                await seedDemoData();
+                await useExpenseStore.getState().loadExpenses();
+                await useIncomeStore.getState().loadIncomes();
+                Alert.alert('✓ Demo', 'Datos ficticios cargados.');
+              } catch (e: any) {
+                Alert.alert('Error', e?.message ?? 'No se pudieron cargar los datos.');
+              }
+            }}
+          >
+            <Icon name="database-plus" size={16} color="#666" />
+            <Text style={s.devSeedText}>Cargar demo</Text>
+          </Pressable>
+
+          <Pressable
+            style={[s.devSeedBtn, { flex: 1 }]}
+            onPress={() => {
+              Alert.alert('Borrar todos los datos', '¿Seguro? Esto elimina gastos, ingresos y configuración.', [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                  text: 'Borrar todo',
+                  style: 'destructive',
+                  onPress: async () => {
+                    const { clearAllUserData } = require('../utils/clearUserData');
+                    await clearAllUserData();
+                    Alert.alert('✓ Listo', 'Todos los datos fueron eliminados.');
+                  },
+                },
+              ]);
+            }}
+          >
+            <Icon name="database-remove" size={16} color="#EF4444" />
+            <Text style={[s.devSeedText, { color: '#EF4444' }]}>Borrar demo</Text>
+          </Pressable>
+        </View>
+      )}
+
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} trigger="export" />
     </ScreenContainer>
   );
@@ -615,4 +662,16 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     signOutText: { color: colors.danger, fontFamily: font.bold, fontSize: 15 },
 
     version: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
+    devSeedBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: '#333',
+      borderStyle: 'dashed',
+    },
+    devSeedText: { color: '#666', fontSize: 12, fontFamily: font.medium },
   });
