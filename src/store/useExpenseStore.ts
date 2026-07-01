@@ -45,6 +45,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     await addToSyncQueue('insert', id, expense as Record<string, any>);
     const expenses = await getAllExpenses();
     set({ expenses });
+    syncWidgetData(expenses, useIncomeStore.getState().incomes);
     track('expense_created', {
       category: expense.category,
       source: expense.source,
