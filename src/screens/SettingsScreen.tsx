@@ -501,6 +501,28 @@ export function SettingsScreen() {
             <Icon name="database-remove" size={16} color="#EF4444" />
             <Text style={[s.devSeedText, { color: '#EF4444' }]}>Borrar demo</Text>
           </Pressable>
+
+          <Pressable
+            style={[s.devSeedBtn, { flex: 1 }]}
+            onPress={() => {
+              const { NativeModules } = require('react-native');
+              const bridge = NativeModules.WidgetDataBridge;
+              if (!bridge) {
+                Alert.alert('Widget Debug', '❌ WidgetDataBridge NO encontrado.\nEl native module no está cargado.');
+                return;
+              }
+              const { useExpenseStore } = require('../store/useExpenseStore');
+              const { useIncomeStore } = require('../store/useIncomeStore');
+              const { syncWidgetData } = require('../utils/widgetBridge');
+              const expenses = useExpenseStore.getState().expenses;
+              const incomes = useIncomeStore.getState().incomes;
+              syncWidgetData(expenses, incomes);
+              Alert.alert('Widget Debug', `✓ WidgetDataBridge encontrado.\nSe enviaron ${expenses.length} gastos y ${incomes.length} ingresos al widget.`);
+            }}
+          >
+            <Icon name="widgets-outline" size={16} color="#06B6D4" />
+            <Text style={[s.devSeedText, { color: '#06B6D4' }]}>Sync widget</Text>
+          </Pressable>
         </View>
       )}
 

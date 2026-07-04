@@ -8,8 +8,13 @@ class WidgetDataBridge: NSObject {
 
     @objc
     func updateWidgetData(_ jsonString: String) {
-        let defaults = UserDefaults(suiteName: appGroup)
-        defaults?.set(jsonString, forKey: "widgetData")
+        guard let defaults = UserDefaults(suiteName: appGroup) else {
+            NSLog("[Widget] ERROR: No se pudo acceder al App Group '\(appGroup)'")
+            return
+        }
+        defaults.set(jsonString, forKey: "widgetData")
+        defaults.synchronize()
+        NSLog("[Widget] Datos escritos correctamente (%d bytes)", jsonString.count)
         WidgetCenter.shared.reloadAllTimelines()
     }
 

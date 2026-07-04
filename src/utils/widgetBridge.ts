@@ -24,7 +24,11 @@ function formatTime(createdAt: string): string {
 }
 
 export function syncWidgetData(expenses: Expense[], incomes: Income[]) {
-  if (Platform.OS !== 'ios' || !WidgetDataBridge?.updateWidgetData) return;
+  if (Platform.OS !== 'ios') return;
+  if (!WidgetDataBridge?.updateWidgetData) {
+    if (__DEV__) console.warn('[Widget] WidgetDataBridge no disponible — el native module no está cargado');
+    return;
+  }
 
   const now = new Date();
   const monthPrefix = localDateString(now).slice(0, 7);
