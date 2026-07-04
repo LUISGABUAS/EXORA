@@ -77,11 +77,10 @@ function formatTime(createdAt: string): string {
   const yesterdayStr = localDateString(
     new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
   );
-  const dateStr = createdAt.slice(0, 10);
-  const timePart = createdAt.slice(11, 16);
-  const [hStr, mStr] = timePart.split(':');
-  const h = parseInt(hStr || '0', 10);
-  const m = mStr || '00';
+  const date = new Date(createdAt);
+  const dateStr = localDateString(date);
+  const h = date.getHours();
+  const m = String(date.getMinutes()).padStart(2, '0');
   const ampm = h >= 12 ? 'PM' : 'AM';
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   if (dateStr === todayStr) return `Hoy ${h12}:${m} ${ampm}`;
