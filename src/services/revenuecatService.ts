@@ -19,6 +19,10 @@ export async function initRevenueCat(userId?: string) {
           : REVENUECAT_API_KEY_ANDROID,
       appUserID: userId || undefined,
     });
+    if (__DEV__) {
+      // En dev usa StoreKit local para testing sin necesitar revisión de Apple
+      await Purchases.setSimulatesAskToBuyInSandbox(true);
+    }
     configured = true;
   } catch (error) {
     configured = false;

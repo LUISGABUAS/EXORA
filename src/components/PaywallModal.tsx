@@ -86,6 +86,7 @@ export function PaywallModal({ visible, onClose }: Props) {
     setLoading(true);
     try {
       const offering = await getOfferings();
+      if (__DEV__) console.log('[Paywall] offering:', JSON.stringify(offering));
       if (offering?.availablePackages) {
         const pkgs: PackageInfo[] = offering.availablePackages.map(pkg => {
           const isAnnual = pkg.packageType === 'ANNUAL';
@@ -99,7 +100,8 @@ export function PaywallModal({ visible, onClose }: Props) {
         });
         setPackages(pkgs);
       }
-    } catch {
+    } catch (e) {
+      if (__DEV__) console.log('[Paywall] error:', e);
     } finally {
       setLoading(false);
     }
