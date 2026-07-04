@@ -18,6 +18,8 @@
 		562FD6412FCD135E00A60758 /* ExpensiaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 562FD62E2FCD135B00A60758 /* ExpensiaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		562FD6DA2FD73BA000A60758 /* AppMinimizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 562FD6D82FD73BA000A60758 /* AppMinimizer.m */; };
 		562FD6DB2FD73BA000A60758 /* AppMinimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562FD6D92FD73BA000A60758 /* AppMinimizer.swift */; };
+		56CB0B572FF9B60A002A29B3 /* WidgetDataBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CB0B562FF9B60A002A29B3 /* WidgetDataBridge.swift */; };
+		56CB0B582FF9B60A002A29B3 /* WidgetDataBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 56CB0B552FF9B60A002A29B3 /* WidgetDataBridge.m */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7FAA384139F14EBA820B9D32 /* Inter_600SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 33E2E14190A846B38949A5BA /* Inter_600SemiBold.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
@@ -64,6 +66,10 @@
 		562FD6D82FD73BA000A60758 /* AppMinimizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppMinimizer.m; sourceTree = "<group>"; };
 		562FD6D92FD73BA000A60758 /* AppMinimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMinimizer.swift; sourceTree = "<group>"; };
 		562FD6DC2FD73BA200A60758 /* SmartExpenseMX2-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SmartExpenseMX2-Bridging-Header.h"; sourceTree = "<group>"; };
+		564F2E242FE48DCE0094AA67 /* SmartExpenseMX2.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = SmartExpenseMX2.entitlements; path = SmartExpenseMX2/SmartExpenseMX2.entitlements; sourceTree = "<group>"; };
+		564F2E252FE48E000094AA67 /* ExpensiaWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ExpensiaWidgetExtension.entitlements; sourceTree = "<group>"; };
+		56CB0B552FF9B60A002A29B3 /* WidgetDataBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WidgetDataBridge.m; sourceTree = "<group>"; };
+		56CB0B562FF9B60A002A29B3 /* WidgetDataBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataBridge.swift; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-SmartExpenseMX2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SmartExpenseMX2.release.xcconfig"; path = "Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-SmartExpenseMX2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SmartExpenseMX2.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SmartExpenseMX2/AppDelegate.swift; sourceTree = "<group>"; };
@@ -75,7 +81,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		562FD6452FCD135F00A60758 /* Exceptions for "ExpensiaWidget" folder in "ExpensiaWidgetExtension" target */ = {
+		562FD6452FCD135F00A60758 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -85,29 +91,8 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		562FD6332FCD135B00A60758 /* ExpensiaWidget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				562FD6452FCD135F00A60758 /* Exceptions for "ExpensiaWidget" folder in "ExpensiaWidgetExtension" target */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = ExpensiaWidget;
-			sourceTree = "<group>";
-		};
-		562FD6502FCD13D900A60758 /* ExpensiaWidget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = ExpensiaWidget;
-			sourceTree = "<group>";
-		};
+		562FD6332FCD135B00A60758 /* ExpensiaWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (562FD6452FCD135F00A60758 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExpensiaWidget; sourceTree = "<group>"; };
+		562FD6502FCD13D900A60758 /* ExpensiaWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ExpensiaWidget; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +119,7 @@
 		13B07FAE1A68108700A75B9A /* SmartExpenseMX2 */ = {
 			isa = PBXGroup;
 			children = (
+				564F2E242FE48DCE0094AA67 /* SmartExpenseMX2.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -177,6 +163,9 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				56CB0B552FF9B60A002A29B3 /* WidgetDataBridge.m */,
+				56CB0B562FF9B60A002A29B3 /* WidgetDataBridge.swift */,
+				564F2E252FE48E000094AA67 /* ExpensiaWidgetExtension.entitlements */,
 				562FD6D82FD73BA000A60758 /* AppMinimizer.m */,
 				562FD6D92FD73BA000A60758 /* AppMinimizer.swift */,
 				13B07FAE1A68108700A75B9A /* SmartExpenseMX2 */,
@@ -348,9 +337,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -401,9 +394,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -417,6 +414,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56CB0B572FF9B60A002A29B3 /* WidgetDataBridge.swift in Sources */,
+				56CB0B582FF9B60A002A29B3 /* WidgetDataBridge.m in Sources */,
 				562FD6DA2FD73BA000A60758 /* AppMinimizer.m in Sources */,
 				562FD6DB2FD73BA000A60758 /* AppMinimizer.swift in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
@@ -447,7 +446,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SmartExpenseMX2/SmartExpenseMX2.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = KZN3M5BBMU;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = SmartExpenseMX2/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -478,7 +479,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SmartExpenseMX2/SmartExpenseMX2.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = KZN3M5BBMU;
 				INFOPLIST_FILE = SmartExpenseMX2/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -514,6 +517,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = ExpensiaWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -563,6 +567,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = ExpensiaWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
