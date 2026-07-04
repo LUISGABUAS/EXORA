@@ -29,8 +29,7 @@ function normalizeDesc(text: string): string {
 }
 
 function getHour(createdAt: string): number {
-  const timePart = createdAt.slice(11, 13);
-  return timePart ? parseInt(timePart, 10) : new Date().getHours();
+  return new Date(createdAt).getHours();
 }
 
 function isInTimeWindow(expenseHour: number, currentHour: number): boolean {
