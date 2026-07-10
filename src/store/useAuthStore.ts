@@ -109,14 +109,22 @@ export const useAuthStore = create<AuthState>((set) => ({
         requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
         nonce: rawNonce,
       });
-      const { identityToken } = appleAuthRequest;
+      const { identityToken, fullName } = appleAuthRequest;
       if (!identityToken) return 'No se obtuvo el token de Apple.';
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: identityToken,
         nonce: rawNonce,
       });
-      return error ? error.message : null;
+      if (error) return error.message;
+      // Apple solo envía el nombre en el primer sign-in — guardarlo inmediatamente
+      const displayName = [fullName?.givenName, fullName?.familyName]
+        .filter(Boolean)
+        .join(' ');
+      if (displayName) {
+        await supabase.auth.updateUser({ data: { full_name: displayName } });
+      }
+      return null;
     } catch (err: any) {
       if (err?.code === '1001') return null; // user cancelled
       return err?.message ?? 'Error al iniciar sesión con Apple.';
