@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useAuthStore } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FinancialGoal, FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
@@ -120,9 +121,14 @@ export function OnboardingScreen() {
   const setFiscalProfile = usePremiumStore(state => state.setFiscalProfile);
   const setFinancialGoals = usePremiumStore(state => state.setFinancialGoals);
   const addExpense = useExpenseStore(state => state.addExpense);
+  const session = useAuthStore(state => state.session);
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [name, setName] = useState('');
+  const appleProvidedName =
+    session?.user?.app_metadata?.provider === 'apple'
+      ? (session?.user?.user_metadata?.full_name ?? '')
+      : '';
+  const [name, setName] = useState(appleProvidedName);
   const [ageRange, setAgeRange] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<FinancialGoal[]>([]);
   const [selectedRegimes, setSelectedRegimes] = useState<FiscalRegime[]>([]);
@@ -159,7 +165,7 @@ export function OnboardingScreen() {
   };
 
   const handleNameNext = () => {
-    if (!name.trim()) {
+    if (!name.trim() && !appleProvidedName) {
       Alert.alert('Escribe tu nombre', 'Necesitamos tu nombre para personalizar la app.');
       return;
     }

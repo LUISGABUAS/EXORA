@@ -20,6 +20,7 @@ interface AuthState {
   signInWithPhone: (phone: string) => Promise<string | null>;
   verifyOtp: (phone: string, code: string) => Promise<string | null>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<string | null>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -136,5 +137,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     await supabase.auth.signOut();
     await clearAllUserData();
     set({ session: null });
+  },
+
+  deleteAccount: async () => {
+    try {
+      const { error } = await supabase.rpc('delete_user_account');
+      if (error) return error.message;
+      await supabase.auth.signOut();
+      await clearAllUserData();
+      set({ session: null });
+      return null;
+    } catch (err: any) {
+      return err?.message ?? 'Error al eliminar la cuenta.';
+    }
   },
 }));

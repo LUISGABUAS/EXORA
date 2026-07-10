@@ -92,6 +92,7 @@ export function SettingsScreen() {
   const expenses = useExpenseStore(state => state.expenses);
   const session = useAuthStore(state => state.session);
   const signOut = useAuthStore(state => state.signOut);
+  const deleteAccount = useAuthStore(state => state.deleteAccount);
   const isPremium = usePremiumStore(state => state.isPremium);
   const plan = usePremiumStore(state => state.plan);
   const isFounder = usePremiumStore(state => state.isFounder);
@@ -457,6 +458,44 @@ export function SettingsScreen() {
         <Text style={s.signOutText}>Cerrar sesión</Text>
       </Pressable>
 
+      {/* Eliminar cuenta */}
+      <Pressable
+        style={s.deleteAccountButton}
+        onPress={() => {
+          Alert.alert(
+            'Eliminar cuenta',
+            'Esta acción es permanente. Se eliminarán todos tus datos, gastos e historial. No se puede deshacer.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Eliminar mi cuenta',
+                style: 'destructive',
+                onPress: () => {
+                  Alert.alert(
+                    '¿Estás seguro?',
+                    'Confirma que deseas eliminar permanentemente tu cuenta de EXORA.',
+                    [
+                      { text: 'Cancelar', style: 'cancel' },
+                      {
+                        text: 'Sí, eliminar',
+                        style: 'destructive',
+                        onPress: async () => {
+                          const err = await deleteAccount();
+                          if (err) Alert.alert('Error', err);
+                        },
+                      },
+                    ],
+                  );
+                },
+              },
+            ],
+          );
+        }}
+      >
+        <Icon name="delete-forever-outline" size={16} color={colors.textMuted} />
+        <Text style={s.deleteAccountText}>Eliminar cuenta</Text>
+      </Pressable>
+
       <Text style={s.version}>EXORA v1.0.0</Text>
 
       {__DEV__ && (
@@ -682,6 +721,15 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       justifyContent: 'center',
     },
     signOutText: { color: colors.danger, fontFamily: font.bold, fontSize: 15 },
+
+    deleteAccountButton: {
+      flexDirection: 'row',
+      gap: 6,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+    },
+    deleteAccountText: { color: colors.textMuted, fontFamily: font.medium, fontSize: 13 },
 
     version: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
     devSeedBtn: {
