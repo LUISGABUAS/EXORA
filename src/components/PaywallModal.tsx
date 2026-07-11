@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -313,6 +314,16 @@ export function PaywallModal({ visible, onClose }: Props) {
           >
             <Text style={s.restoreText}>Restaurar compra</Text>
           </Pressable>
+
+          <View style={s.legalLinks}>
+            <Pressable onPress={() => Linking.openURL('https://www.expensia.com.mx/terminos')}>
+              <Text style={s.legalLink}>Términos de uso</Text>
+            </Pressable>
+            <Text style={s.legalSep}>·</Text>
+            <Pressable onPress={() => Linking.openURL('https://www.expensia.com.mx/privacidad')}>
+              <Text style={s.legalLink}>Privacidad</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </View>
     </Modal>
@@ -533,5 +544,22 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
       color: colors.textMuted,
       fontSize: 13,
       fontFamily: font.medium,
+    },
+    legalLinks: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 6,
+      paddingBottom: 8,
+    },
+    legalLink: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontFamily: font.regular,
+      textDecorationLine: 'underline',
+    },
+    legalSep: {
+      color: colors.textMuted,
+      fontSize: 11,
     },
   });
