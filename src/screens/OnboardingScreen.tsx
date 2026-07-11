@@ -165,7 +165,7 @@ export function OnboardingScreen() {
   };
 
   const handleNameNext = () => {
-    if (!name.trim() && !appleProvidedName) {
+    if (!name.trim() && !isApple) {
       Alert.alert('Escribe tu nombre', 'Necesitamos tu nombre para personalizar la app.');
       return;
     }
