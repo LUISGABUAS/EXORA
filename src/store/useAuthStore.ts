@@ -5,6 +5,9 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { supabase } from '../lib/supabase';
 import { clearAllUserData } from '../utils/clearUserData';
 
+// Nombre capturado de Apple en el primer sign-in (disponible antes de que updateUser complete)
+export let pendingAppleName = '';
+
 // Lazy-load Apple Auth — iOS only, crashes on Android if imported unconditionally
 const getAppleAuth = () =>
   Platform.OS === 'ios'
@@ -111,18 +114,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
       const { identityToken, fullName } = appleAuthRequest;
       if (!identityToken) return 'No se obtuvo el token de Apple.';
+      // Guardar nombre ANTES del sign-in para que OnboardingScreen lo lea al instante
+      const displayName = [fullName?.givenName, fullName?.familyName]
+        .filter(Boolean)
+        .join(' ');
+      pendingAppleName = displayName;
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: identityToken,
         nonce: rawNonce,
       });
       if (error) return error.message;
-      // Apple solo envía el nombre en el primer sign-in — guardarlo inmediatamente
-      const displayName = [fullName?.givenName, fullName?.familyName]
-        .filter(Boolean)
-        .join(' ');
       if (displayName) {
-        await supabase.auth.updateUser({ data: { full_name: displayName } });
+        supabase.auth.updateUser({ data: { full_name: displayName } }).catch(() => {});
       }
       return null;
     } catch (err: any) {

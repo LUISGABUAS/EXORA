@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore, pendingAppleName } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FinancialGoal, FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
 import { ColorPalette } from '../theme/colors';
@@ -122,12 +122,12 @@ export function OnboardingScreen() {
   const setFinancialGoals = usePremiumStore(state => state.setFinancialGoals);
   const addExpense = useExpenseStore(state => state.addExpense);
   const session = useAuthStore(state => state.session);
+  const isApple = session?.user?.app_metadata?.provider === 'apple';
+  const appleProvidedName = isApple
+    ? (pendingAppleName || session?.user?.user_metadata?.full_name || '')
+    : '';
 
   const [currentStep, setCurrentStep] = useState(0);
-  const appleProvidedName =
-    session?.user?.app_metadata?.provider === 'apple'
-      ? (session?.user?.user_metadata?.full_name ?? '')
-      : '';
   const [name, setName] = useState(appleProvidedName);
   const [ageRange, setAgeRange] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<FinancialGoal[]>([]);
