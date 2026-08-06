@@ -133,6 +133,11 @@ export function DashboardScreen() {
   const currentMonth = MONTHS[now.getMonth()];
   const currentYear = now.getFullYear();
 
+  // Prefijo del mes anterior
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthPrefix = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthLabel = MONTHS[prevMonthDate.getMonth()];
+
   const weekStart = localDateString(
     new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6),
   );
@@ -148,6 +153,16 @@ export function DashboardScreen() {
   const monthlyIncome = incomes
     .filter(i => i.date.startsWith(monthPrefix))
     .reduce((sum, i) => sum + i.amount, 0);
+
+  // Sobrante del mes anterior
+  const prevMonthExpenses = expenses
+    .filter(e => e.date.startsWith(prevMonthPrefix))
+    .reduce((sum, e) => sum + e.amount, 0);
+  const prevMonthIncome = incomes
+    .filter(i => i.date.startsWith(prevMonthPrefix))
+    .reduce((sum, i) => sum + i.amount, 0);
+  const rollover = Math.max(0, prevMonthIncome - prevMonthExpenses);
+
   const deductibleTotal = monthlyExpenses.filter(e => e.deductible).reduce((sum, e) => sum + e.amount, 0);
   const taxSavingsEstimate = estimateTaxSavings(deductibleTotal, fiscalRegime);
   const showConversionBanner = !hasFullAccess() && deductibleTotal >= 500 && fiscalRegime !== 'no_facturo';
@@ -162,7 +177,7 @@ export function DashboardScreen() {
   const weekPct = prevWeek > 0 ? Math.abs(weekDiff / prevWeek) * 100 : 0;
   const weekUp = weekDiff >= 0;
 
-  const netFlow = monthlyIncome - monthly;
+  const netFlow = monthlyIncome + rollover - monthly;
 
   const recentExpenses = useMemo(() => expenses.slice(0, 4), [expenses]);
 
@@ -313,6 +328,14 @@ export function DashboardScreen() {
                         <Text style={[s.heroIncomeAmount, { color: monthlyIncome > 0 ? colors.success : colors.textMuted }]}>
                           {monthlyIncome > 0 ? formatCurrency(monthlyIncome) : '—'}
                         </Text>
+                        {rollover > 0 && (
+                          <View style={s.rolloverChip}>
+                            <Icon name="arrow-up-right" size={10} color={colors.success} />
+                            <Text style={s.rolloverText}>
+                              +{formatCurrency(rollover)} de {prevMonthLabel}
+                            </Text>
+                          </View>
+                        )}
                       </View>
                       <Pressable style={s.heroIncomeBtn} onPress={() => {
                         setIncomeModalVisible(true);
@@ -613,6 +636,12 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     heroIncomeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     heroIncomeAmount: { fontSize: 22, fontFamily: font.extrabold, marginTop: 2 },
+    rolloverChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4,
+      backgroundColor: colors.success + '15', borderRadius: 6,
+      paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start',
+    },
+    rolloverText: { fontSize: 10, fontFamily: font.semibold, color: colors.success },
     heroIncomeBtn: {
       flexDirection: 'row',
       alignItems: 'center',
