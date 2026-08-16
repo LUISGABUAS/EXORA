@@ -145,7 +145,7 @@ export function SmartInputBar({
         <TextInput
           ref={inputRef}
           style={s.input}
-          placeholder="Escribe un gasto... (ej. 120 tacos)"
+          placeholder="ej. 120 tacos, 45 gasolina..."
           placeholderTextColor={colors.textMuted}
           value={text}
           onChangeText={handleChangeText}
@@ -160,8 +160,8 @@ export function SmartInputBar({
         <Pressable onPress={() => setVoiceVisible(true)} hitSlop={8}>
           <Icon name="microphone-outline" size={20} color={colors.textMuted} />
         </Pressable>
-        <Pressable onPress={onScanPress} hitSlop={8}>
-          <Icon name="camera-outline" size={20} color={colors.textMuted} />
+        <Pressable onPress={onScanPress} style={s.scanBtn} hitSlop={4}>
+          <Icon name="camera-outline" size={18} color="#F59E0B" />
         </Pressable>
         <Pressable onPress={onExpandPress} hitSlop={8}>
           <Icon name="arrow-expand" size={20} color={colors.textMuted} />
@@ -391,6 +391,16 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       borderRadius: 999,
       paddingHorizontal: 16,
       paddingVertical: 8,
+    },
+    scanBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: '#F59E0B18',
+      borderWidth: 1,
+      borderColor: '#F59E0B35',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     saveButtonDisabled: { opacity: 0.5 },
     saveButtonText: {

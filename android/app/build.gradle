@@ -96,10 +96,10 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file(EXPENSIA_STORE_FILE)
-            storePassword EXPENSIA_STORE_PASSWORD
-            keyAlias EXPENSIA_KEY_ALIAS
-            keyPassword EXPENSIA_KEY_PASSWORD
+            storeFile file(EXORA_STORE_FILE)
+            storePassword EXORA_STORE_PASSWORD
+            keyAlias EXORA_KEY_ALIAS
+            keyPassword EXORA_KEY_PASSWORD
         }
     }
     buildTypes {

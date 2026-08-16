@@ -1,0 +1,133 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "20CA5E73",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6781416549",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "KZN3M5BBMU",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 804901578.03488803,
+    "_locale" : "es_MX",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "MEX",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "22164987",
+      "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "EXPENSIA Pro",
+          "locale" : "es_MX"
+        }
+      ],
+      "name" : "EXORA Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "599.00",
+              "displayPrice" : "599.00",
+              "internalID" : "6781418437_BILLED_UPFRONT",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "599.00",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6781418437",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "EXORA Pro sin límites durante un año completo.",
+              "displayName" : "EXORA Pro Anual",
+              "locale" : "es_MX"
+            }
+          ],
+          "productID" : "exora_anual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "EXORA Pro Anual",
+          "subscriptionGroupID" : "22164987",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "79.00",
+              "displayPrice" : "79.00",
+              "internalID" : "6781417719_BILLED_UPFRONT",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "79.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6781417719",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : " Accede a todas las funciones de EXORA sin límites",
+              "displayName" : "EXORA Pro Mensual",
+              "locale" : "es_MX"
+            }
+          ],
+          "productID" : "exora_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "EXORA Pro Mensual",
+          "subscriptionGroupID" : "22164987",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 5,
+    "minor" : 0
+  }
+}

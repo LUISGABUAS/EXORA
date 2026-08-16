@@ -45,29 +45,30 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // refreshSession hace una llamada real al servidor — falla si el usuario fue borrado
-        const { data: refreshed, error } = await supabase.auth.refreshSession();
-        if (error || !refreshed.session) {
-          await supabase.auth.signOut();
-          set({ session: null, loading: false });
-          return;
-        }
-        // Segunda capa: verificar que el perfil existe en la DB
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', refreshed.session.user.id)
-          .single();
-        if (profileError) {
-          await supabase.auth.signOut();
-          set({ session: null, loading: false });
-          return;
-        }
-        set({ session: refreshed.session, loading: false });
-      } else {
+      if (!session) {
         set({ session: null, loading: false });
+        return;
       }
+
+      // Si el token es válido por al menos 5 minutos más, abrir la app inmediatamente
+      // y refrescar en background para no bloquear el arranque sin internet
+      const expiresAt = (session.expires_at ?? 0) * 1000;
+      if (expiresAt > Date.now() + 5 * 60 * 1000) {
+        set({ session, loading: false });
+        supabase.auth.refreshSession()
+          .then(({ data }) => { if (data.session) set({ session: data.session }); })
+          .catch(() => {});
+        return;
+      }
+
+      // Token expirado o a punto de expirar — necesita red para refrescar
+      const { data: refreshed, error } = await supabase.auth.refreshSession();
+      if (error || !refreshed.session) {
+        await supabase.auth.signOut();
+        set({ session: null, loading: false });
+        return;
+      }
+      set({ session: refreshed.session, loading: false });
     } catch {
       set({ session: null, loading: false });
     }

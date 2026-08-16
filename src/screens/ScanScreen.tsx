@@ -280,103 +280,67 @@ export function ScanScreen() {
   if (mode === 'options') {
     return (
       <ScreenContainer>
+        {/* Header */}
         <Animated.View entering={FadeInDown.duration(350)}>
-          <Text style={s.title}>Agregar gasto</Text>
-          <Text style={s.subtitle}>
-            Elige como registrar tu factura o gasto
+          <Text style={s.title}>Captura tu gasto</Text>
+        </Animated.View>
+
+        {/* Hero — Escanear ticket */}
+        <Animated.View entering={FadeInDown.delay(80).duration(320)}>
+          <Pressable style={s.heroCard} onPress={openCamera} disabled={ocrLoading}>
+            <View style={s.heroIconWrap}>
+              <Icon name="camera" size={36} color="#fff" />
+            </View>
+            <Text style={s.heroTitle}>Escanear ticket</Text>
+            <Text style={s.heroDesc}>
+              Apunta la cámara y extrae los datos al instante
+            </Text>
+            {!hasFullAccess() ? (
+              <View style={s.heroCounter}>
+                <Icon name="camera-iris" size={13} color="rgba(255,255,255,0.9)" />
+                <Text style={s.heroCounterText}>
+                  {Math.max(3 - weeklyScans, 0)} escaneos restantes esta semana
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+        </Animated.View>
+
+        {/* Scan hint */}
+        <Animated.View entering={FadeInDown.delay(140).duration(300)}>
+          <Text style={s.scanHint}>
+            Buena iluminación · ticket recto · sin sombras
           </Text>
         </Animated.View>
 
-        <View style={s.optionsContainer}>
-          <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-            <Pressable
-              style={s.optionCard}
-              onPress={openCamera}
-              disabled={ocrLoading}
-            >
-              <View style={s.optionIcon}>
-                <Icon name="camera" size={26} color={colors.primary} />
+        {/* Secondary options */}
+        <Animated.View entering={FadeInDown.delay(200).duration(300)}>
+          <View style={s.secondaryRow}>
+            <Pressable style={s.secondaryCard} onPress={pickPhoto} disabled={ocrLoading}>
+              <View style={[s.secondaryIcon, { backgroundColor: '#3B82F615' }]}>
+                <Icon name="image" size={22} color="#3B82F6" />
               </View>
-              <View style={s.optionInfo}>
-                <Text style={s.optionTitle}>Escanear ticket</Text>
-                <Text style={s.optionDesc}>
-                  Toma una foto y extrae datos automáticamente
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={20} color={colors.textMuted} />
+              <Text style={s.secondaryTitle}>Desde galería</Text>
+              <Text style={s.secondaryDesc}>Elige una foto existente</Text>
             </Pressable>
-          </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(200).duration(300)}>
-            <Pressable
-              style={s.optionCard}
-              onPress={pickXML}
-              disabled={ocrLoading}
-            >
-              <View style={s.optionIcon}>
+            <Pressable style={s.secondaryCard} onPress={pickXML} disabled={ocrLoading}>
+              <View style={[s.secondaryIcon, { backgroundColor: '#8B5CF615' }]}>
                 {ocrLoading ? (
-                  <ActivityIndicator color={colors.primary} />
+                  <ActivityIndicator color="#8B5CF6" size="small" />
                 ) : (
-                  <Icon name="file-xml-box" size={26} color={colors.primary} />
+                  <Icon name="file-xml-box" size={22} color="#8B5CF6" />
                 )}
               </View>
-              <View style={s.optionInfo}>
-                <View style={s.optionTitleRow}>
-                  <Text style={s.optionTitle}>Importar XML/CFDI</Text>
-                  <View style={s.freeBadge}>
-                    <Text style={s.freeBadgeText}>Gratis</Text>
-                  </View>
+              <View style={s.secondaryTitleRow}>
+                <Text style={s.secondaryTitle}>XML / CFDI</Text>
+                <View style={s.freeBadge}>
+                  <Text style={s.freeBadgeText}>Gratis</Text>
                 </View>
-                <Text style={s.optionDesc}>
-                  Selecciona una factura XML del SAT
-                </Text>
               </View>
-              <Icon name="chevron-right" size={20} color={colors.textMuted} />
+              <Text style={s.secondaryDesc}>Factura del SAT</Text>
             </Pressable>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(300).duration(300)}>
-            <Pressable
-              style={s.optionCard}
-              onPress={pickPhoto}
-              disabled={ocrLoading}
-            >
-              <View style={s.optionIcon}>
-                <Icon name="image" size={26} color={colors.primary} />
-              </View>
-              <View style={s.optionInfo}>
-                <Text style={s.optionTitle}>Seleccionar foto</Text>
-                <Text style={s.optionDesc}>Elige una foto de tu galería</Text>
-              </View>
-              <Icon name="chevron-right" size={20} color={colors.textMuted} />
-            </Pressable>
-          </Animated.View>
-        </View>
-
-        {/* Scan counter (free users only) */}
-        {!hasFullAccess() ? (
-          <Animated.View entering={FadeInDown.delay(350).duration(300)}>
-            <View style={s.scanCounter}>
-              <Icon name="camera-iris" size={18} color={colors.primary} />
-              <Text style={s.scanCounterText}>
-                {Math.max(3 - weeklyScans, 0)} escaneos restantes esta semana
-              </Text>
-            </View>
-          </Animated.View>
-        ) : null}
-
-        {/* Tips */}
-        <Animated.View
-          entering={FadeInDown.delay(400).duration(300)}
-          style={s.tipsCard}
-        >
-          <View style={s.tipsHeader}>
-            <Icon name="lightbulb-outline" size={16} color={colors.warning} />
-            <Text style={s.tipsTitle}>Consejos para mejor resultado</Text>
           </View>
-          <Text style={s.tipText}>• Buena iluminación, sin sombras</Text>
-          <Text style={s.tipText}>• Ticket recto y completo en la foto</Text>
-          <Text style={s.tipText}>• Evita fotos borrosas o movidas</Text>
         </Animated.View>
 
         <PaywallModal
@@ -541,31 +505,101 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       marginTop: 4,
       lineHeight: 20,
     },
-    optionsContainer: { gap: 12 },
-    optionCard: {
+    // Hero card
+    heroCard: {
+      backgroundColor: colors.primary,
+      borderRadius: 28,
+      padding: 28,
+      alignItems: 'center',
+      gap: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.35,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    heroIconWrap: {
+      width: 76,
+      height: 76,
+      borderRadius: 38,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    heroTitle: {
+      color: '#fff',
+      fontSize: 22,
+      fontFamily: font.extrabold,
+      letterSpacing: -0.5,
+    },
+    heroDesc: {
+      color: 'rgba(255,255,255,0.72)',
+      fontSize: 13,
+      fontFamily: font.medium,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    heroCounter: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 14,
+      gap: 6,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      marginTop: 4,
+    },
+    heroCounterText: {
+      color: 'rgba(255,255,255,0.9)',
+      fontSize: 12,
+      fontFamily: font.semibold,
+    },
+    // Scan hint
+    scanHint: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.medium,
+      textAlign: 'center',
+    },
+    // Secondary row
+    secondaryRow: { flexDirection: 'row', gap: 12 },
+    secondaryCard: {
+      flex: 1,
       backgroundColor: colors.surface,
-      borderRadius: 18,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: colors.border,
       padding: 16,
+      gap: 4,
     },
-    optionIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: colors.primary + '15',
+    secondaryIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
+      marginBottom: 4,
     },
-    optionInfo: { flex: 1, gap: 2 },
-    optionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    optionTitle: { fontSize: 15, fontFamily: font.bold, color: colors.text },
+    secondaryTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    secondaryTitle: {
+      color: colors.text,
+      fontSize: 14,
+      fontFamily: font.bold,
+    },
+    secondaryDesc: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontFamily: font.medium,
+    },
     freeBadge: {
       backgroundColor: colors.success + '20',
-      paddingHorizontal: 8,
+      paddingHorizontal: 7,
       paddingVertical: 2,
       borderRadius: 999,
     },
@@ -574,21 +608,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
       fontSize: 10,
       fontFamily: font.extrabold,
     },
-    optionDesc: { fontSize: 12, color: colors.textMuted },
-    tipsCard: {
-      backgroundColor: colors.warning + '10',
-      borderRadius: 16,
-      padding: 14,
-      gap: 6,
-    },
-    tipsHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      marginBottom: 4,
-    },
-    tipsTitle: { fontSize: 13, fontFamily: font.bold, color: colors.text },
-    tipText: { fontSize: 12, color: colors.textMuted, marginLeft: 22 },
     preview: {
       width: '100%',
       height: 200,
@@ -766,20 +785,6 @@ const useStyles = (colors: ColorPalette, _isDark: boolean) =>
     backButtonText: {
       color: colors.white,
       fontSize: 15,
-      fontFamily: font.bold,
-    },
-    scanCounter: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: colors.primaryGlow,
-      borderRadius: 14,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    scanCounterText: {
-      color: colors.primary,
-      fontSize: 13,
       fontFamily: font.bold,
     },
   });

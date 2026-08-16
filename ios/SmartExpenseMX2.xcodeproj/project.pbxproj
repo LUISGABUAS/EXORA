@@ -20,6 +20,7 @@
 		562FD6DB2FD73BA000A60758 /* AppMinimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562FD6D92FD73BA000A60758 /* AppMinimizer.swift */; };
 		56CB0B572FF9B60A002A29B3 /* WidgetDataBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CB0B562FF9B60A002A29B3 /* WidgetDataBridge.swift */; };
 		56CB0B582FF9B60A002A29B3 /* WidgetDataBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 56CB0B552FF9B60A002A29B3 /* WidgetDataBridge.m */; };
+		56CB0B5A2FF9D2C6002A29B3 /* EXORA.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 56CB0B592FF9D2C6002A29B3 /* EXORA.storekit */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7FAA384139F14EBA820B9D32 /* Inter_600SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 33E2E14190A846B38949A5BA /* Inter_600SemiBold.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
@@ -70,6 +71,7 @@
 		564F2E252FE48E000094AA67 /* ExpensiaWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ExpensiaWidgetExtension.entitlements; sourceTree = "<group>"; };
 		56CB0B552FF9B60A002A29B3 /* WidgetDataBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WidgetDataBridge.m; sourceTree = "<group>"; };
 		56CB0B562FF9B60A002A29B3 /* WidgetDataBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataBridge.swift; sourceTree = "<group>"; };
+		56CB0B592FF9D2C6002A29B3 /* EXORA.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = EXORA.storekit; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-SmartExpenseMX2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SmartExpenseMX2.release.xcconfig"; path = "Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-SmartExpenseMX2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SmartExpenseMX2.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SmartExpenseMX2/AppDelegate.swift; sourceTree = "<group>"; };
@@ -81,7 +83,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		562FD6452FCD135F00A60758 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		562FD6452FCD135F00A60758 /* Exceptions for "ExpensiaWidget" folder in "ExpensiaWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -91,8 +93,29 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		562FD6332FCD135B00A60758 /* ExpensiaWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (562FD6452FCD135F00A60758 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ExpensiaWidget; sourceTree = "<group>"; };
-		562FD6502FCD13D900A60758 /* ExpensiaWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ExpensiaWidget; sourceTree = "<group>"; };
+		562FD6332FCD135B00A60758 /* ExpensiaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				562FD6452FCD135F00A60758 /* Exceptions for "ExpensiaWidget" folder in "ExpensiaWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ExpensiaWidget;
+			sourceTree = "<group>";
+		};
+		562FD6502FCD13D900A60758 /* ExpensiaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ExpensiaWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +179,7 @@
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				56CB0B592FF9D2C6002A29B3 /* EXORA.storekit */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -299,6 +323,7 @@
 				1C70447294E646ACB85310F8 /* Inter_500Medium.ttf in Resources */,
 				2E20E4B556864772AE83FF66 /* Inter_400Regular.ttf in Resources */,
 				371D8175B2A2435F840D3A37 /* Inter_700Bold.ttf in Resources */,
+				56CB0B5A2FF9D2C6002A29B3 /* EXORA.storekit in Resources */,
 				B9A7D9B67E5B4C63A45B7EF8 /* Inter_900Black.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -337,13 +362,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -394,13 +415,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SmartExpenseMX2/Pods-SmartExpenseMX2-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -447,10 +464,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = SmartExpenseMX2/SmartExpenseMX2.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = KZN3M5BBMU;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = SmartExpenseMX2/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -480,9 +498,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = SmartExpenseMX2/SmartExpenseMX2.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = KZN3M5BBMU;
 				INFOPLIST_FILE = SmartExpenseMX2/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -520,7 +539,7 @@
 				CODE_SIGN_ENTITLEMENTS = ExpensiaWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = KZN3M5BBMU;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -571,7 +590,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = KZN3M5BBMU;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

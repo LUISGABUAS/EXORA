@@ -32,12 +32,20 @@ import { formatCurrency, localDateString } from '../utils/format';
 const CACHE_KEY = '@exora_advisor_cache';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
-const SUGGESTED_QUESTIONS = [
+const SUGGESTED_QUESTIONS_PERSONAL = [
   '¿En qué estoy gastando de más?',
   '¿Cuánto puedo deducir este mes?',
   '¿Cómo mejorar mi flujo de efectivo?',
   '¿Qué gastos puedo recortar?',
   '¿Estoy ahorrando suficiente?',
+];
+
+const SUGGESTED_QUESTIONS_EDUCATIONAL = [
+  '¿Qué gastos son deducibles en México?',
+  '¿Cómo funciona el régimen RESICO?',
+  '¿Cuánto debería ahorrar de mi sueldo?',
+  '¿Cómo empezar a controlar mis finanzas?',
+  '¿Qué es el CFDI y para qué sirve?',
 ];
 
 interface Section {
@@ -68,10 +76,8 @@ export function AsesorScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
   const session = useAuthStore(state => state.session);
-  const isPremiumUser = usePremiumStore(state => state.isPremium);
-  const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
-  const canAccess = isPremiumUser || (trialEndsAt != null && trialEndsAt >= new Date().toISOString().slice(0, 10));
+  const canAccess = hasFullAccess();
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const razonSocial = usePremiumStore(state => state.razonSocial);
   const actividadEconomica = usePremiumStore(state => state.actividadEconomica);
@@ -79,6 +85,7 @@ export function AsesorScreen() {
   const ageRange = usePremiumStore(state => state.ageRange);
   const expenses = useExpenseStore(state => state.expenses);
   const incomes = useIncomeStore(state => state.incomes);
+  const hasFinancialData = expenses.length > 0 || incomes.length > 0;
   const savings = useSavingsStore(state => state.goals);
   const budgets = useBudgetStore(state => state.budgets);
   const recurring = useRecurringStore(state => state.items);
@@ -423,10 +430,12 @@ export function AsesorScreen() {
           </>
         ) : (
           <View style={s.emptyWrap}>
-            <Icon name="chart-line" size={48} color={colors.border} />
+            <Icon name={hasFinancialData ? 'chart-line' : 'school-outline'} size={48} color={colors.border} />
             <Text style={s.emptyText}>
-              {expenses.length < 3
-                ? 'Registra al menos 3 gastos para obtener tu análisis.'
+              {!hasFinancialData
+                ? 'Aún no tienes datos registrados.\nPuedes preguntarme sobre finanzas personales, deducciones fiscales y más.'
+                : expenses.length < 3
+                ? 'Registra al menos 3 gastos para obtener tu análisis personalizado.'
                 : 'Toca el botón para analizar tus finanzas.'}
             </Text>
             {expenses.length >= 3 && (
@@ -464,7 +473,7 @@ export function AsesorScreen() {
         ) : (
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.suggestionsScroll}>
-              {SUGGESTED_QUESTIONS.map(q => (
+              {(hasFinancialData ? SUGGESTED_QUESTIONS_PERSONAL : SUGGESTED_QUESTIONS_EDUCATIONAL).map(q => (
                 <Pressable
                   key={q}
                   style={s.suggestionChip}

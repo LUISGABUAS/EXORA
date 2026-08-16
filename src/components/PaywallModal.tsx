@@ -316,11 +316,11 @@ export function PaywallModal({ visible, onClose }: Props) {
           </Pressable>
 
           <View style={s.legalLinks}>
-            <Pressable onPress={() => Linking.openURL('https://www.expensia.com.mx/terminos')}>
+            <Pressable onPress={() => Linking.openURL('https://www.exora.finance/terminos')}>
               <Text style={s.legalLink}>Términos de uso</Text>
             </Pressable>
             <Text style={s.legalSep}>·</Text>
-            <Pressable onPress={() => Linking.openURL('https://www.expensia.com.mx/privacidad')}>
+            <Pressable onPress={() => Linking.openURL('https://www.exora.finance/privacidad')}>
               <Text style={s.legalLink}>Privacidad</Text>
             </Pressable>
           </View>
