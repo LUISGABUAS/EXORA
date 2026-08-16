@@ -78,3 +78,8 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Apple private keys
+*.p8
+AuthKey_*.p8
+SubscriptionKey_*.p8
