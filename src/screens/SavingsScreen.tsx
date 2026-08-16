@@ -94,16 +94,17 @@ export function SavingsScreen() {
               ) : null}
             </View>
           </View>
-          {item.completed ? (
-            <View style={s.completedBadge}>
-              <Icon name="check-circle" size={14} color={colors.primary} />
-              <Text style={s.completedText}>¡Lograda!</Text>
-            </View>
-          ) : (
+          <View style={s.cardTopRight}>
+            {item.completed && (
+              <View style={s.completedBadge}>
+                <Icon name="check-circle" size={14} color={colors.primary} />
+                <Text style={s.completedText}>¡Lograda!</Text>
+              </View>
+            )}
             <Pressable onPress={() => handleDelete(item)} hitSlop={8}>
               <Icon name="trash-can-outline" size={18} color={colors.danger} />
             </Pressable>
-          )}
+          </View>
         </View>
 
         {/* Progress bar */}
@@ -370,6 +371,7 @@ const useStyles = (colors: ColorPalette) =>
       borderColor: colors.border,
     },
     cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     cardEmoji: { fontSize: 32 },
     cardTitle: { color: colors.text, fontSize: 16, fontFamily: font.bold },

@@ -136,19 +136,28 @@ export function ProfileEditScreen() {
 
       const text = await readPdfText(file.uri);
       if (!text) {
-        Alert.alert('No se pudo leer', 'No se pudo extraer texto del PDF.');
+        Alert.alert(
+          'No se pudo leer el PDF',
+          'Asegúrate de que el archivo sea la Constancia de Situación Fiscal descargada del portal del SAT (rfc.sat.gob.mx). Si el PDF está en iCloud, descárgalo primero al dispositivo.',
+        );
         setUploading(false);
         return;
       }
       if (!validateIsConstancia(text)) {
-        Alert.alert('Documento no válido', 'El archivo no parece ser una Constancia de Situación Fiscal del SAT.');
+        Alert.alert(
+          'Documento no reconocido',
+          'El archivo no parece ser una Constancia de Situación Fiscal del SAT. Descárgala desde rfc.sat.gob.mx → "Obtener Constancia".',
+        );
         setUploading(false);
         return;
       }
 
       const parsed = parseConstanciaText(text);
       if (!parsed.success) {
-        Alert.alert('Error al procesar', parsed.error || 'No se pudieron extraer los datos.');
+        Alert.alert(
+          'Datos incompletos',
+          'Se detectó la constancia pero no se pudo extraer el RFC o régimen. Selecciona tu régimen manualmente.',
+        );
         setUploading(false);
         return;
       }

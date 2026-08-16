@@ -14,7 +14,7 @@ export async function readPdfText(filePath: string): Promise<string | null> {
     const binary = Buffer.from(base64, 'base64').toString('binary');
     const lines: string[] = [];
 
-    // Extraer texto de operadores Tj y TJ
+    // Extraer texto de operadores Tj y TJ (PDFs sin comprimir)
     let inText = false;
     for (let i = 0; i < binary.length; i++) {
       if (binary[i] === 'B' && binary[i + 1] === 'T') {
@@ -27,7 +27,6 @@ export async function readPdfText(filePath: string): Promise<string | null> {
       }
       if (!inText) continue;
 
-      // (texto) Tj
       if (binary[i] === '(') {
         let text = '';
         let j = i + 1;
@@ -43,18 +42,29 @@ export async function readPdfText(filePath: string): Promise<string | null> {
       }
     }
 
-    // También escanear por secuencias legibles (RFC, palabras clave SAT)
-    const asciiChunks = binary.match(/[\x20-\x7E\xC0-\xFF]{4,}/g);
+    // Extraer metadatos del diccionario Info del PDF (siempre sin comprimir,
+    // incluso en PDFs con streams comprimidos — constancias SAT modernas caen aquí)
+    const infoPattern = /\/(?:Title|Subject|Author|Keywords|Creator|Producer)\s*\(([^)]{2,200})\)/g;
+    let infoMatch: RegExpExecArray | null;
+    while ((infoMatch = infoPattern.exec(binary)) !== null) {
+      const val = infoMatch[1].trim();
+      if (val) lines.push(val);
+    }
+
+    // Escaneo amplio de cadenas ASCII legibles (captura texto en streams no comprimidos
+    // y strings de estructura PDF que no están en BT/ET)
+    const asciiChunks = binary.match(/[\x20-\x7E\xC0-\xFF]{6,}/g);
     if (asciiChunks) {
       for (const chunk of asciiChunks) {
-        if (/RFC|CURP|SAT|[A-Z&Ñ]{3,4}\d{6}/i.test(chunk)) {
+        // Solo cadenas con letras — descartar líneas de sólo números/símbolos PDF
+        if (/[a-záéíóúñA-ZÁÉÍÓÚÑ]{3,}/.test(chunk)) {
           lines.push(chunk.trim());
         }
       }
     }
 
     const fullText = lines.join('\n');
-    return fullText.length >= 50 ? fullText : null;
+    return fullText.length >= 20 ? fullText : null;
   } catch {
     return null;
   }
@@ -66,22 +76,29 @@ const CONSTANCIA_KEYWORDS = [
   'servicio de administración tributaria',
   'servicio de administracion tributaria',
   'registro federal',
+  'régimen fiscal',
+  'regimen fiscal',
   'régimen',
   'regimen',
+  'contribuyente',
+  'constancia',
+  'hacienda',
+  'cff',
+  'sat',
 ];
 
 /**
  * Valida que el texto extraído parezca una constancia del SAT.
- * Requiere al menos 2 coincidencias de palabras clave.
+ * Requiere al menos 1 coincidencia de palabras clave (PDFs modernos del SAT
+ * usan streams comprimidos; el texto legible queda en los metadatos Info).
  */
 export function validateIsConstancia(text: string): boolean {
-  if (!text || text.length < 50) return false;
+  if (!text || text.length < 20) return false;
   const lower = text.toLowerCase();
-  let matches = 0;
   for (const kw of CONSTANCIA_KEYWORDS) {
-    if (lower.includes(kw)) matches++;
+    if (lower.includes(kw)) return true;
   }
-  return matches >= 2;
+  return false;
 }
 
 /**
