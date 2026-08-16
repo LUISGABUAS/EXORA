@@ -32,6 +32,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { SplitScreen } from '../screens/SplitScreen';
 import { IncomesScreen } from '../screens/IncomesScreen';
 import { RecurringIncomeScreen } from '../screens/RecurringIncomeScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { useDeepLinkStore } from '../store/useDeepLinkStore';
 import { usePremiumStore } from '../store/usePremiumStore';
@@ -59,6 +60,7 @@ export type RootStackParamList = {
   IngresosRecurrentes: undefined;
   Asesor: undefined;
   MisFacturas: undefined;
+  Notifications: undefined;
 };
 
 export type TabParamList = {
@@ -295,6 +297,11 @@ export function AppNavigator() {
               name="Asesor"
               component={AsesorScreen}
               options={{ title: 'Asesor Financiero', headerBackTitle: 'Inicio' }}
+            />
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
+              options={{ title: 'Notificaciones', headerBackTitle: 'Perfil' }}
             />
           </>
         )}

@@ -22,7 +22,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { exportExpensesToCsv } from '../services/exportService';
 import { getAvailableBiometric, getBiometricLabel } from '../services/biometricService';
 import { applyReferralCode, getOrCreateReferralCode, REFERRAL_ERROR_MESSAGES } from '../services/referralService';
-import { cancelAllReminders, scheduleDailyReminder, scheduleWeeklySummary } from '../services/notificationService';
+import { cancelAllReminders, scheduleDailyReminder, scheduleWeeklySummary } from '../services/notificationService'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { useAuthStore } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
@@ -32,8 +32,6 @@ import { ColorPalette } from '../theme/colors';
 import { ThemeMode, useTheme } from '../theme/ThemeContext';
 import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
 import { localDateString } from '../utils/format';
-
-const REMINDER_KEY = '@exora_reminders';
 
 const THEME_MODES: Array<{ mode: ThemeMode; label: string; icon: string }> = [
   { mode: 'light', label: 'Claro', icon: 'white-balance-sunny' },
@@ -105,7 +103,6 @@ export function SettingsScreen() {
   const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
   const extendTrial = usePremiumStore(state => state.extendTrial);
 
-  const [remindersOn, setRemindersOn] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [biometricType, setBiometricTypeLocal] = useState<string>('none');
   const [myCode, setMyCode] = useState('');
@@ -128,7 +125,6 @@ export function SettingsScreen() {
     'Usuario';
 
   useEffect(() => {
-    AsyncStorage.getItem(REMINDER_KEY).then(val => { if (val === 'true') setRemindersOn(true); });
     getAvailableBiometric().then(t => setBiometricTypeLocal(t));
     if (session?.user?.id) {
       getOrCreateReferralCode(session.user.id).then(setMyCode).catch(() => {});
@@ -164,12 +160,6 @@ export function SettingsScreen() {
     }
   };
 
-  const toggleReminders = async (value: boolean) => {
-    setRemindersOn(value);
-    await AsyncStorage.setItem(REMINDER_KEY, String(value));
-    if (value) { scheduleDailyReminder(); scheduleWeeklySummary(); }
-    else { cancelAllReminders(); }
-  };
 
   const exportCsv = async () => {
     try {
@@ -306,14 +296,14 @@ export function SettingsScreen() {
 
         <View style={s.divider} />
 
-        {/* Recordatorios */}
-        <View style={s.settingRow}>
+        {/* Notificaciones */}
+        <Pressable style={s.settingRow} onPress={() => navigation.navigate('Notifications')}>
           <View style={[iconWrap('#F59E0B'), { marginRight: 12 }]}>
             <Icon name="bell-outline" size={18} color="#F59E0B" />
           </View>
-          <Text style={[s.settingLabel, { flex: 1 }]}>Recordatorios</Text>
-          <Switch value={remindersOn} onValueChange={toggleReminders} trackColor={{ true: colors.primary }} />
-        </View>
+          <Text style={[s.settingLabel, { flex: 1 }]}>Notificaciones</Text>
+          <Icon name="chevron-right" size={16} color={colors.textMuted} />
+        </Pressable>
 
         {/* Biométrico */}
         {biometricType !== 'none' && (

@@ -29,7 +29,7 @@ export function configureNotifications() {
   }
 }
 
-export function scheduleDailyReminder() {
+export function scheduleDailyReminder(hour = 20) {
   try {
     PushNotification.cancelLocalNotification('1');
 
@@ -38,7 +38,7 @@ export function scheduleDailyReminder() {
       now.getFullYear(),
       now.getMonth(),
       now.getDate(),
-      20,
+      hour,
       0,
       0,
     );
