@@ -61,14 +61,21 @@ export const useAuthStore = create<AuthState>((set) => ({
         return;
       }
 
-      // Token expirado o a punto de expirar — necesita red para refrescar
-      const { data: refreshed, error } = await supabase.auth.refreshSession();
-      if (error || !refreshed.session) {
-        await supabase.auth.signOut();
-        set({ session: null, loading: false });
-        return;
+      // Token expirado o a punto de expirar — intentar refrescar con timeout
+      // Si no hay internet el refresh puede colgar minutos; con 4s fallamos rápido
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const refreshResult = await Promise.race([
+        supabase.auth.refreshSession().then(r => r.data.session ?? null).catch(() => null),
+        timeout,
+      ]);
+
+      if (refreshResult) {
+        set({ session: refreshResult, loading: false });
+      } else {
+        // Sin internet o refresh fallido — usar sesión expirada para acceso offline
+        // onAuthStateChange la actualizará cuando vuelva la conexión
+        set({ session, loading: false });
       }
-      set({ session: refreshed.session, loading: false });
     } catch {
       set({ session: null, loading: false });
     }

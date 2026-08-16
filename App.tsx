@@ -117,8 +117,11 @@ function AppContent() {
 
   useEffect(() => {
     const bootstrap = async () => {
-      // Auth primero — necesario para que el chequeo de fundador en Supabase funcione
-      await initializeAuth().catch(() => {});
+      // Auth primero — con timeout de 5s para no bloquear sin internet
+      await Promise.race([
+        initializeAuth(),
+        new Promise<void>(resolve => setTimeout(resolve, 5000)),
+      ]).catch(() => {});
 
       await Promise.allSettled([
         initDatabase().then(() => loadExpenses()).catch(e => console.error('DB error:', e)),
