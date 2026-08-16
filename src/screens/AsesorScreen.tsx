@@ -31,6 +31,9 @@ import { formatCurrency, localDateString } from '../utils/format';
 
 const CACHE_KEY = '@exora_advisor_cache';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+const QUESTIONS_KEY = '@exora_advisor_questions';
+const FREE_DAILY_LIMIT = 3;
+const PREMIUM_DAILY_LIMIT = 20;
 
 const SUGGESTED_QUESTIONS_PERSONAL = [
   '¿En qué estoy gastando de más?',
@@ -96,7 +99,28 @@ export function AsesorScreen() {
   const [question, setQuestion] = useState('');
   const [askMode, setAskMode] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [questionsToday, setQuestionsToday] = useState(0);
   const inputRef = useRef<TextInput>(null);
+
+  // Carga el conteo de preguntas del día actual
+  useEffect(() => {
+    AsyncStorage.getItem(QUESTIONS_KEY).then(raw => {
+      if (!raw) return;
+      const { date, count } = JSON.parse(raw);
+      const today = new Date().toISOString().slice(0, 10);
+      if (date === today) setQuestionsToday(count);
+    });
+  }, []);
+
+  const incrementQuestionCount = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const next = questionsToday + 1;
+    setQuestionsToday(next);
+    await AsyncStorage.setItem(QUESTIONS_KEY, JSON.stringify({ date: today, count: next }));
+  };
+
+  const questionsLeft = Math.max(0, PREMIUM_DAILY_LIMIT - questionsToday);
+  const limitReached = questionsToday >= PREMIUM_DAILY_LIMIT;
 
   const buildPayload = useCallback((q?: string) => {
     const now = new Date();
@@ -180,6 +204,12 @@ export function AsesorScreen() {
       return;
     }
 
+    // Limitar preguntas manuales (no el análisis automático inicial)
+    if (q && limitReached) {
+      setErrorMsg(`Alcanzaste el límite de ${PREMIUM_DAILY_LIMIT} preguntas por día. Vuelve mañana.`);
+      return;
+    }
+
     // Check cache for full analysis (not for questions)
     if (!q) {
       try {
@@ -225,6 +255,8 @@ export function AsesorScreen() {
             data: json.analysis,
             timestamp: Date.now(),
           }));
+        } else {
+          await incrementQuestionCount();
         }
       } else {
         throw new Error('No se recibió análisis del servidor.');
@@ -236,7 +268,7 @@ export function AsesorScreen() {
     } finally {
       setLoading(false);
     }
-  }, [session, canAccess, buildPayload]);
+  }, [session, canAccess, buildPayload, limitReached, incrementQuestionCount]);
 
   useEffect(() => {
     if (canAccess && expenses.length >= 3) {
@@ -450,20 +482,32 @@ export function AsesorScreen() {
 
       {/* Ask bar */}
       <View style={[s.askBar, { backgroundColor: isDark ? '#111' : colors.surface }]}>
+        {/* Contador de preguntas */}
+        {questionsToday > 0 && (
+          <View style={s.quotaRow}>
+            <Text style={[s.quotaText, limitReached && { color: colors.danger }]}>
+              {limitReached
+                ? `Límite diario alcanzado — vuelve mañana`
+                : `${questionsLeft} pregunta${questionsLeft !== 1 ? 's' : ''} restante${questionsLeft !== 1 ? 's' : ''} hoy`}
+            </Text>
+          </View>
+        )}
+
         {askMode ? (
           <View style={s.askInputRow}>
             <TextInput
               ref={inputRef}
               style={s.askInput}
-              placeholder="¿Qué quieres saber?"
+              placeholder={limitReached ? 'Límite alcanzado por hoy' : '¿Qué quieres saber?'}
               placeholderTextColor={colors.textMuted}
               value={question}
               onChangeText={setQuestion}
               returnKeyType="send"
               onSubmitEditing={handleAsk}
               autoFocus
+              editable={!limitReached}
             />
-            <Pressable style={s.sendBtn} onPress={handleAsk} disabled={!question.trim()}>
+            <Pressable style={[s.sendBtn, (limitReached || !question.trim()) && { opacity: 0.4 }]} onPress={handleAsk} disabled={!question.trim() || limitReached}>
               <Icon name="send" size={18} color="#fff" />
             </Pressable>
             <Pressable onPress={() => setAskMode(false)} hitSlop={8} style={{ marginLeft: 6 }}>
@@ -476,14 +520,18 @@ export function AsesorScreen() {
               {(hasFinancialData ? SUGGESTED_QUESTIONS_PERSONAL : SUGGESTED_QUESTIONS_EDUCATIONAL).map(q => (
                 <Pressable
                   key={q}
-                  style={s.suggestionChip}
-                  onPress={() => { setQuestion(q); fetchAnalysis(q); }}
+                  style={[s.suggestionChip, limitReached && { opacity: 0.4 }]}
+                  onPress={() => { if (!limitReached) { setQuestion(q); fetchAnalysis(q); } }}
                 >
                   <Text style={s.suggestionText}>{q}</Text>
                 </Pressable>
               ))}
             </ScrollView>
-            <Pressable style={s.askBtn} onPress={() => { setAskMode(true); setTimeout(() => inputRef.current?.focus(), 100); }}>
+            <Pressable
+              style={[s.askBtn, limitReached && { opacity: 0.4 }]}
+              onPress={() => { if (!limitReached) { setAskMode(true); setTimeout(() => inputRef.current?.focus(), 100); } }}
+              disabled={limitReached}
+            >
               <Icon name="message-question-outline" size={18} color="#fff" />
             </Pressable>
           </>
@@ -572,7 +620,9 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     analyzeBtnText: { color: '#fff', fontFamily: font.bold, fontSize: 15 },
 
     // Ask bar
-    askBar: { borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 16, paddingVertical: 10, paddingBottom: Platform.OS === 'ios' ? 28 : 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+    askBar: { borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 16, paddingVertical: 10, paddingBottom: Platform.OS === 'ios' ? 28 : 10, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    quotaRow: { width: '100%', marginBottom: 4 },
+    quotaText: { fontSize: 11, color: colors.textMuted, fontFamily: font.medium },
     suggestionsScroll: { flex: 1 },
     suggestionChip: { backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginRight: 8, borderWidth: 1, borderColor: colors.border },
     suggestionText: { color: colors.text, fontSize: 12, fontFamily: font.medium },
