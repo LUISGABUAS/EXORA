@@ -160,14 +160,29 @@ Incluye secciones sobre: mayor gasto, tendencia vs mes anterior, oportunidad de 
 
     const data = await response.json();
     const text = data.content?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) {
-      return new Response(JSON.stringify({ error: 'Respuesta inválida' }), {
+    console.log('[financial-advisor] Claude response length:', text.length, 'preview:', text.slice(0, 120));
+
+    // Extraer JSON — soporta respuesta directa o envuelta en ```json ... ```
+    let analysis: Record<string, unknown> | null = null;
+    const candidates = [
+      text.match(/```json\s*([\s\S]*?)```/)?.[1],  // markdown code block
+      text.match(/\{[\s\S]*\}/)?.[0],              // primer objeto JSON
+    ].filter(Boolean);
+
+    for (const candidate of candidates) {
+      try {
+        analysis = JSON.parse(candidate as string);
+        if (analysis && typeof analysis === 'object') break;
+      } catch {}
+    }
+
+    if (!analysis) {
+      console.error('[financial-advisor] JSON parse failed. Raw text:', text.slice(0, 300));
+      return new Response(JSON.stringify({ error: 'Respuesta inválida del modelo' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const analysis = JSON.parse(match[0]);
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

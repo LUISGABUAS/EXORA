@@ -33,7 +33,7 @@ const CACHE_KEY = '@exora_advisor_cache';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 const QUESTIONS_KEY = '@exora_advisor_questions';
 const FREE_DAILY_LIMIT = 3;
-const PREMIUM_DAILY_LIMIT = 20;
+const PREMIUM_DAILY_LIMIT = 3;
 
 const SUGGESTED_QUESTIONS_PERSONAL = [
   '¿En qué estoy gastando de más?',
@@ -275,7 +275,8 @@ export function AsesorScreen() {
   }, [session, canAccess, buildPayload, limitReached, incrementQuestionCount]);
 
   useEffect(() => {
-    if (canAccess && expenses.length >= 3) {
+    // Solo llamar si no hay análisis en estado ya (evita re-llamadas en re-mounts)
+    if (canAccess && expenses.length >= 3 && !analysis) {
       fetchAnalysis();
     }
   }, [canAccess]);
