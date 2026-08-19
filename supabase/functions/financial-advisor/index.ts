@@ -149,7 +149,11 @@ Incluye secciones sobre: mayor gasto, tendencia vs mes anterior, oportunidad de 
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: 'Error al generar análisis' }), {
+      const errBody = await response.json().catch(() => ({}));
+      const errType = errBody?.error?.type ?? '';
+      const errStatus = response.status;
+      console.error('[financial-advisor] Anthropic error', errStatus, JSON.stringify(errBody));
+      return new Response(JSON.stringify({ error: 'anthropic_error', status: errStatus, type: errType }), {
         status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

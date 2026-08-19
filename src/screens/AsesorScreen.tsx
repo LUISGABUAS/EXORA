@@ -236,16 +236,20 @@ export function AsesorScreen() {
 
       if (fnError) {
         const raw = (fnError.message ?? '').toLowerCase();
-        if (raw.includes('529') || raw.includes('overloaded')) {
-          throw new Error('El servicio de IA está saturado. Intenta en unos minutos.');
-        }
-        if (raw.includes('402') || raw.includes('credit') || raw.includes('billing')) {
-          throw new Error('El servicio de IA no está disponible por el momento.');
-        }
         if (raw.includes('401') || raw.includes('unauthorized')) {
           throw new Error('Sesión expirada. Cierra sesión y vuelve a entrar.');
         }
         throw new Error('Sin conexión con el asesor. Verifica tu internet e intenta de nuevo.');
+      }
+      // Error detallado de Anthropic que viene en el body
+      if (json?.error === 'anthropic_error') {
+        const t = json.type ?? '';
+        const s = json.status ?? 0;
+        if (s === 529 || t.includes('overloaded')) throw new Error('El servicio de IA está saturado. Intenta en unos minutos.');
+        if (s === 401 || t.includes('authentication')) throw new Error('API key de IA no válida. Contacta soporte.');
+        if (s === 402 || t.includes('credit') || t.includes('billing')) throw new Error('El servicio de IA no está disponible por el momento.');
+        if (s === 429 || t.includes('rate')) throw new Error('Demasiadas solicitudes. Espera un momento e intenta de nuevo.');
+        throw new Error(`Error del servicio de IA (${s}). Intenta más tarde.`);
       }
       if (json?.analysis) {
         setAnalysis(json.analysis);
