@@ -99,6 +99,41 @@ export function cancelAllReminders() {
   }
 }
 
+export function scheduleStreakReminder(streak: number) {
+  try {
+    PushNotification.cancelLocalNotification('60');
+    if (streak <= 0) return;
+
+    const now = new Date();
+    const fireDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      19, 0, 0,
+    );
+
+    const messages = [
+      `🔥 Llevas ${streak} días seguidos — no lo rompas hoy.`,
+      `🔥 Racha de ${streak} días. Abre EXORA para mantenerla viva.`,
+      `¡${streak} días de racha! No dejes que se rompa hoy 💪`,
+      `Tu racha de ${streak} días te espera. Abre EXORA y sigue cuidando tu dinero.`,
+    ];
+    const message = messages[streak % messages.length];
+
+    PushNotification.localNotificationSchedule({
+      id: '60',
+      channelId: CHANNEL_ID,
+      title: 'No pierdas tu racha',
+      message,
+      date: fireDate,
+      repeatType: 'day',
+      allowWhileIdle: true,
+    });
+  } catch (e) {
+    console.warn('[Notifications] No se pudo agendar recordatorio de racha:', e);
+  }
+}
+
 // Regímenes que tienen pago mensual (provisional) el día 17
 const MONTHLY_PAYMENT_REGIMES: FiscalRegime[] = [
   'resico',

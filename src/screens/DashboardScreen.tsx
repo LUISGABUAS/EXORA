@@ -23,6 +23,7 @@ import { PaywallModal } from '../components/PaywallModal';
 import { SmartInputBar } from '../components/SmartInputBar';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { StreakBadge } from '../components/StreakBadge';
+import { StreakCard } from '../components/StreakCard';
 import { UndoToast } from '../components/UndoToast';
 import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
 import { useAuthStore } from '../store/useAuthStore';
@@ -383,6 +384,9 @@ export function DashboardScreen() {
                   </View>
                 </Animated.View>
 
+                {/* Streak Card */}
+                <StreakCard streak={streak} />
+
                 {/* Recent Transactions */}
                 <Animated.View entering={FadeInDown.delay(200).duration(350)}>
                   <View style={s.sectionRow}>
@@ -398,7 +402,7 @@ export function DashboardScreen() {
                         <Pressable
                           key={exp.id}
                           style={[s.txItem, idx === recentExpenses.length - 1 && s.txItemLast]}
-                          onPress={() => navigation.navigate('ExpenseDetail', { expenseId: exp.id })}
+                          onPress={() => navigation.navigate('ExpenseDetail', { expenseId: exp.id, startEditing: true })}
                         >
                           <View style={[s.txIconWrap, { backgroundColor: catColor + '18' }]}>
                             <Icon

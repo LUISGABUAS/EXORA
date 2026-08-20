@@ -29,6 +29,7 @@ import {
   PAYMENT_METHOD_ICONS,
   PAYMENT_METHOD_LABELS,
 } from '../types/income';
+import { DateField } from '../components/DateField';
 import { formatCurrency, localDateString } from '../utils/format';
 
 const INCOME_TYPES = Object.keys(INCOME_TYPE_LABELS) as IncomeType[];
@@ -432,12 +433,9 @@ export function IncomesScreen() {
 
             {/* Date */}
             <Text style={s.fieldLabel}>Fecha</Text>
-            <TextInput
-              style={s.input}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textMuted}
+            <DateField
               value={form.date}
-              onChangeText={v => set('date', v)}
+              onChange={v => set('date', v)}
             />
 
             {/* Type */}

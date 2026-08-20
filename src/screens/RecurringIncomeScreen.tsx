@@ -13,7 +13,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { RecurringIncome, useRecurringIncomeStore } from '../store/useRecurringIncomeStore';
+import { RecurringIncome, RecurringFrequency, useRecurringIncomeStore } from '../store/useRecurringIncomeStore';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
@@ -31,13 +31,25 @@ import { formatCurrency } from '../utils/format';
 const INCOME_TYPES = Object.keys(INCOME_TYPE_LABELS) as IncomeType[];
 const PAYMENT_METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
 
+const DAYS_OF_WEEK = [
+  { label: 'Dom', fullLabel: 'Domingo',   value: 0 },
+  { label: 'Lun', fullLabel: 'Lunes',     value: 1 },
+  { label: 'Mar', fullLabel: 'Martes',    value: 2 },
+  { label: 'Mié', fullLabel: 'Miércoles', value: 3 },
+  { label: 'Jue', fullLabel: 'Jueves',    value: 4 },
+  { label: 'Vie', fullLabel: 'Viernes',   value: 5 },
+  { label: 'Sáb', fullLabel: 'Sábado',    value: 6 },
+];
+
 const EMPTY = {
   amount: '',
   type: 'nomina' as IncomeType,
   description: '',
   paymentMethod: 'transferencia' as PaymentMethod,
   invoiced: false,
+  frequency: 'monthly' as RecurringFrequency,
   dayOfMonth: 1,
+  dayOfWeek: 1,
   active: true,
 };
 
@@ -70,7 +82,9 @@ export function RecurringIncomeScreen() {
       description: item.description,
       paymentMethod: item.paymentMethod,
       invoiced: item.invoiced,
+      frequency: item.frequency ?? 'monthly',
       dayOfMonth: item.dayOfMonth,
+      dayOfWeek: item.dayOfWeek ?? 1,
       active: item.active,
     });
     setModalVisible(true);
@@ -88,7 +102,9 @@ export function RecurringIncomeScreen() {
       description: form.description,
       paymentMethod: form.paymentMethod,
       invoiced: form.invoiced,
+      frequency: form.frequency,
       dayOfMonth: form.dayOfMonth,
+      dayOfWeek: form.dayOfWeek,
       active: form.active,
     };
     if (editing) {
@@ -118,7 +134,7 @@ export function RecurringIncomeScreen() {
             <Icon name="repeat" size={52} color={colors.border} />
             <Text style={s.emptyTitle}>Sin ingresos fijos</Text>
             <Text style={s.emptyDesc}>
-              Agrega tu salario, renta cobrada u otros ingresos que recibes cada mes. EXORA los registrará automáticamente.
+              Agrega tu salario, renta u otros ingresos fijos. EXORA los registrará automáticamente según la frecuencia que elijas (mensual o semanal).
             </Text>
             <Pressable style={s.emptyBtn} onPress={openNew}>
               <Icon name="plus" size={18} color="#fff" />
@@ -130,7 +146,7 @@ export function RecurringIncomeScreen() {
             <Animated.View entering={FadeInDown.duration(300)} style={s.infoCard}>
               <Icon name="information-outline" size={16} color={colors.primary} />
               <Text style={s.infoText}>
-                EXORA registra estos ingresos automáticamente cada mes en la fecha indicada.
+                EXORA registra estos ingresos automáticamente en la frecuencia indicada.
               </Text>
             </Animated.View>
 
@@ -153,7 +169,9 @@ export function RecurringIncomeScreen() {
                     <View style={s.itemMeta}>
                       <Icon name="calendar-clock" size={12} color={colors.textMuted} />
                       <Text style={s.itemMetaText}>
-                        Día {item.dayOfMonth} de cada mes
+                        {item.frequency === 'weekly'
+                          ? `Cada ${DAYS_OF_WEEK.find(d => d.value === item.dayOfWeek)?.fullLabel ?? 'semana'}`
+                          : `Día ${item.dayOfMonth} de cada mes`}
                       </Text>
                       <Icon name={PAYMENT_METHOD_ICONS[item.paymentMethod]} size={12} color={colors.textMuted} />
                       <Text style={s.itemMetaText}>{PAYMENT_METHOD_LABELS[item.paymentMethod]}</Text>
@@ -197,7 +215,7 @@ export function RecurringIncomeScreen() {
 
           <ScrollView contentContainerStyle={s.modalScroll} keyboardShouldPersistTaps="handled">
 
-            <Text style={s.fieldLabel}>Monto mensual (MXN)</Text>
+            <Text style={s.fieldLabel}>Monto por pago (MXN)</Text>
             <TextInput
               style={s.input}
               keyboardType="decimal-pad"
@@ -207,6 +225,26 @@ export function RecurringIncomeScreen() {
               onChangeText={v => set_('amount', v)}
               autoFocus={!editing}
             />
+
+            <Text style={s.fieldLabel}>Frecuencia de pago</Text>
+            <View style={s.freqRow}>
+              {(['monthly', 'weekly'] as RecurringFrequency[]).map(f => (
+                <Pressable
+                  key={f}
+                  style={[s.freqChip, form.frequency === f && s.freqChipActive]}
+                  onPress={() => set_('frequency', f)}
+                >
+                  <Icon
+                    name={f === 'monthly' ? 'calendar-month-outline' : 'calendar-week-outline'}
+                    size={15}
+                    color={form.frequency === f ? '#fff' : colors.text}
+                  />
+                  <Text style={[s.chipText, form.frequency === f && { color: '#fff' }]}>
+                    {f === 'monthly' ? 'Mensual' : 'Semanal'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
 
             <Text style={s.fieldLabel}>Tipo de ingreso</Text>
             <View style={s.chipGrid}>
@@ -224,18 +262,39 @@ export function RecurringIncomeScreen() {
               ))}
             </View>
 
-            <Text style={s.fieldLabel}>Día del mes en que lo recibes</Text>
-            <View style={s.dayRow}>
-              {[1, 5, 10, 15, 17, 20, 25, 28].map(d => (
-                <Pressable
-                  key={d}
-                  style={[s.dayChip, form.dayOfMonth === d && s.dayChipActive]}
-                  onPress={() => set_('dayOfMonth', d)}
-                >
-                  <Text style={[s.dayChipText, form.dayOfMonth === d && { color: '#fff' }]}>{d}</Text>
-                </Pressable>
-              ))}
-            </View>
+            {form.frequency === 'monthly' ? (
+              <>
+                <Text style={s.fieldLabel}>Día del mes en que lo recibes</Text>
+                <View style={s.dayRow}>
+                  {[1, 5, 10, 15, 17, 20, 25, 28].map(d => (
+                    <Pressable
+                      key={d}
+                      style={[s.dayChip, form.dayOfMonth === d && s.dayChipActive]}
+                      onPress={() => set_('dayOfMonth', d)}
+                    >
+                      <Text style={[s.dayChipText, form.dayOfMonth === d && { color: '#fff' }]}>{d}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={s.fieldLabel}>Día de la semana en que lo recibes</Text>
+                <View style={s.dayRow}>
+                  {DAYS_OF_WEEK.map(d => (
+                    <Pressable
+                      key={d.value}
+                      style={[s.weekChip, form.dayOfWeek === d.value && s.dayChipActive]}
+                      onPress={() => set_('dayOfWeek', d.value)}
+                    >
+                      <Text style={[s.dayChipText, form.dayOfWeek === d.value && { color: '#fff' }]}>
+                        {d.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
 
             <Text style={s.fieldLabel}>Método de pago</Text>
             <View style={s.paymentRow}>
@@ -356,13 +415,25 @@ const useStyles = (colors: ColorPalette, isDark: boolean) =>
     },
     chipText: { color: colors.text, fontSize: 12, fontFamily: font.medium },
 
+    freqRow: { flexDirection: 'row', gap: 8 },
+    freqChip: {
+      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+      paddingVertical: 12, borderRadius: 14,
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt,
+    },
+    freqChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+
     dayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     dayChip: {
       width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
       backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
     },
+    weekChip: {
+      width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+      backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+    },
     dayChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    dayChipText: { color: colors.text, fontSize: 14, fontFamily: font.bold },
+    dayChipText: { color: colors.text, fontSize: 13, fontFamily: font.bold },
 
     paymentRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     paymentChip: {

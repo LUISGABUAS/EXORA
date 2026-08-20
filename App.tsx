@@ -17,7 +17,7 @@ import { initDatabase } from './src/database/db';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { BiometricLock } from './src/components/BiometricLock';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
-import { configureNotifications, scheduleSatDeadlines } from './src/services/notificationService';
+import { configureNotifications, scheduleSatDeadlines, scheduleStreakReminder } from './src/services/notificationService';
 import { startSyncService, pullFromSupabase } from './src/services/syncService';
 import { setUserContext } from './src/services/crashReporting';
 import { syncWidgetData } from './src/utils/widgetBridge';
@@ -73,10 +73,10 @@ function AppContent() {
   const loadIncomes = useIncomeStore(state => state.loadIncomes);
   const hydrateCustomCategories = useCustomCategoryStore(state => state.hydrate);
   const hydrateCurrency = useCurrencyStore(state => state.hydrate);
-  const getDueThisMonth = useRecurringStore(state => state.getDueThisMonth);
+  const getDueThisMonth = useRecurringStore(state => state.getDueItems);
   const markProcessed = useRecurringStore(state => state.markProcessed);
   const hydrateRecurringIncome = useRecurringIncomeStore(state => state.hydrate);
-  const getDueIncomeThisMonth = useRecurringIncomeStore(state => state.getDueThisMonth);
+  const getDueIncomeThisMonth = useRecurringIncomeStore(state => state.getDueItems);
   const markIncomeProcessed = useRecurringIncomeStore(state => state.markProcessed);
   const { colors, isDark } = useTheme();
 
@@ -94,16 +94,23 @@ function AppContent() {
     }
   }, [session]);
 
-  // Flush analytics + lock on background
+  // Flush analytics + lock on background; update streak on foreground
   useEffect(() => {
+    let lastState = AppState.currentState;
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'background' || nextState === 'inactive') {
         flushNow();
         if (biometricEnabled) setLocked(true);
       }
+      if (nextState === 'active' && lastState !== 'active') {
+        updateStreak().catch(() => {}).then(() => {
+          scheduleStreakReminder(usePremiumStore.getState().streak);
+        });
+      }
+      lastState = nextState;
     });
     return () => sub.remove();
-  }, [biometricEnabled]);
+  }, [biometricEnabled, updateStreak]);
 
   // Detect biometric type and lock on first load if enabled
   useEffect(() => {
@@ -136,17 +143,27 @@ function AppContent() {
         hydrateRecurringIncome(),
       ]);
       await updateStreak().catch(() => {});
+      scheduleStreakReminder(usePremiumStore.getState().streak);
 
-      // Procesar gastos recurrentes vencidos este mes
+      // Procesar gastos recurrentes vencidos
       try {
         const due = getDueThisMonth();
         const addExpense = useExpenseStore.getState().addExpense;
         const today = new Date();
         const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const weekNum = Math.ceil(
+          ((today.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7,
+        );
+        const week = `${today.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         for (const r of due) {
+          const date = r.frequency === 'weekly'
+            ? todayStr
+            : `${month}-${String(r.dayOfMonth).padStart(2, '0')}`;
           await addExpense({
             amount: r.amount,
-            date: `${month}-${String(r.dayOfMonth).padStart(2, '0')}`,
+            date,
             category: r.category,
             description: r.description,
             merchantName: r.merchantName,
@@ -157,29 +174,38 @@ function AppContent() {
             usoCFDI: '',
             source: 'manual',
           });
-          await markProcessed(r.id, month);
+          await markProcessed(r.id, r.frequency === 'weekly' ? week : month);
         }
       } catch (e) {
         if (__DEV__) console.warn('Recurring error:', e);
       }
 
-      // Procesar ingresos recurrentes vencidos este mes
+      // Procesar ingresos recurrentes vencidos
       try {
         const dueIncomes = getDueIncomeThisMonth();
         const addIncome = useIncomeStore.getState().addIncome;
         const today = new Date();
         const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const weekNum = Math.ceil(
+          ((today.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7,
+        );
+        const week = `${today.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         for (const r of dueIncomes) {
+          const date = r.frequency === 'weekly'
+            ? todayStr
+            : `${month}-${String(r.dayOfMonth).padStart(2, '0')}`;
           await addIncome({
             amount: r.amount,
-            date: `${month}-${String(r.dayOfMonth).padStart(2, '0')}`,
+            date,
             type: r.type,
             description: r.description,
             invoiced: r.invoiced,
             recurring: true,
             paymentMethod: r.paymentMethod,
           });
-          await markIncomeProcessed(r.id, month);
+          await markIncomeProcessed(r.id, r.frequency === 'weekly' ? week : month);
         }
       } catch (e) {
         if (__DEV__) console.warn('Recurring income error:', e);

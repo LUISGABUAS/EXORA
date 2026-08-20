@@ -16,6 +16,7 @@ import { SavingsGoal, useSavingsStore } from '../store/useSavingsStore';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
+import { DateField } from '../components/DateField';
 import { formatCurrency } from '../utils/format';
 
 const EMOJIS = ['🏠', '✈️', '🚗', '💻', '📱', '🎓', '👶', '💍', '🏋️', '🎸', '🌴', '💰'];
@@ -204,12 +205,11 @@ export function SavingsScreen() {
             onChangeText={setTarget}
             keyboardType="decimal-pad"
           />
-          <TextInput
-            style={s.input}
-            placeholder="Fecha límite opcional (YYYY-MM-DD)"
-            placeholderTextColor={colors.textMuted}
+          <DateField
             value={deadline}
-            onChangeText={setDeadline}
+            onChange={setDeadline}
+            placeholder="Fecha límite (opcional)"
+            optional
           />
 
           <View style={s.formButtons}>

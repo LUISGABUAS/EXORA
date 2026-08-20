@@ -13,7 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useExpenseStore } from '../store/useExpenseStore';
-import { RecurringExpense, useRecurringStore } from '../store/useRecurringStore';
+import { RecurringExpense, RecurringFrequency, useRecurringStore } from '../store/useRecurringStore';
 import { ExpenseCategory } from '../types/expense';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
@@ -33,7 +33,17 @@ const CATEGORY_ICONS: Record<ExpenseCategory, string> = {
   Otros: 'dots-horizontal-circle-outline',
 };
 
-const DAYS = Array.from({ length: 28 }, (_, i) => i + 1);
+const DAYS_OF_MONTH = Array.from({ length: 28 }, (_, i) => i + 1);
+
+const DAYS_OF_WEEK = [
+  { label: 'Dom', fullLabel: 'Domingo',   value: 0 },
+  { label: 'Lun', fullLabel: 'Lunes',     value: 1 },
+  { label: 'Mar', fullLabel: 'Martes',    value: 2 },
+  { label: 'Mié', fullLabel: 'Miércoles', value: 3 },
+  { label: 'Jue', fullLabel: 'Jueves',    value: 4 },
+  { label: 'Vie', fullLabel: 'Viernes',   value: 5 },
+  { label: 'Sáb', fullLabel: 'Sábado',    value: 6 },
+];
 
 export function RecurringScreen() {
   const { colors } = useTheme();
@@ -43,18 +53,19 @@ export function RecurringScreen() {
   const [registering, setRegistering] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  // Form state
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('Otros');
   const [merchantName, setMerchantName] = useState('');
+  const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
   const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [dayOfWeek, setDayOfWeek] = useState(1);
   const [deductible, setDeductible] = useState(false);
 
   const resetForm = () => {
     setDescription(''); setAmount(''); setCategory('Otros');
-    setMerchantName(''); setDayOfMonth(1); setDeductible(false);
-    setShowForm(false);
+    setMerchantName(''); setFrequency('monthly'); setDayOfMonth(1);
+    setDayOfWeek(1); setDeductible(false); setShowForm(false);
   };
 
   const handleAdd = async () => {
@@ -66,7 +77,9 @@ export function RecurringScreen() {
       amount: amt,
       category,
       merchantName: merchantName.trim() || description.trim(),
+      frequency,
       dayOfMonth,
+      dayOfWeek,
       active: true,
       deductible,
     });
@@ -112,6 +125,14 @@ export function RecurringScreen() {
     );
   };
 
+  const frequencyLabel = (item: RecurringExpense) => {
+    if (item.frequency === 'weekly') {
+      const d = DAYS_OF_WEEK.find(d => d.value === item.dayOfWeek);
+      return `Cada ${d?.fullLabel ?? 'semana'}`;
+    }
+    return `Día ${item.dayOfMonth} de cada mes`;
+  };
+
   const renderItem = ({ item }: { item: RecurringExpense }) => (
     <View style={[s.card, !item.active && s.cardInactive]}>
       <View style={[s.iconBox, { backgroundColor: colors.primary + '18' }]}>
@@ -119,7 +140,7 @@ export function RecurringScreen() {
       </View>
       <View style={s.cardInfo}>
         <Text style={[s.cardTitle, !item.active && s.textMuted]}>{item.description}</Text>
-        <Text style={s.cardSub}>Día {item.dayOfMonth} de cada mes · {item.category}</Text>
+        <Text style={s.cardSub}>{frequencyLabel(item)} · {item.category}</Text>
       </View>
       <View style={s.cardRight}>
         <Text style={[s.cardAmount, !item.active && s.textMuted]}>{formatCurrency(item.amount)}</Text>
@@ -190,7 +211,7 @@ export function RecurringScreen() {
           />
 
           <Text style={s.label}>Categoría</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.catRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.scrollRow}>
             {CATEGORIES.map(cat => (
               <Pressable
                 key={cat}
@@ -203,18 +224,57 @@ export function RecurringScreen() {
             ))}
           </ScrollView>
 
-          <Text style={s.label}>Día del mes</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.dayRow}>
-            {DAYS.map(d => (
+          <Text style={s.label}>Frecuencia</Text>
+          <View style={s.freqRow}>
+            {(['monthly', 'weekly'] as RecurringFrequency[]).map(f => (
               <Pressable
-                key={d}
-                style={[s.dayChip, dayOfMonth === d && s.dayChipActive]}
-                onPress={() => setDayOfMonth(d)}
+                key={f}
+                style={[s.freqChip, frequency === f && s.freqChipActive]}
+                onPress={() => setFrequency(f)}
               >
-                <Text style={[s.dayChipText, dayOfMonth === d && s.dayChipTextActive]}>{d}</Text>
+                <Icon
+                  name={f === 'monthly' ? 'calendar-month-outline' : 'calendar-week-outline'}
+                  size={15}
+                  color={frequency === f ? colors.white : colors.text}
+                />
+                <Text style={[s.catChipText, frequency === f && s.catChipTextActive]}>
+                  {f === 'monthly' ? 'Mensual' : 'Semanal'}
+                </Text>
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
+
+          {frequency === 'monthly' ? (
+            <>
+              <Text style={s.label}>Día del mes</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.scrollRow}>
+                {DAYS_OF_MONTH.map(d => (
+                  <Pressable
+                    key={d}
+                    style={[s.dayChip, dayOfMonth === d && s.dayChipActive]}
+                    onPress={() => setDayOfMonth(d)}
+                  >
+                    <Text style={[s.dayChipText, dayOfMonth === d && s.dayChipTextActive]}>{d}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </>
+          ) : (
+            <>
+              <Text style={s.label}>Día de la semana</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.scrollRow}>
+                {DAYS_OF_WEEK.map(d => (
+                  <Pressable
+                    key={d.value}
+                    style={[s.dayChip, dayOfWeek === d.value && s.dayChipActive]}
+                    onPress={() => setDayOfWeek(d.value)}
+                  >
+                    <Text style={[s.dayChipText, dayOfWeek === d.value && s.dayChipTextActive]}>{d.label}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </>
+          )}
 
           <View style={s.deductibleRow}>
             <Text style={s.label}>Deducible</Text>
@@ -241,7 +301,7 @@ export function RecurringScreen() {
         <View style={s.empty}>
           <Icon name="repeat" size={52} color={colors.textMuted} />
           <Text style={s.emptyTitle}>Sin gastos recurrentes</Text>
-          <Text style={s.emptySub}>Agrega renta, Netflix, Spotify y más para que se registren solos cada mes.</Text>
+          <Text style={s.emptySub}>Agrega renta, Netflix, Spotify y más. Se registran solos cada mes o cada semana.</Text>
           <Pressable style={s.addBtn} onPress={() => setShowForm(true)}>
             <Icon name="plus" size={20} color={colors.white} />
             <Text style={s.addBtnText}>Agregar</Text>
@@ -279,7 +339,6 @@ const useStyles = (colors: ColorPalette) =>
       gap: 6,
     },
     addBtnText: { color: colors.white, fontFamily: font.bold, fontSize: 14 },
-    // Form
     form: {
       backgroundColor: colors.surface,
       borderRadius: 18,
@@ -300,7 +359,23 @@ const useStyles = (colors: ColorPalette) =>
       color: colors.text,
     },
     label: { color: colors.textMuted, fontSize: 12, fontFamily: font.semibold, marginBottom: -4 },
-    catRow: { marginHorizontal: -4 },
+    scrollRow: { marginHorizontal: -4 },
+
+    freqRow: { flexDirection: 'row', gap: 8 },
+    freqChip: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    freqChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+
     catChip: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -316,10 +391,10 @@ const useStyles = (colors: ColorPalette) =>
     catChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     catChipText: { color: colors.primary, fontSize: 12, fontFamily: font.semibold },
     catChipTextActive: { color: colors.white },
-    dayRow: { marginHorizontal: -3 },
+
     dayChip: {
-      width: 36,
-      height: 36,
+      width: 40,
+      height: 40,
       borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
@@ -331,45 +406,25 @@ const useStyles = (colors: ColorPalette) =>
     dayChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     dayChipText: { color: colors.text, fontSize: 13, fontFamily: font.semibold },
     dayChipTextActive: { color: colors.white },
+
     deductibleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     formButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
     cancelBtn: {
-      flex: 1,
-      padding: 14,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
+      flex: 1, padding: 14, borderRadius: 14,
+      borderWidth: 1, borderColor: colors.border, alignItems: 'center',
     },
     cancelBtnText: { color: colors.textMuted, fontFamily: font.bold },
-    saveBtn: {
-      flex: 2,
-      padding: 14,
-      borderRadius: 14,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-    },
+    saveBtn: { flex: 2, padding: 14, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center' },
     saveBtnText: { color: colors.white, fontFamily: font.extrabold, fontSize: 15 },
-    // List
+
     list: { gap: 10, paddingBottom: 40 },
     card: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      backgroundColor: colors.surface, borderRadius: 16, padding: 14,
+      borderWidth: 1, borderColor: colors.border,
     },
     cardInactive: { opacity: 0.5 },
-    iconBox: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    iconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     cardInfo: { flex: 1 },
     cardTitle: { color: colors.text, fontSize: 15, fontFamily: font.bold },
     cardSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
@@ -377,7 +432,7 @@ const useStyles = (colors: ColorPalette) =>
     cardAmount: { color: colors.text, fontSize: 15, fontFamily: font.extrabold },
     cardActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     textMuted: { color: colors.textMuted },
-    // Empty
+
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 32 },
     emptyTitle: { color: colors.text, fontSize: 20, fontFamily: font.extrabold, textAlign: 'center' },
     emptySub: { color: colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 20 },

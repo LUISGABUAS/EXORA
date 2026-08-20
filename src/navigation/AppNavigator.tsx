@@ -43,7 +43,7 @@ export type RootStackParamList = {
   Login: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
-  ExpenseDetail: { expenseId: number };
+  ExpenseDetail: { expenseId: number; startEditing?: boolean };
   Scan: undefined;
   ProfileEdit: undefined;
   ReporteFiscal: undefined;

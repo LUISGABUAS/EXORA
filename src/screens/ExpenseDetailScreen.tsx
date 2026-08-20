@@ -56,12 +56,12 @@ const infoStyles = StyleSheet.create({
 export function ExpenseDetailScreen({ route, navigation }: Props) {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
-  const { expenseId } = route.params;
+  const { expenseId, startEditing } = route.params;
   const getExpense = useExpenseStore(state => state.getExpense);
   const editExpense = useExpenseStore(state => state.editExpense);
   const removeExpense = useExpenseStore(state => state.removeExpense);
   const expense = getExpense(expenseId);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(!!startEditing);
   const [imageFullscreen, setImageFullscreen] = useState(false);
 
   if (!expense) {

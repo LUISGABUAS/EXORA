@@ -2,15 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { ExpenseCategory } from '../types/expense';
 
+export type RecurringFrequency = 'monthly' | 'weekly';
+
 export interface RecurringExpense {
   id: string;
   description: string;
   amount: number;
   category: ExpenseCategory;
   merchantName: string;
-  dayOfMonth: number; // 1-28
+  frequency: RecurringFrequency;
+  dayOfMonth: number; // 1-28, usado cuando frequency === 'monthly'
+  dayOfWeek: number;  // 0=Dom 1=Lun ... 6=Sáb, usado cuando frequency === 'weekly'
   active: boolean;
-  lastProcessed: string | null; // 'YYYY-MM' del último mes procesado
+  lastProcessed: string | null; // 'YYYY-MM' (monthly) o 'YYYY-WW' (weekly)
   deductible: boolean;
 }
 
@@ -21,8 +25,8 @@ interface RecurringState {
   add: (item: Omit<RecurringExpense, 'id' | 'lastProcessed'>) => Promise<void>;
   update: (id: string, patch: Partial<RecurringExpense>) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  markProcessed: (id: string, month: string) => Promise<void>;
-  getDueThisMonth: () => RecurringExpense[];
+  markProcessed: (id: string, period: string) => Promise<void>;
+  getDueItems: () => RecurringExpense[];
 }
 
 const KEY = '@exora_recurring';
@@ -32,8 +36,13 @@ function currentMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function todayDay() {
-  return new Date().getDate();
+function currentWeek() {
+  const d = new Date();
+  const startOfYear = new Date(d.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(
+    ((d.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7,
+  );
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
 function uuid() {
@@ -47,7 +56,13 @@ export const useRecurringStore = create<RecurringState>((set, get) => ({
   hydrate: async () => {
     try {
       const raw = await AsyncStorage.getItem(KEY);
-      set({ items: raw ? JSON.parse(raw) : [], loaded: true });
+      const parsed: any[] = raw ? JSON.parse(raw) : [];
+      const items: RecurringExpense[] = parsed.map(i => ({
+        frequency: 'monthly' as RecurringFrequency,
+        dayOfWeek: 1,
+        ...i,
+      }));
+      set({ items, loaded: true });
     } catch {
       set({ loaded: true });
     }
@@ -72,17 +87,24 @@ export const useRecurringStore = create<RecurringState>((set, get) => ({
     await AsyncStorage.setItem(KEY, JSON.stringify(items));
   },
 
-  markProcessed: async (id, month) => {
-    const items = get().items.map(i => (i.id === id ? { ...i, lastProcessed: month } : i));
+  markProcessed: async (id, period) => {
+    const items = get().items.map(i => (i.id === id ? { ...i, lastProcessed: period } : i));
     set({ items });
     await AsyncStorage.setItem(KEY, JSON.stringify(items));
   },
 
-  getDueThisMonth: () => {
+  getDueItems: () => {
+    const today = new Date();
     const month = currentMonth();
-    const day = todayDay();
-    return get().items.filter(
-      i => i.active && i.lastProcessed !== month && i.dayOfMonth <= day,
-    );
+    const week = currentWeek();
+    const dayOfMonth = today.getDate();
+    const dayOfWeek = today.getDay();
+    return get().items.filter(i => {
+      if (!i.active) return false;
+      if (i.frequency === 'weekly') {
+        return i.dayOfWeek === dayOfWeek && i.lastProcessed !== week;
+      }
+      return i.lastProcessed !== month && i.dayOfMonth <= dayOfMonth;
+    });
   },
 }));
