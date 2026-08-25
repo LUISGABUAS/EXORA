@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -404,7 +406,10 @@ export function IncomesScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={s.modal}>
+        <KeyboardAvoidingView
+          style={s.modal}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={s.modalHeader}>
             <Text style={s.modalTitle}>
               {editing ? 'Editar ingreso' : 'Nuevo ingreso'}
@@ -559,7 +564,7 @@ export function IncomesScreen() {
               </Pressable>
             ) : null}
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

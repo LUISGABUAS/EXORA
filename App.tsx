@@ -98,7 +98,7 @@ function AppContent() {
   useEffect(() => {
     let lastState = AppState.currentState;
     const sub = AppState.addEventListener('change', nextState => {
-      if (nextState === 'background' || nextState === 'inactive') {
+      if (nextState === 'background') {
         flushNow();
         if (biometricEnabled) setLocked(true);
       }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { DateField } from './DateField';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   CURRENCY_SYMBOLS,
@@ -79,8 +80,8 @@ export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFor
     if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
       next.amount = 'Ingresa un monto mayor a cero.';
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      next.date = 'Usa el formato YYYY-MM-DD.';
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      next.date = 'Selecciona una fecha.';
     }
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -136,34 +137,31 @@ export function ExpenseForm({ initialValues, submitLabel, onSubmit }: ExpenseFor
         </View>
       </View>
 
-      {/* Amount + Date row */}
-      <View style={s.row}>
-        <View style={s.inputGroupFlex}>
-          <Text style={s.label}>Monto {currency !== 'MXN' ? `(${currency})` : ''}</Text>
-          <TextInput
-            keyboardType="decimal-pad"
-            placeholder={currency === 'MXN' ? '$0.00' : '0.00'}
-            placeholderTextColor={colors.textMuted}
-            style={[s.input, errors.amount && s.inputError]}
-            value={amount}
-            onChangeText={t => { setAmount(t); setErrors(e => ({ ...e, amount: undefined })); }}
-          />
-          {errors.amount ? <Text style={s.errorText}>{errors.amount}</Text> : null}
-          {currency !== 'MXN' && convertedMXN !== null ? (
-            <Text style={s.convertedText}>≈ {formatCurrency(convertedMXN)} MXN</Text>
-          ) : null}
-        </View>
-        <View style={s.inputGroupFlex}>
-          <Text style={s.label}>Fecha</Text>
-          <TextInput
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.textMuted}
-            style={[s.input, errors.date && s.inputError]}
-            value={date}
-            onChangeText={t => { setDate(t); setErrors(e => ({ ...e, date: undefined })); }}
-          />
-          {errors.date ? <Text style={s.errorText}>{errors.date}</Text> : null}
-        </View>
+      {/* Amount */}
+      <View style={s.inputGroup}>
+        <Text style={s.label}>Monto {currency !== 'MXN' ? `(${currency})` : ''}</Text>
+        <TextInput
+          keyboardType="decimal-pad"
+          placeholder={currency === 'MXN' ? '$0.00' : '0.00'}
+          placeholderTextColor={colors.textMuted}
+          style={[s.input, errors.amount && s.inputError]}
+          value={amount}
+          onChangeText={t => { setAmount(t); setErrors(e => ({ ...e, amount: undefined })); }}
+        />
+        {errors.amount ? <Text style={s.errorText}>{errors.amount}</Text> : null}
+        {currency !== 'MXN' && convertedMXN !== null ? (
+          <Text style={s.convertedText}>≈ {formatCurrency(convertedMXN)} MXN</Text>
+        ) : null}
+      </View>
+
+      {/* Date */}
+      <View style={s.inputGroup}>
+        <Text style={s.label}>Fecha</Text>
+        <DateField
+          value={date}
+          onChange={t => { setDate(t); setErrors(e => ({ ...e, date: undefined })); }}
+        />
+        {errors.date ? <Text style={s.errorText}>{errors.date}</Text> : null}
       </View>
 
       <View style={s.inputGroup}>

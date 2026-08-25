@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useCustomCategoryStore } from '../store/useCustomCategoryStore';
 import { Expense } from '../types/expense';
 import { ColorPalette } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -18,6 +19,12 @@ interface ExpenseCardProps {
 export function ExpenseCard({ expense, onPress, index = 0 }: ExpenseCardProps) {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
+  const customCategories = useCustomCategoryStore(state => state.categories);
+
+  const customCat = customCategories.find(c => c.name === expense.category);
+  const iconName = customCat?.icon ?? categoryIcons[expense.category] ?? 'circle-outline';
+  const iconColor = customCat?.color ?? colors.primary;
+  const iconBg = customCat ? customCat.color + '20' : (isDark ? '#1a3a34' : '#d8f0ea');
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).duration(300).springify()}>
@@ -26,11 +33,11 @@ export function ExpenseCard({ expense, onPress, index = 0 }: ExpenseCardProps) {
         style={({ pressed }) => [s.card, pressed && s.cardPressed]}
       >
         <View style={s.header}>
-          <View style={[s.iconWrap, { backgroundColor: isDark ? '#1a3a34' : '#d8f0ea' }]}>
+          <View style={[s.iconWrap, { backgroundColor: iconBg }]}>
             <Icon
-              name={categoryIcons[expense.category] ?? 'circle-outline'}
+              name={iconName}
               size={22}
-              color={colors.primary}
+              color={iconColor}
             />
           </View>
           <Text style={s.merchant} numberOfLines={1}>

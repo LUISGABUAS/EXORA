@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useCustomCategoryStore } from '../store/useCustomCategoryStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { ColorPalette } from '../theme/colors';
 import { categoryIcons } from '../theme/icons';
@@ -16,7 +17,7 @@ interface QuickShortcutsProps {
 interface ShortcutItem {
   description: string;
   amount: number;
-  category: ExpenseCategory;
+  category: string;
   frequency: number;
 }
 
@@ -45,6 +46,7 @@ export function QuickShortcuts({ onSelect }: QuickShortcutsProps) {
   const { colors } = useTheme();
   const s = useStyles(colors);
   const expenses = useExpenseStore(state => state.expenses);
+  const customCategories = useCustomCategoryStore(state => state.categories);
 
   const shortcuts = useMemo((): ShortcutItem[] => {
     if (expenses.length < 5) return [];
@@ -84,7 +86,7 @@ export function QuickShortcuts({ onSelect }: QuickShortcutsProps) {
     const input: ExpenseInput = {
       amount: item.amount,
       date: localDateString(new Date()),
-      category: item.category,
+      category: item.category as ExpenseCategory,
       description: item.description,
       merchantName: '',
       conceptsText: '',
@@ -107,7 +109,16 @@ export function QuickShortcuts({ onSelect }: QuickShortcutsProps) {
         {shortcuts.map(item => (
           <Pressable key={item.description} style={s.item} onPress={() => handlePress(item)}>
             <View style={s.iconCircle}>
-              <Icon name={categoryIcons[item.category]} size={22} color={colors.text} />
+              {(() => {
+                const custom = customCategories.find(c => c.name === item.category);
+                return (
+                  <Icon
+                    name={custom?.icon ?? categoryIcons[item.category as ExpenseCategory] ?? 'tag-outline'}
+                    size={22}
+                    color={custom?.color ?? colors.text}
+                  />
+                );
+              })()}
             </View>
             <Text style={s.itemLabel} numberOfLines={1}>
               {item.description.charAt(0).toUpperCase() + item.description.slice(1)}
