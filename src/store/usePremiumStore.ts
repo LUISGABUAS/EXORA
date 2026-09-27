@@ -175,20 +175,20 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
       const parsed = raw ? JSON.parse(raw) : {};
       if (onboardingFlag === 'true') parsed.onboardingComplete = true;
 
-      // Onboarding per-user: Supabase es fuente de verdad
+      // Onboarding per-user: getSession() lee del caché local, no hace red
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        const user = authSession?.user ?? null;
         if (user) {
           const supabaseOnboarding = user.user_metadata?.onboarding_complete;
           if (supabaseOnboarding === true) {
             parsed.onboardingComplete = true;
           } else {
-            // Usuario nuevo o cuenta sin onboarding completado — ignorar AsyncStorage local
             parsed.onboardingComplete = false;
           }
         }
       } catch {
-        // Sin red — usa valor local como fallback
+        // Sin sesión — usa valor local como fallback
       }
 
       set({ ...defaults, ...parsed, loaded: true });
@@ -352,7 +352,8 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
   checkOnboardingForUser: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return;
       const onboarded = user.user_metadata?.onboarding_complete === true;
       set({ onboardingComplete: onboarded });
