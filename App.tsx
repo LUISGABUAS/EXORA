@@ -17,6 +17,7 @@ import { initDatabase } from './src/database/db';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { BiometricLock } from './src/components/BiometricLock';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { configureNotifications, scheduleSatDeadlines, scheduleStreakReminder } from './src/services/notificationService';
 import { startSyncService, pullFromSupabase } from './src/services/syncService';
 import { setUserContext } from './src/services/crashReporting';
@@ -103,9 +104,7 @@ function AppContent() {
         if (biometricEnabled) setLocked(true);
       }
       if (nextState === 'active' && lastState !== 'active') {
-        updateStreak().catch(() => {}).then(() => {
-          scheduleStreakReminder(usePremiumStore.getState().streak);
-        });
+        updateStreak().catch(() => {});
       }
       lastState = nextState;
     });
@@ -213,7 +212,10 @@ function AppContent() {
 
       configureNotifications();
       const { fiscalRegime, plan } = usePremiumStore.getState();
-      scheduleSatDeadlines(fiscalRegime);
+      const satPref = await AsyncStorage.getItem('@exora_notif_sat').catch(() => null);
+      if (satPref === 'true' && fiscalRegime !== 'no_facturo') {
+        scheduleSatDeadlines(fiscalRegime);
+      }
       startSyncService();
 
       // Sync widget data al abrir la app
