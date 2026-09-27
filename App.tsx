@@ -41,16 +41,10 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 // Sentry — initialized by the wizard, wraps the app below
 Sentry.init({
   dsn: 'https://936126e6a2a51caec1d808428e97bdcb@o4511520191086592.ingest.us.sentry.io/4511520196395008',
-  sendDefaultPii: true,
+  sendDefaultPii: false,
   enableLogs: true,
   environment: __DEV__ ? 'development' : 'production',
   tracesSampleRate: __DEV__ ? 0 : 0.2,
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [
-    Sentry.mobileReplayIntegration(),
-    Sentry.feedbackIntegration(),
-  ],
 });
 
 function AppContent() {
@@ -144,70 +138,38 @@ function AppContent() {
       await updateStreak().catch(() => {});
       scheduleStreakReminder(usePremiumStore.getState().streak);
 
-      // Procesar gastos recurrentes vencidos
+      // Procesar recurrentes vencidos (gastos e ingresos)
+      const today = new Date();
+      const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+      const weekNum = Math.ceil(
+        ((today.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7,
+      );
+      const week = `${today.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
       try {
         const due = getDueThisMonth();
         const addExpense = useExpenseStore.getState().addExpense;
-        const today = new Date();
-        const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        const startOfYear = new Date(today.getFullYear(), 0, 1);
-        const weekNum = Math.ceil(
-          ((today.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7,
-        );
-        const week = `${today.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         for (const r of due) {
-          const date = r.frequency === 'weekly'
-            ? todayStr
-            : `${month}-${String(r.dayOfMonth).padStart(2, '0')}`;
-          await addExpense({
-            amount: r.amount,
-            date,
-            category: r.category,
-            description: r.description,
-            merchantName: r.merchantName,
-            conceptsText: '',
-            ocrRawText: '',
-            deductible: r.deductible,
-            rfc: '',
-            usoCFDI: '',
-            source: 'manual',
-          });
+          const date = r.frequency === 'weekly' ? todayStr : `${month}-${String(r.dayOfMonth).padStart(2, '0')}`;
+          await addExpense({ amount: r.amount, date, category: r.category, description: r.description, merchantName: r.merchantName, conceptsText: '', ocrRawText: '', deductible: r.deductible, rfc: '', usoCFDI: '', source: 'manual' });
           await markProcessed(r.id, r.frequency === 'weekly' ? week : month);
         }
       } catch (e) {
-        if (__DEV__) console.warn('Recurring error:', e);
+        if (__DEV__) console.warn('Recurring expenses error:', e);
       }
 
-      // Procesar ingresos recurrentes vencidos
       try {
         const dueIncomes = getDueIncomeThisMonth();
         const addIncome = useIncomeStore.getState().addIncome;
-        const today = new Date();
-        const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-        const startOfYear = new Date(today.getFullYear(), 0, 1);
-        const weekNum = Math.ceil(
-          ((today.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7,
-        );
-        const week = `${today.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         for (const r of dueIncomes) {
-          const date = r.frequency === 'weekly'
-            ? todayStr
-            : `${month}-${String(r.dayOfMonth).padStart(2, '0')}`;
-          await addIncome({
-            amount: r.amount,
-            date,
-            type: r.type,
-            description: r.description,
-            invoiced: r.invoiced,
-            recurring: true,
-            paymentMethod: r.paymentMethod,
-          });
+          const date = r.frequency === 'weekly' ? todayStr : `${month}-${String(r.dayOfMonth).padStart(2, '0')}`;
+          await addIncome({ amount: r.amount, date, type: r.type, description: r.description, invoiced: r.invoiced, recurring: true, paymentMethod: r.paymentMethod });
           await markIncomeProcessed(r.id, r.frequency === 'weekly' ? week : month);
         }
       } catch (e) {
-        if (__DEV__) console.warn('Recurring income error:', e);
+        if (__DEV__) console.warn('Recurring incomes error:', e);
       }
 
       configureNotifications();

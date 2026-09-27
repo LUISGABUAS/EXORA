@@ -22,7 +22,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { exportExpensesToCsv } from '../services/exportService';
 import { getAvailableBiometric, getBiometricLabel } from '../services/biometricService';
 import { applyReferralCode, getOrCreateReferralCode, REFERRAL_ERROR_MESSAGES } from '../services/referralService';
-import { cancelAllReminders, scheduleDailyReminder, scheduleWeeklySummary } from '../services/notificationService'; // eslint-disable-line @typescript-eslint/no-unused-vars
+import { cancelAllReminders } from '../services/notificationService';
 import { useAuthStore } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';

@@ -292,7 +292,6 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
         : state.trialEndsAt;
     set({ onboardingComplete: true, trialEndsAt });
     await persist(getData(get()));
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     supabase.auth.updateUser({ data: { onboarding_complete: true } }).catch(() => {});
     if (trialEndsAt) {
       const { scheduleTrialReminders } = await import(
