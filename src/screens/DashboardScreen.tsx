@@ -385,7 +385,7 @@ export function DashboardScreen() {
                 </Animated.View>
 
                 {/* Streak Card */}
-                <StreakCard streak={streak} />
+                <StreakCard streak={streak} expenses={expenses} />
 
                 {/* Recent Transactions */}
                 <Animated.View entering={FadeInDown.delay(200).duration(350)}>
