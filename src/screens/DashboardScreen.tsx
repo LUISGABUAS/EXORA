@@ -22,7 +22,6 @@ import { NewExpenseModal } from '../components/NewExpenseModal';
 import { PaywallModal } from '../components/PaywallModal';
 import { SmartInputBar } from '../components/SmartInputBar';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { StreakBadge } from '../components/StreakBadge';
 import { StreakCard } from '../components/StreakCard';
 import { UndoToast } from '../components/UndoToast';
 import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
@@ -276,7 +275,6 @@ export function DashboardScreen() {
                   <Text style={s.headerSub}>{currentMonth} {currentYear}</Text>
                 </View>
               </Pressable>
-              <StreakBadge streak={streak} />
             </Animated.View>
 
             {/* Smart Input */}
