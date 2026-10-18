@@ -55,6 +55,8 @@
 	<string>Exora necesita acceso a tus fotos para seleccionar tickets y tu foto de perfil.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Exora puede guardar imágenes de tus tickets en tu galería.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Exora puede usar tu ubicación para identificar el comercio de tus tickets escaneados.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>RCTNewArchEnabled</key>
