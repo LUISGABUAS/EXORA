@@ -32,7 +32,11 @@ jest.mock('react-native-reanimated', () => {
     View: RN.View,
     Text: RN.Text,
     createAnimatedComponent: comp => comp,
+    FadeIn: animLayout,
+    FadeOut: animLayout,
     FadeInDown: animLayout,
+    FadeInUp: animLayout,
+    FadeOutDown: animLayout,
     SlideInDown: animLayout,
     SlideOutDown: animLayout,
     useSharedValue: jest.fn(init => ({ value: init })),
@@ -55,12 +59,14 @@ jest.mock('react-native-safe-area-context', () => {
     onInsetsChange: () => {},
   });
   return {
-    SafeAreaProvider: ({ children }) => React.createElement(
-      SafeAreaContext.Provider,
-      { value: { insets, frame, onInsetsChange: () => {} } },
-      children,
-    ),
-    SafeAreaView: ({ children, ...props }) => React.createElement(View, props, children),
+    SafeAreaProvider: ({ children }) =>
+      React.createElement(
+        SafeAreaContext.Provider,
+        { value: { insets, frame, onInsetsChange: () => {} } },
+        children,
+      ),
+    SafeAreaView: ({ children, ...props }) =>
+      React.createElement(View, props, children),
     SafeAreaInsetsContext: SafeAreaContext,
     SafeAreaFrameContext: React.createContext(frame),
     useSafeAreaInsets: () => insets,
@@ -85,13 +91,17 @@ jest.mock('react-native-vision-camera', () => ({
 // react-native-sqlite-storage
 jest.mock('react-native-sqlite-storage', () => ({
   openDatabase: jest.fn(() => ({
-    transaction: jest.fn((fn) => {
+    transaction: jest.fn(fn => {
       const tx = {
-        executeSql: jest.fn(() => Promise.resolve([{ rows: { raw: () => [], length: 0 } }])),
+        executeSql: jest.fn(() =>
+          Promise.resolve([{ rows: { raw: () => [], length: 0 } }]),
+        ),
       };
       return Promise.resolve(fn(tx));
     }),
-    executeSql: jest.fn(() => Promise.resolve([{ rows: { raw: () => [], length: 0 } }])),
+    executeSql: jest.fn(() =>
+      Promise.resolve([{ rows: { raw: () => [], length: 0 } }]),
+    ),
   })),
   enablePromise: jest.fn(),
 }));
@@ -119,7 +129,9 @@ jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     auth: {
       getSession: jest.fn(() => Promise.resolve({ data: { session: null } })),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+      onAuthStateChange: jest.fn(() => ({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      })),
       signInWithPassword: jest.fn(),
       signUp: jest.fn(),
       signInWithOtp: jest.fn(),
@@ -186,9 +198,15 @@ jest.mock('react-native-purchases', () => ({
   default: {
     configure: jest.fn(),
     getOfferings: jest.fn(() => Promise.resolve({ current: null })),
-    purchasePackage: jest.fn(() => Promise.resolve({ customerInfo: { entitlements: { active: {} } } })),
-    restorePurchases: jest.fn(() => Promise.resolve({ entitlements: { active: {} } })),
-    getCustomerInfo: jest.fn(() => Promise.resolve({ entitlements: { active: {} } })),
+    purchasePackage: jest.fn(() =>
+      Promise.resolve({ customerInfo: { entitlements: { active: {} } } }),
+    ),
+    restorePurchases: jest.fn(() =>
+      Promise.resolve({ entitlements: { active: {} } }),
+    ),
+    getCustomerInfo: jest.fn(() =>
+      Promise.resolve({ entitlements: { active: {} } }),
+    ),
   },
 }));
 
@@ -213,4 +231,22 @@ jest.mock('@react-native-voice/voice', () => ({
     onSpeechPartialResults: null,
     onSpeechError: null,
   },
+}));
+
+// @sentry/react-native ships ESM and native code; tests only need a no-op.
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  wrap: component => component,
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setContext: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  withScope: jest.fn(),
+  reactNavigationIntegration: jest.fn(() => ({
+    registerNavigationContainer: jest.fn(),
+  })),
+  mobileReplayIntegration: jest.fn(),
+  feedbackIntegration: jest.fn(),
 }));
