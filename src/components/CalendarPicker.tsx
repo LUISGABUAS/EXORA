@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -47,9 +46,11 @@ interface CalendarProps {
   onSelect: (date: string) => void;
   startDate?: string;
   endDate?: string;
+  /** Days before this date (YYYY-MM-DD) can't be picked. */
+  minDate?: string;
 }
 
-function MonthCalendar({ year, month, selectedDate, onSelect, startDate, endDate, colors, s }: CalendarProps & {
+function MonthCalendar({ year, month, selectedDate, onSelect, startDate, endDate, minDate, colors, s }: CalendarProps & {
   year: number; month: number; colors: ColorPalette; s: any;
 }) {
   const totalDays = getDaysInMonth(year, month);
@@ -67,7 +68,6 @@ function MonthCalendar({ year, month, selectedDate, onSelect, startDate, endDate
 
   const startD = toDate(startDate ?? '');
   const endD = toDate(endDate ?? '');
-  const selD = toDate(selectedDate);
 
   const isInRange = (day: number): boolean => {
     if (!startD || !endD) return false;
@@ -101,6 +101,7 @@ function MonthCalendar({ year, month, selectedDate, onSelect, startDate, endDate
             const inRange = isInRange(day);
             const isToday = dateStr === toStr(new Date());
             const highlighted = selected || start || end;
+            const disabled = !!minDate && dateStr < minDate;
 
             return (
               <Pressable
@@ -111,12 +112,15 @@ function MonthCalendar({ year, month, selectedDate, onSelect, startDate, endDate
                   highlighted && { backgroundColor: colors.primary, borderRadius: 10 },
                 ]}
                 onPress={() => onSelect(dateStr)}
+                disabled={disabled}
+                accessibilityState={{ disabled }}
               >
                 <Text style={[
                   s.dayText,
                   inRange && { color: colors.primary },
                   highlighted && { color: '#fff', fontFamily: font.bold },
                   isToday && !highlighted && { color: colors.primary, fontFamily: font.bold },
+                  disabled && { opacity: 0.3 },
                 ]}>
                   {day}
                 </Text>
@@ -199,6 +203,7 @@ export function CalendarPicker({ visible, onClose, value, onSelect, title = 'Sel
           month={month}
           selectedDate={value}
           onSelect={handleSelect}
+          minDate={minDate}
           colors={colors}
           s={s}
         />
@@ -220,7 +225,7 @@ export function CalendarPicker({ visible, onClose, value, onSelect, title = 'Sel
   );
 }
 
-const useStyles = (colors: ColorPalette, isDark: boolean) =>
+const useStyles = (colors: ColorPalette, _isDark: boolean) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
