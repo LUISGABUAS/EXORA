@@ -57,7 +57,6 @@ interface PackageInfo {
 export function PaywallModal({ visible, onClose }: Props) {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
-  const setPlan = usePremiumStore(state => state.setPlan);
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
   const trialEndsAt = usePremiumStore(state => state.trialEndsAt);
 
@@ -288,11 +287,11 @@ export function PaywallModal({ visible, onClose }: Props) {
           {/* CTA */}
           <Animated.View entering={FadeInDown.delay(280).duration(350)}>
             <Pressable
-              style={[s.cta, purchasing && s.ctaDisabled]}
+              style={[s.cta, (purchasing || loading) && s.ctaDisabled]}
               onPress={handlePurchase}
-              disabled={purchasing}
+              disabled={purchasing || loading}
             >
-              {purchasing ? (
+              {purchasing || loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={s.ctaText}>
