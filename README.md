@@ -1,97 +1,84 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# EXORA Finances
 
-# Getting Started
+[![CI](https://github.com/LUISGABUAS/EXORA/actions/workflows/ci.yml/badge.svg)](https://github.com/LUISGABUAS/EXORA/actions/workflows/ci.yml)
+[![App Store](https://img.shields.io/badge/App_Store-Available-0D96F6?logo=apple&logoColor=white)](https://apps.apple.com/mx/app/exora-finances/id6781416549)
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+Personal finance app for Mexico, **live on the App Store**. Track expenses and income, set budgets, scan receipts, validate invoices (CFDI) against the SAT and get AI-powered advice about your money and taxes.
 
-## Step 1: Start Metro
+Built and shipped end to end by [Luis Gabuardi](https://luisgabuardi.pages.dev): product, mobile app, backend and App Store release.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Features
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **Expenses and income** with categories, recurring items, multiple currencies, split bills and savings goals.
+- **Receipt scanning**: on-device text recognition (ML Kit) plus a server-side parser to fill in amount, merchant and date. Voice input is also supported.
+- **Budgets and streaks**: monthly budgets with alerts, rollover of unspent money and a daily logging streak.
+- **Mexican tax tools**: CFDI invoices checked live against the SAT web service, deductible expenses, RESICO tax calculator, fiscal report export and SAT deadline reminders.
+- **AI advisor**: answers questions about your spending and generates monthly insights through Supabase Edge Functions; the API key never reaches the device.
+- **Bank statement import** from PDF.
+- **Offline first**: data lives in SQLite on the phone and syncs with Supabase when online.
+- **Security**: Face ID / Touch ID lock, Sign in with Apple and Google.
+- **iOS home-screen widget** with the month's spending.
+- **Subscriptions** with RevenueCat (monthly and yearly plans).
 
-```sh
-# Using npm
-npm start
+## Tech stack
 
-# OR using Yarn
-yarn start
+| Layer | Technology |
+| --- | --- |
+| App | React Native 0.84, TypeScript (strict), React Navigation |
+| State | Zustand stores, persisted with AsyncStorage |
+| Local data | SQLite (`react-native-sqlite-storage`) |
+| Backend | Supabase: Auth, Postgres, Storage, Edge Functions (Deno) |
+| AI | Anthropic Claude models called from Edge Functions |
+| Payments | RevenueCat (StoreKit / Google Play Billing) |
+| Monitoring | Sentry (integrated; add your DSN in `src/config/keys.ts`) |
+| Native | ML Kit text recognition, Vision Camera, biometrics, iOS widget (Swift bridge) |
+
+## Architecture
+
+```
+React Native app
+ ├─ screens/      UI, one file per screen
+ ├─ store/        Zustand stores (expenses, budgets, premium, …)
+ ├─ database/     SQLite schema and queries (source of truth on the device)
+ ├─ services/     sync, OCR, notifications, RevenueCat, analytics
+ └─ utils/        receipt parsing, tax calculations, formatting
+        │
+        ▼  sync when online
+Supabase
+ ├─ Postgres + Row Level Security
+ └─ Edge Functions
+     ├─ ocr-parse          receipt text → structured expense
+     ├─ validate-cfdi      CFDI XML → SAT status (vigente / cancelado)
+     ├─ ai-insights        monthly spending insights
+     └─ financial-advisor  questions about money and taxes
 ```
 
-## Step 2: Build and run your app
+The app works fully offline: every write goes to SQLite first and a sync service pushes changes to Supabase. AI and SAT calls run in Edge Functions so secrets stay on the server.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## Quality
 
-### Android
+- **164 automated tests** (Jest) covering receipt parsing, feature extraction, AI receipt helpers, the SAT tax certificate reader and UI regressions.
+- **CI on every push**: type checking, linting and tests run in GitHub Actions.
+- TypeScript in strict mode with zero type errors.
 
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```bash
+npm run typecheck   # TypeScript
+npm run lint        # ESLint
+npm test            # Jest
 ```
 
-### iOS
+## Running locally
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Requirements: Node 22+, Xcode (iOS) or Android Studio, CocoaPods.
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```bash
+npm install
+cd ios && pod install && cd ..
+npm run ios        # or: npm run android
 ```
 
-Then, and every time you update your native dependencies, run:
+Client keys are public by design: Supabase URL and anon key in `src/lib/supabase.ts`, RevenueCat public keys in `src/services/revenuecatService.ts`, Sentry DSN in `src/config/keys.ts`. Private keys stay in Supabase: Edge Functions need `ANTHROPIC_API_KEY` and `OCR_SPACE_API_KEY` as secrets.
 
-```sh
-bundle exec pod install
-```
+## Contact
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Luis Gabuardi · [luisgabuardi.pages.dev](https://luisgabuardi.pages.dev) · [LinkedIn](https://www.linkedin.com/in/luis-felipe-alejandro-gabuardi-gonzalez-a482a4384/) · gabuasluis@gmail.com
