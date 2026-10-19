@@ -100,6 +100,14 @@ export function StreakCard({ streak, expenses }: Props) {
   const s = useStyles(colors, isDark);
   const [idx, setIdx] = useState(0);
 
+  // Hooks run on every render, before the early return: when the streak goes from
+  // 0 to 1 while the card is mounted, calling them conditionally crashes React.
+  const insights = useMemo(() => buildInsights(streak, expenses), [streak, expenses]);
+  const hasMultiple = insights.length > 1;
+  const handlePress = useCallback(() => {
+    if (hasMultiple) setIdx(i => (i + 1) % insights.length);
+  }, [hasMultiple, insights.length]);
+
   if (streak <= 0) return null;
 
   const milestone = getMilestone(streak);
@@ -112,13 +120,7 @@ export function StreakCard({ streak, expenses }: Props) {
     : 1;
   const daysToNext = nextMilestone - streak;
 
-  const insights = useMemo(() => buildInsights(streak, expenses), [streak, expenses]);
   const currentInsight = insights[idx % insights.length];
-  const hasMultiple = insights.length > 1;
-
-  const handlePress = useCallback(() => {
-    if (hasMultiple) setIdx(i => (i + 1) % insights.length);
-  }, [hasMultiple, insights.length]);
 
   return (
     <Animated.View entering={FadeInDown.delay(170).duration(350)}>
