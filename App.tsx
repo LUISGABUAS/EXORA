@@ -87,6 +87,8 @@ function AppContent() {
     if (!userId) {
       prevSessionRef.current = null;
     }
+    // Runs per session change; the helpers are recreated every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   // Flush analytics + lock on background; update streak on foreground
@@ -204,6 +206,8 @@ function AppContent() {
       track('app_open', { plan, fiscalRegime });
     };
     void bootstrap();
+    // One-time start-up; store actions read fresh state through getState().
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadExpenses, initializeAuth, hydratePremium, updateStreak, hydrateTemplates, syncWithRevenueCat]);
 
   if (authLoading || !premiumLoaded) {

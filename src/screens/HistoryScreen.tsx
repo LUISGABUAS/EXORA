@@ -61,7 +61,6 @@ export function HistoryScreen() {
   const loading = useExpenseStore((state) => state.loading);
   const addExpense = useExpenseStore((state) => state.addExpense);
   const removeExpense = useExpenseStore((state) => state.removeExpense);
-  const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
   const premiumLoaded = usePremiumStore(state => state.loaded);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -130,7 +129,7 @@ export function HistoryScreen() {
     }
 
     return result;
-  }, [expenses, query, selectedCategory, startDate, endDate, minAmount, maxAmount, sortMode, hasFullAccess]);
+  }, [expenses, query, selectedCategory, startDate, endDate, minAmount, maxAmount, sortMode]);
 
   // Chart data computed from all expenses (not filtered)
   const now = new Date();

@@ -22,7 +22,6 @@ import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { formatCurrency, localDateString } from '../utils/format';
 import { calculateTax } from '../utils/taxCalculator';
-import { FISCAL_REGIME_DISPLAY } from '../types/fiscal';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 const MONTHS = [

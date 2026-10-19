@@ -25,7 +25,7 @@ import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { parseSmartInput } from '../utils/smartInputParser';
 import { readPdfText, validateIsConstancia, parseConstanciaText } from '../services/constanciaService';
-import { estimateTaxSavings, savingsRateLabel } from '../utils/taxCalculator';
+import { estimateTaxSavings } from '../utils/taxCalculator';
 import { formatCurrency } from '../utils/format';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -361,7 +361,7 @@ function NameSlide({ colors, s, value, onChange, onNext }: { colors: ColorPalett
   );
 }
 
-function AgeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPalette; s: any; selected: string; onSelect: (v: string) => void; onNext: () => void }) {
+function AgeSlide({ s, selected, onSelect, onNext }: { colors: ColorPalette; s: any; selected: string; onSelect: (v: string) => void; onNext: () => void }) {
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
       <Text style={s.slideTitle}>¿Cuántos años tienes?</Text>
@@ -390,7 +390,7 @@ function AgeSlide({ colors, s, selected, onSelect, onNext }: { colors: ColorPale
   );
 }
 
-function GoalsSlide({ colors, s, selected, onToggle, onNext }: { colors: ColorPalette; s: any; selected: FinancialGoal[]; onToggle: (g: FinancialGoal) => void; onNext: () => void }) {
+function GoalsSlide({ s, selected, onToggle, onNext }: { colors: ColorPalette; s: any; selected: FinancialGoal[]; onToggle: (g: FinancialGoal) => void; onNext: () => void }) {
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={s.slide}>
       <Text style={s.slideTitle}>¿Cuál es tu meta?</Text>
@@ -718,7 +718,7 @@ function FirstExpenseSlide({ colors, s, value, onChange, onNext, onSkip }: { col
   );
 }
 
-function ReadySlide({ colors, s, name, regime, onFinish }: { colors: ColorPalette; s: any; name: string; regime: FiscalRegime | null; onFinish: () => void }) {
+function ReadySlide({ colors, s, name, onFinish }: { colors: ColorPalette; s: any; name: string; regime: FiscalRegime | null; onFinish: () => void }) {
   const firstName = name.split(' ')[0] || '';
   return (
     <Animated.View entering={FadeIn.duration(500)} style={[s.slide, s.readySlide]}>

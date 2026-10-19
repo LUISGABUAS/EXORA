@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Linking, Platform, StyleSheet, View } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import {
   createNavigationContainerRef,
   DarkTheme,

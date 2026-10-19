@@ -70,7 +70,7 @@ export function ProfileEditScreen() {
       .eq('id', userId)
       .single()
       .then(({ data }) => { if (data?.avatar_url) setAvatarUri(data.avatar_url); });
-  }, [session?.user?.id]);
+  }, [session?.user?.id, setAvatarUri]);
 
   const handleAvatarPress = () => {
     const options = ['Tomar foto', 'Elegir de galería', 'Cancelar'];

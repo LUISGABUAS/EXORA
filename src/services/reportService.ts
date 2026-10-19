@@ -1,7 +1,7 @@
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 import { FiscalRegime } from '../store/usePremiumStore';
-import { Expense, ExpenseCategory } from '../types/expense';
+import { Expense } from '../types/expense';
 import { calculateTaxSavings } from '../utils/taxSavings';
 
 const REGIME_LABELS: Record<FiscalRegime, string> = {

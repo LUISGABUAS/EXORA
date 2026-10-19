@@ -150,7 +150,8 @@ export function generateLocalInsights(
 export async function generateAIInsights(
   expenses: Expense[],
   regime: FiscalRegime,
-  authToken: string,
+  // supabase.functions.invoke already sends the session token.
+  _authToken: string,
 ): Promise<Insight[]> {
   // Check cache
   try {

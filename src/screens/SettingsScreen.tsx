@@ -11,7 +11,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -22,10 +21,9 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { exportExpensesToCsv } from '../services/exportService';
 import { getAvailableBiometric, getBiometricLabel } from '../services/biometricService';
 import { applyReferralCode, getOrCreateReferralCode, REFERRAL_ERROR_MESSAGES } from '../services/referralService';
-import { cancelAllReminders } from '../services/notificationService';
 import { useAuthStore } from '../store/useAuthStore';
 import { useExpenseStore } from '../store/useExpenseStore';
-import { FiscalRegime, usePremiumStore } from '../store/usePremiumStore';
+import { usePremiumStore } from '../store/usePremiumStore';
 import { getPendingSyncItems } from '../database/syncQueue';
 import { flushSyncQueue } from '../services/syncService';
 import { ColorPalette } from '../theme/colors';

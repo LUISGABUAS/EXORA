@@ -24,7 +24,7 @@ import { SmartInputBar } from '../components/SmartInputBar';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { StreakCard } from '../components/StreakCard';
 import { UndoToast } from '../components/UndoToast';
-import { RootStackParamList, TabParamList } from '../navigation/AppNavigator';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuthStore } from '../store/useAuthStore';
 import { useDeepLinkStore } from '../store/useDeepLinkStore';
 import { useExpenseStore } from '../store/useExpenseStore';

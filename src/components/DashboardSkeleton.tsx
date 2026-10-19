@@ -126,7 +126,7 @@ const useStyles = (colors: ColorPalette) =>
     },
   });
 
-const useRowStyles = (colors: ColorPalette) =>
+const useRowStyles = (_colors: ColorPalette) =>
   StyleSheet.create({
     row: {
       flexDirection: 'row',

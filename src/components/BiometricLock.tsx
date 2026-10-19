@@ -16,7 +16,7 @@ interface BiometricLockProps {
 }
 
 export function BiometricLock({ biometricType, onUnlocked }: BiometricLockProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
 

@@ -14,7 +14,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ScreenContainer } from '../components/ScreenContainer';
 import {
   cancelAllReminders,
-  notifyBudgetAlert,
   scheduleDailyReminder,
   scheduleSatDeadlines,
   scheduleWeeklySummary,

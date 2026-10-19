@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -10,7 +9,6 @@ import {
   Text,
   TextStyle,
   View,
-  ViewStyle,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import RNFS from 'react-native-fs';
@@ -369,7 +367,7 @@ function AlertasTab({
 // ── Sub-componente: Card de alerta ────────────────────────────────────────────
 
 function AlertaCard({
-  alerta, onResolver, colors, isDark, s,
+  alerta, onResolver, s,
 }: {
   alerta: FiscalAlert;
   onResolver: (id: string) => void;
@@ -456,7 +454,7 @@ function FacturasTab({
 // ── Sub-componente: Card de CFDI ──────────────────────────────────────────────
 
 function CFDICard({
-  cfdi, colors, isDark, s,
+  cfdi, s,
 }: {
   cfdi: CFDIRecord;
   colors: ColorPalette;
@@ -534,7 +532,7 @@ function scoreTextColor(color: string): string {
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
-function useStyles(colors: ColorPalette, isDark: boolean) {
+function useStyles(colors: ColorPalette, _isDark: boolean) {
   return StyleSheet.create({
     scroll: { flex: 1 },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },

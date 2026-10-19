@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AnnualChart } from '../components/AnnualChart';
 import { PaywallModal } from '../components/PaywallModal';
 import { PieChart } from '../components/PieChart';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { exportFiscalReportCsv, generateFiscalReport } from '../services/reportService';
+import { exportFiscalReportCsv } from '../services/reportService';
 import { exportMonthlyReport } from '../services/pdfExportService';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { useIncomeStore } from '../store/useIncomeStore';
@@ -40,7 +39,6 @@ function buildMonthPrefix(year: number, month: number) {
 export function ReporteFiscalScreen() {
   const { colors, isDark } = useTheme();
   const s = useStyles(colors, isDark);
-  const navigation = useNavigation();
   const expenses = useExpenseStore(state => state.expenses);
   const incomes = useIncomeStore(state => state.incomes);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
@@ -199,7 +197,7 @@ export function ReporteFiscalScreen() {
       // exportFiscalReportCsv uses current month internally; we build our own CSV for the selected month
       const monthExpenses = expenses.filter(e => e.date.startsWith(monthPrefix));
       await exportFiscalReportCsv(monthExpenses, fiscalRegime);
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'No se pudo exportar el reporte.');
     } finally {
       setExporting(false);

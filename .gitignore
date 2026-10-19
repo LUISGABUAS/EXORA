@@ -83,3 +83,6 @@ yarn-error.log
 *.p8
 AuthKey_*.p8
 SubscriptionKey_*.p8
+
+# Claude Code local settings
+.claude/settings.local.json

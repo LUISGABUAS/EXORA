@@ -26,13 +26,11 @@ import { supabase } from '../lib/supabase';
 import { ColorPalette } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
-import { ExpenseCategory } from '../types/expense';
 import { formatCurrency, localDateString } from '../utils/format';
 
 const CACHE_KEY = '@exora_advisor_cache';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 const QUESTIONS_KEY = '@exora_advisor_questions';
-const FREE_DAILY_LIMIT = 3;
 const PREMIUM_DAILY_LIMIT = 3;
 
 const SUGGESTED_QUESTIONS_PERSONAL = [
@@ -112,12 +110,12 @@ export function AsesorScreen() {
     });
   }, []);
 
-  const incrementQuestionCount = async () => {
+  const incrementQuestionCount = useCallback(async () => {
     const today = new Date().toISOString().slice(0, 10);
     const next = questionsToday + 1;
     setQuestionsToday(next);
     await AsyncStorage.setItem(QUESTIONS_KEY, JSON.stringify({ date: today, count: next }));
-  };
+  }, [questionsToday]);
 
   const questionsLeft = Math.max(0, PREMIUM_DAILY_LIMIT - questionsToday);
   const limitReached = questionsToday >= PREMIUM_DAILY_LIMIT;
@@ -148,8 +146,6 @@ export function AsesorScreen() {
       .map(([n, a]) => `${n}: ${formatCurrency(a)}`).join(', ');
 
     const monthPrefix = today.slice(0, 7);
-    const prevPrefix = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      .toISOString().slice(0, 7);
 
     const monthTotal = recent.reduce((s, e) => s + e.amount, 0);
     const prevMonthTotal = prev.reduce((s, e) => s + e.amount, 0);
@@ -279,6 +275,8 @@ export function AsesorScreen() {
     if (canAccess && expenses.length >= 3 && !analysis) {
       fetchAnalysis();
     }
+    // Only when premium access changes; `analysis` guards against repeat calls.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canAccess]);
 
   const handleAsk = () => {

@@ -75,9 +75,6 @@ async function verificarSAT(
   cfdi: CFDIParsed,
 ): Promise<'vigente' | 'cancelado' | 'no_encontrado' | 'error_sat'> {
   try {
-    const expresion = encodeURIComponent(
-      `?re=${cfdi.rfc_emisor}&rr=${cfdi.rfc_receptor}&tt=${cfdi.total.toFixed(6)}&id=${cfdi.uuid}`,
-    );
     const soapBody = `<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
   <soapenv:Header/>
