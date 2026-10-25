@@ -193,12 +193,13 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
 
       set({ ...defaults, ...parsed, loaded: true });
 
-      // Siempre verifica fundador en Supabase — garantiza sync tras reinstalar o limpiar datos
+      // Verifica fundador en Supabase con timeout — si no hay red, skip
       try {
         const { checkIsFounderInSupabase } = await import(
           '../services/founderService'
         );
-        const isFounder = await checkIsFounderInSupabase();
+        const timeout = new Promise<false>(resolve => setTimeout(() => resolve(false), 3000));
+        const isFounder = await Promise.race([checkIsFounderInSupabase(), timeout]);
         if (isFounder) {
           set({ isFounder: true, isPremium: true, plan: 'founder' });
           await persist(getData(get()));
