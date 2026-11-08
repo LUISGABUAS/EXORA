@@ -115,13 +115,9 @@ function AppContent() {
 
   useEffect(() => {
     const bootstrap = async () => {
-      // Auth primero — con timeout de 5s para no bloquear sin internet
-      await Promise.race([
-        initializeAuth(),
-        new Promise<void>(resolve => setTimeout(resolve, 5000)),
-      ]).catch(() => {});
-
+      // Auth y datos locales en paralelo — la app abre apenas termina el caché local
       await Promise.allSettled([
+        initializeAuth(),
         initDatabase().then(() => loadExpenses()).catch(e => console.error('DB error:', e)),
         hydratePremium(),
         hydrateTemplates(),

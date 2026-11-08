@@ -45,36 +45,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        set({ session: null, loading: false });
-        return;
-      }
+      // Muestra la app inmediatamente con la sesión cacheada (sin esperar red)
+      set({ session: session ?? null, loading: false });
+      if (!session) return;
 
-      // Si el token es válido por al menos 5 minutos más, abrir la app inmediatamente
-      // y refrescar en background para no bloquear el arranque sin internet
+      // Refresca el token en background — nunca bloquea el arranque
       const expiresAt = (session.expires_at ?? 0) * 1000;
-      if (expiresAt > Date.now() + 5 * 60 * 1000) {
-        set({ session, loading: false });
-        supabase.auth.refreshSession()
-          .then(({ data }) => { if (data.session) set({ session: data.session }); })
-          .catch(() => {});
-        return;
-      }
-
-      // Token expirado o a punto de expirar — intentar refrescar con timeout
-      // Si no hay internet el refresh puede colgar minutos; con 4s fallamos rápido
-      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
-      const refreshResult = await Promise.race([
-        supabase.auth.refreshSession().then(r => r.data.session ?? null).catch(() => null),
-        timeout,
-      ]);
-
-      if (refreshResult) {
-        set({ session: refreshResult, loading: false });
-      } else {
-        // Sin internet o refresh fallido — usar sesión expirada para acceso offline
-        // onAuthStateChange la actualizará cuando vuelva la conexión
-        set({ session, loading: false });
+      if (expiresAt <= Date.now() + 5 * 60 * 1000) {
+        Promise.race([
+          supabase.auth.refreshSession()
+            .then(({ data }) => { if (data.session) set({ session: data.session }); })
+            .catch(() => {}),
+          new Promise(resolve => setTimeout(resolve, 4000)),
+        ]);
       }
     } catch {
       set({ session: null, loading: false });
