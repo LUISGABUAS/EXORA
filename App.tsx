@@ -18,7 +18,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { BiometricLock } from './src/components/BiometricLock';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { configureNotifications, scheduleSatDeadlines, scheduleStreakReminder } from './src/services/notificationService';
+import { configureNotifications, scheduleSatDeadlines } from './src/services/notificationService';
 import { startSyncService, pullFromSupabase } from './src/services/syncService';
 import { setUserContext } from './src/services/crashReporting';
 import { syncWidgetData } from './src/utils/widgetBridge';
@@ -54,7 +54,6 @@ function AppContent() {
   const authLoading = useAuthStore(state => state.loading);
   const hydratePremium = usePremiumStore(state => state.hydrate);
   const checkOnboardingForUser = usePremiumStore(state => state.checkOnboardingForUser);
-  const updateStreak = usePremiumStore(state => state.updateStreak);
   const syncWithRevenueCat = usePremiumStore(state => state.syncWithRevenueCat);
   const premiumLoaded = usePremiumStore(state => state.loaded);
   const biometricEnabled = usePremiumStore(state => state.biometricEnabled);
@@ -91,7 +90,7 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
-  // Flush analytics + lock on background; update streak on foreground
+  // Flush analytics + lock on background
   useEffect(() => {
     let lastState = AppState.currentState;
     const sub = AppState.addEventListener('change', nextState => {
@@ -99,13 +98,10 @@ function AppContent() {
         flushNow();
         if (biometricEnabled) setLocked(true);
       }
-      if (nextState === 'active' && lastState !== 'active') {
-        updateStreak().catch(() => {});
-      }
       lastState = nextState;
     });
     return () => sub.remove();
-  }, [biometricEnabled, updateStreak]);
+  }, [biometricEnabled]);
 
   // Detect biometric type and lock on first load if enabled
   useEffect(() => {
@@ -137,9 +133,6 @@ function AppContent() {
         hydrateCurrency(),
         hydrateRecurringIncome(),
       ]);
-      await updateStreak().catch(() => {});
-      scheduleStreakReminder(usePremiumStore.getState().streak);
-
       // Procesar recurrentes vencidos (gastos e ingresos)
       const today = new Date();
       const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -208,7 +201,7 @@ function AppContent() {
     void bootstrap();
     // One-time start-up; store actions read fresh state through getState().
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadExpenses, initializeAuth, hydratePremium, updateStreak, hydrateTemplates, syncWithRevenueCat]);
+  }, [loadExpenses, initializeAuth, hydratePremium, hydrateTemplates, syncWithRevenueCat]);
 
   if (authLoading || !premiumLoaded) {
     return (

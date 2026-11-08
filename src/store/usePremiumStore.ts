@@ -34,8 +34,6 @@ interface PremiumState {
   trialEndsAt: string | null;
   weeklyScans: number;
   weekStartDate: string;
-  streak: number;
-  lastActiveDate: string;
   fiscalRegime: FiscalRegime;
   allFiscalRegimes: FiscalRegime[];
   razonSocial: string | null;
@@ -55,7 +53,6 @@ interface PremiumState {
   canScanOCR: () => boolean;
   incrementScan: () => Promise<void>;
   hasFullAccess: () => boolean;
-  updateStreak: () => Promise<void>;
   setFiscalRegime: (r: FiscalRegime) => Promise<void>;
   setFiscalProfile: (data: {
     fiscalRegime?: FiscalRegime;
@@ -116,8 +113,6 @@ const defaults = {
   trialEndsAt: null as string | null,
   weeklyScans: 0,
   weekStartDate: getMonday(new Date()),
-  streak: 0,
-  lastActiveDate: '',
   fiscalRegime: 'no_facturo' as FiscalRegime,
   allFiscalRegimes: [] as FiscalRegime[],
   razonSocial: null as string | null,
@@ -145,8 +140,6 @@ function getData(state: PremiumState): PersistData {
     trialEndsAt: state.trialEndsAt,
     weeklyScans: state.weeklyScans,
     weekStartDate: state.weekStartDate,
-    streak: state.streak,
-    lastActiveDate: state.lastActiveDate,
     fiscalRegime: state.fiscalRegime,
     allFiscalRegimes: state.allFiscalRegimes,
     razonSocial: state.razonSocial,
@@ -245,21 +238,6 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
     return false;
   },
 
-  updateStreak: async () => {
-    const state = get();
-    const today = todayStr();
-    const yesterday = yesterdayStr();
-
-    if (state.lastActiveDate === today) return;
-
-    let newStreak = 1;
-    if (state.lastActiveDate === yesterday) {
-      newStreak = state.streak + 1;
-    }
-
-    set({ streak: newStreak, lastActiveDate: today });
-    await persist(getData(get()));
-  },
 
   setFiscalRegime: async r => {
     set({ fiscalRegime: r });

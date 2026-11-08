@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -406,10 +405,7 @@ export function IncomesScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setModalVisible(false)}
       >
-        <KeyboardAvoidingView
-          style={s.modal}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+        <View style={s.modal}>
           <View style={s.modalHeader}>
             <Text style={s.modalTitle}>
               {editing ? 'Editar ingreso' : 'Nuevo ingreso'}
@@ -422,6 +418,7 @@ export function IncomesScreen() {
           <ScrollView
             contentContainerStyle={s.modalScroll}
             keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
             {/* Amount */}
             <Text style={s.fieldLabel}>Monto (MXN)</Text>
@@ -564,7 +561,7 @@ export function IncomesScreen() {
               </Pressable>
             ) : null}
           </ScrollView>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );

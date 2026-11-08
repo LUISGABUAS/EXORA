@@ -22,7 +22,6 @@ import { NewExpenseModal } from '../components/NewExpenseModal';
 import { PaywallModal } from '../components/PaywallModal';
 import { SmartInputBar } from '../components/SmartInputBar';
 import { ScreenContainer } from '../components/ScreenContainer';
-import { StreakCard } from '../components/StreakCard';
 import { UndoToast } from '../components/UndoToast';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuthStore } from '../store/useAuthStore';
@@ -98,7 +97,6 @@ export function DashboardScreen() {
   const session = useAuthStore(state => state.session);
   const incomes = useIncomeStore(state => state.incomes);
   const addIncome = useIncomeStore(state => state.addIncome);
-  const streak = usePremiumStore(state => state.streak);
   const fiscalRegime = usePremiumStore(state => state.fiscalRegime);
   const hasFullAccess = usePremiumStore(state => state.hasFullAccess);
   const premiumLoaded = usePremiumStore(state => state.loaded);
@@ -381,9 +379,6 @@ export function DashboardScreen() {
                     )}
                   </View>
                 </Animated.View>
-
-                {/* Streak Card */}
-                <StreakCard streak={streak} expenses={expenses} />
 
                 {/* Recent Transactions */}
                 <Animated.View entering={FadeInDown.delay(200).duration(350)}>

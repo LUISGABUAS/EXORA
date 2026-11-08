@@ -49,8 +49,6 @@ export async function clearAllUserData(): Promise<void> {
     trialEndsAt: null,
     weeklyScans: 0,
     weekStartDate: '',
-    streak: 0,
-    lastActiveDate: '',
     fiscalRegime: 'resico',
     allFiscalRegimes: [],
     razonSocial: null,

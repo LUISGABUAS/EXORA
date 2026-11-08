@@ -9,7 +9,6 @@ import { addToSyncQueue } from '../database/syncQueue';
 import { trackExpenseForRating } from '../services/ratingService';
 import { notifyBudgetAlert } from '../services/notificationService';
 import { useBudgetStore } from './useBudgetStore';
-import { usePremiumStore } from './usePremiumStore';
 import { Expense, ExpenseCategory, ExpenseInput } from '../types/expense';
 import { localDateString } from '../utils/format';
 import { syncWidgetData } from '../utils/widgetBridge';
@@ -52,7 +51,6 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       source: expense.source,
     });
     trackExpenseForRating().catch(() => {});
-    usePremiumStore.getState().updateStreak().catch(() => {});
     // Budget alert — check if category crossed 80% or 100%
     try {
       const budgets = useBudgetStore.getState().budgets;
