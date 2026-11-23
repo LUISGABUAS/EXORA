@@ -92,13 +92,11 @@ function AppContent() {
 
   // Flush analytics + lock on background
   useEffect(() => {
-    let lastState = AppState.currentState;
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'background') {
         flushNow();
         if (biometricEnabled) setLocked(true);
       }
-      lastState = nextState;
     });
     return () => sub.remove();
   }, [biometricEnabled]);
